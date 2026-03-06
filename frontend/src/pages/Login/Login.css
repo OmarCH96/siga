@@ -1,0 +1,49 @@
+/**
+ * Estilos personalizados para la página de Login
+ */
+
+/* Patrón de fondo con puntos */
+.bg-pattern {
+  background-color: #f6f6f8;
+  background-image: radial-gradient(#1754cf10 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Modo oscuro para el patrón de fondo */
+.dark .bg-pattern {
+  background-color: #111621;
+  background-image: radial-gradient(#1754cf20 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Spinner pequeño para el botón de carga */
+.spinner-small {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Animación de entrada suave para la tarjeta */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Aplicar animación a la tarjeta cuando se carga */
+.bg-pattern > div {
+  animation: fadeInUp 0.5s ease-out;
+}

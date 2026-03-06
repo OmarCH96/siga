@@ -1,0 +1,21 @@
+{
+  "name": "siga-root",
+  "version": "1.0.0",
+  "description": "Sistema Integral de Gestión Administrativa",
+  "private": true,
+  "scripts": {
+    "db:init": "node scripts/init-db.js",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "keywords": ["gestión", "documentos", "administrativa"],
+  "author": "Omar Cárcamo Hernández - Dirección de Planeación y Geomática",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "pg": "^8.11.3"
+  }
+}

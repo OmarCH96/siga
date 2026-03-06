@@ -1,0 +1,164 @@
+PS F:\GESTOR REACT-TAURI\SIGA\backend> npm run dev
+
+> siga-backend@1.0.0 dev
+> nodemon src/index.js
+
+[nodemon] 3.1.14
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node src/index.js`
+Consulta ejecutada: { text: 'SELECT NOW() as now', duration: '44ms', rows: 1 }
+✓ Conexión a base de datos exitosa: 2026-03-06T18:52:41.157Z
+╔════════════════════════════════════════════════════════════╗
+║   Sistema Integral de Gestión Administrativa (SIGA)       ║
+╚════════════════════════════════════════════════════════════╝
+
+✓ Servidor corriendo en puerto 3000
+✓ Entorno: development
+✓ Base de datos: gestor_db@localhost
+
+API disponible en: http://localhost:3000/api
+Health check: http://localhost:3000/health
+
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE u.nombre_usuario = $1\n' +
+    '    ',
+  duration: '9ms',
+  rows: 0
+}
+Error capturado: {
+  message: 'Credenciales inválidas',
+  stack: 'Error: Credenciales inválidas\n' +
+    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
+  url: '/api/auth/login',
+  method: 'POST',
+  user: undefined
+}
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] starting `node src/index.js`
+Consulta ejecutada: { text: 'SELECT NOW() as now', duration: '35ms', rows: 1 }
+✓ Conexión a base de datos exitosa: 2026-03-06T18:53:30.471Z
+╔════════════════════════════════════════════════════════════╗
+║   Sistema Integral de Gestión Administrativa (SIGA)       ║
+╚════════════════════════════════════════════════════════════╝
+
+✓ Servidor corriendo en puerto 3000
+✓ Entorno: development
+✓ Base de datos: gestor_db@localhost
+
+API disponible en: http://localhost:3000/api
+Health check: http://localhost:3000/health
+
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE u.nombre_usuario = $1\n' +
+    '    ',
+  duration: '9ms',
+  rows: 0
+}
+Error capturado: {
+  message: 'Credenciales inválidas',
+  stack: 'Error: Credenciales inválidas\n' +
+    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
+  url: '/api/auth/login',
+  method: 'POST',
+  user: undefined
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE u.nombre_usuario = $1\n' +
+    '    ',
+  duration: '1ms',
+  rows: 0
+}
+Error capturado: {
+  message: 'Credenciales inválidas',
+  stack: 'Error: Credenciales inválidas\n' +
+    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
+  url: '/api/auth/login',
+  method: 'POST',
+  user: undefined
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE u.nombre_usuario = $1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 0
+}
+Error capturado: {
+  message: 'Credenciales inválidas',
+  stack: 'Error: Credenciales inválidas\n' +
+    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
+  url: '/api/auth/login',
+  method: 'POST',
+  user: undefined
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE u.nombre_usuario = $1\n' +
+    '    ',
+  duration: '33ms',
+  rows: 0
+}
+Error capturado: {
+  message: 'Credenciales inválidas',
+  stack: 'Error: Credenciales inválidas\n' +
+    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
+  url: '/api/auth/login',
+  method: 'POST',
+  user: undefined
+}

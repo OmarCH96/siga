@@ -1,0 +1,24 @@
+flowchart LR
+    U[Usuario Interno\nAdministrador / Operador] --> FE[Frontend React + Vite\nApp Web/Desktop]
+    FE --> SS[SecureStorage\nSessionStorage]
+    FE -->|HTTPS JSON| API[Backend Express API\n/auth, /usuarios]
+
+    API --> MW[Middlewares\nHelmet, CORS, RateLimit, Auth, Validate]
+    MW --> C[Controllers]
+    C --> S[Services\nAuthService, SignatureService]
+    S --> R[Repositories\nUsuario, Rol, Area, Auditoria]
+    R --> DB[(PostgreSQL)]
+
+    DB --> T1[usuario / rol / area]
+    DB --> T2[documento / turno_documento]
+    DB --> T3[historial_documento / auditoria_sistema]
+
+    API -. auditoria .-> DB
+    FE -. verificacion token .-> API
+    FE -. build desktop .-> TAURI[Tauri Runtime + Rust Shell]
+
+    subgraph Build_y_Empaquetado
+      VITE[Vite Build]
+      TAURI
+      VITE --> TAURI
+    end
