@@ -6,8 +6,8 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute = ({ children, requiredRole = null, unauthorizedPath = '/unauthorized' }) => {
+  const { isAuthenticated, isLoading, hasRole } = useAuth();
 
   // Mostrar loader mientras verifica autenticación
   if (isLoading) {
@@ -29,6 +29,11 @@ const ProtectedRoute = ({ children }) => {
   // Si no está autenticado, redirigir a login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Si la ruta requiere rol específico y el usuario no lo tiene, redirigir
+  if (requiredRole && !hasRole(requiredRole)) {
+    return <Navigate to={unauthorizedPath} replace />;
   }
 
   // Si está autenticado, renderizar children o Outlet

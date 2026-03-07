@@ -6,6 +6,15 @@
 const { AuthorizationError } = require('../utils/errors');
 const rolRepository = require('../repositories/rol.repository');
 
+function normalizeText(value = '') {
+  return value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 /**
  * Verifica que el usuario tenga un rol específico
  * @param {Array<string>} rolesPermitidos - Lista de roles permitidos
@@ -19,7 +28,10 @@ function requireRole(...rolesPermitidos) {
 
       const rolUsuario = req.user.rol_nombre;
 
-      if (!rolesPermitidos.includes(rolUsuario)) {
+      const rolesNormalizados = rolesPermitidos.map((rol) => normalizeText(rol));
+      const rolUsuarioNormalizado = normalizeText(rolUsuario);
+
+      if (!rolesNormalizados.includes(rolUsuarioNormalizado)) {
         throw new AuthorizationError(
           `Acceso denegado. Rol requerido: ${rolesPermitidos.join(' o ')}`
         );
@@ -78,7 +90,7 @@ function requireOwnershipOrAdmin(getResourceOwnerId) {
       }
 
       // Los administradores tienen acceso total
-      if (req.user.rol_nombre === 'Administrador') {
+      if (normalizeText(req.user.rol_nombre) === normalizeText('Administrador')) {
         return next();
       }
 
@@ -111,7 +123,7 @@ function requireArea(getRequiredAreaId) {
       }
 
       // Los administradores tienen acceso total
-      if (req.user.rol_nombre === 'Administrador') {
+      if (normalizeText(req.user.rol_nombre) === normalizeText('Administrador')) {
         return next();
       }
 

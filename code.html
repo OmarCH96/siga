@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin Dashboard - Gobierno Digital</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1754cf",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col shrink-0">
+<div class="p-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-xl">account_balance</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-sm font-bold tracking-tight">Admin Panel</h1>
+<p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Gobierno Digital</p>
+</div>
+</div>
+<nav class="flex-1 p-4 space-y-1 overflow-y-auto no-scrollbar">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-sm">Inicio</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">business</span>
+<span class="text-sm">Unidades</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="text-sm">Reportes</span>
+</a>
+<div class="pt-4 pb-2">
+<p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gestión</p>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-sm">Documentos</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm">Configuración</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3 p-2">
+<div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Avatar de usuario administrador" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5pxdG66uqIE6dVbYmPbWfVgiJwDS0cN8fuTSUb48NlTXRWS6AW5pALGhI8dRcWembs-SYFHOtfYYfESztpNySOO7FSXV8nEs7ggSG6DtjSFncJUl5WrRwUOfI7m6mKq1ZZPZ2AaVGeP_UKkYAvL_GP0knfRWtg5-slLryNVM4ptJjPaZwN377FvBM1abmzF8KKaB8bNw8lqxImkPhc9PrOdLe3oQ1-z1fq01LtNm9DiAEPihH5Sw2JSBJEvFs3CBhj5e3jTIn1xA"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold truncate">Juan Pérez</p>
+<p class="text-[10px] text-slate-500 truncate">Administrador Central</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm">logout</span>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- Top Navbar -->
+<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-8 shrink-0">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative max-w-md w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20" placeholder="Buscar unidades o documentos..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative group">
+<button class="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-sm">account_tree</span>
+                            Contexto: Sede Central
+                            <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-8 no-scrollbar">
+<!-- Unit Selector Header -->
+<div class="mb-8">
+<h2 class="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Unidades Administrativas</h2>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Seleccione una unidad para gestionar su correspondencia y métricas operativas.</p>
+</div>
+<!-- Unit Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+<!-- Unit Card 1 -->
+<div class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/50 transition-all cursor-pointer">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-600">
+<span class="material-symbols-outlined text-2xl">payments</span>
+</div>
+<span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-full uppercase">Activo</span>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Secretaría de Finanzas</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">Gestión presupuestaria y auditoría interna institucional.</p>
+<div class="flex items-center gap-4 border-t border-slate-50 dark:border-slate-800 pt-4">
+<div class="flex flex-col">
+<span class="text-xs text-slate-400">Documentos</span>
+<span class="text-sm font-bold">1,240</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-slate-400">Pendientes</span>
+<span class="text-sm font-bold text-primary">12</span>
+</div>
+</div>
+</div>
+<!-- Unit Card 2 (Active/Selected Simulation) -->
+<div class="group bg-white dark:bg-slate-900 border-2 border-primary rounded-xl p-5 shadow-xl shadow-primary/5 transition-all">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-2xl">corporate_fare</span>
+</div>
+<span class="px-2 py-1 bg-primary text-white text-[10px] font-bold rounded-full uppercase">Seleccionado</span>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Dirección General</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">Coordinación estratégica y supervisión de proyectos críticos.</p>
+<div class="flex items-center gap-4 border-t border-slate-50 dark:border-slate-800 pt-4">
+<div class="flex flex-col">
+<span class="text-xs text-slate-400">Documentos</span>
+<span class="text-sm font-bold">850</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-slate-400">Pendientes</span>
+<span class="text-sm font-bold text-primary">45</span>
+</div>
+</div>
+</div>
+<!-- Unit Card 3 -->
+<div class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/50 transition-all cursor-pointer">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-center text-purple-600">
+<span class="material-symbols-outlined text-2xl">groups</span>
+</div>
+<span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded-full uppercase">Activo</span>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Recursos Humanos</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">Gestión de talento, nómina y servicios al personal administrativo.</p>
+<div class="flex items-center gap-4 border-t border-slate-50 dark:border-slate-800 pt-4">
+<div class="flex flex-col">
+<span class="text-xs text-slate-400">Documentos</span>
+<span class="text-sm font-bold">420</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-slate-400">Pendientes</span>
+<span class="text-sm font-bold text-primary">05</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Unit Dashboard Section (Simulated Interaction) -->
+<div class="space-y-6">
+<div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-1 overflow-x-auto no-scrollbar">
+<div class="flex gap-8">
+<button class="pb-4 px-1 text-sm font-bold border-b-2 border-primary text-primary flex items-center gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">analytics</span>
+                                Estadísticas
+                            </button>
+<button class="pb-4 px-1 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">upload_file</span>
+                                Salientes
+                            </button>
+<button class="pb-4 px-1 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">download_for_offline</span>
+                                Entrantes
+                            </button>
+<button class="pb-4 px-1 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">mail</span>
+                                Correspondencia General
+                            </button>
+</div>
+</div>
+<!-- Tab 1: Statistics Content -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Chart Mockup 1 -->
+<div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+<h4 class="text-sm font-bold mb-6 flex items-center justify-between">
+                                Flujo de Correspondencia (Últimos 7 días)
+                                <span class="text-xs font-normal text-slate-500">Filtrado por: Dirección General</span>
+</h4>
+<div class="h-64 flex items-end justify-between gap-4 px-2">
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative flex flex-col justify-end overflow-hidden" style="height: 60%;">
+<div class="w-full bg-primary/40 h-1/2"></div>
+<div class="w-full bg-primary h-1/2"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-400">LUN</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative flex flex-col justify-end overflow-hidden" style="height: 85%;">
+<div class="w-full bg-primary/40 h-1/3"></div>
+<div class="w-full bg-primary h-2/3"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-400">MAR</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative flex flex-col justify-end overflow-hidden" style="height: 45%;">
+<div class="w-full bg-primary/40 h-1/4"></div>
+<div class="w-full bg-primary h-3/4"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-400">MIE</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative flex flex-col justify-end overflow-hidden" style="height: 100%;">
+<div class="w-full bg-primary/40 h-1/2"></div>
+<div class="w-full bg-primary h-1/2"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-400">JUE</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative flex flex-col justify-end overflow-hidden" style="height: 70%;">
+<div class="w-full bg-primary/40 h-2/5"></div>
+<div class="w-full bg-primary h-3/5"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-400">VIE</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative flex flex-col justify-end overflow-hidden" style="height: 30%;">
+<div class="w-full bg-primary/40 h-1/2"></div>
+<div class="w-full bg-primary h-1/2"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-400">SAB</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg relative flex flex-col justify-end overflow-hidden" style="height: 20%;">
+<div class="w-full bg-primary/40 h-1/2"></div>
+<div class="w-full bg-primary h-1/2"></div>
+</div>
+<span class="text-[10px] font-bold text-slate-400">DOM</span>
+</div>
+</div>
+</div>
+<!-- Chart Mockup 2: Pie -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col">
+<h4 class="text-sm font-bold mb-6">Distribución por Estado</h4>
+<div class="flex-1 flex items-center justify-center relative">
+<div class="w-40 h-40 rounded-full border-[12px] border-primary border-r-green-500 border-b-amber-400 relative">
+<div class="absolute inset-0 flex items-center justify-center flex-col">
+<span class="text-2xl font-black">850</span>
+<span class="text-[10px] text-slate-400 uppercase font-bold">Total</span>
+</div>
+</div>
+</div>
+<div class="mt-6 grid grid-cols-2 gap-2">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-[10px] font-medium text-slate-500 uppercase">Completado</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-amber-400"></div>
+<span class="text-[10px] font-medium text-slate-500 uppercase">En Proceso</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="text-[10px] font-medium text-slate-500 uppercase">Enviado</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-red-400"></div>
+<span class="text-[10px] font-medium text-slate-500 uppercase">Devuelto</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Table Section -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+<div class="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+<h4 class="text-sm font-bold">Documentos Recientes</h4>
+<div class="flex items-center gap-2">
+<button class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+</button>
+<button class="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                                    Nuevo Trámite
+                                </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-slate-50 dark:bg-slate-800/50">
+<tr>
+<th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Folio</th>
+<th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Asunto</th>
+<th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Origen / Destino</th>
+<th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+<th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+<th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<td class="px-6 py-4 text-sm font-semibold text-primary">DG-2023-001</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-medium">Solicitud de Auditoría Trimestral</span>
+<span class="text-[10px] text-slate-400">Prioridad: Alta</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">Secretaría de Finanzas</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">24 Oct 2023</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold rounded uppercase">En Proceso</span>
+</td>
+<td class="px-6 py-4">
+<button class="p-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<td class="px-6 py-4 text-sm font-semibold text-primary">DG-2023-014</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-medium">Nombramiento Jefe de Área B</span>
+<span class="text-[10px] text-slate-400">Prioridad: Media</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">Recursos Humanos</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">22 Oct 2023</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold rounded uppercase">Completado</span>
+</td>
+<td class="px-6 py-4">
+<button class="p-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<td class="px-6 py-4 text-sm font-semibold text-primary">DG-2023-019</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-medium">Oficio de Comisión: Tlaxcala</span>
+<span class="text-[10px] text-slate-400">Prioridad: Baja</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">Coordinación Regional</td>
+<td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">21 Oct 2023</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] font-bold rounded uppercase">Cancelado</span>
+</td>
+<td class="px-6 py-4">
+<button class="p-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+<span class="text-xs text-slate-500">Mostrando 3 de 850 documentos</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 border border-slate-200 dark:border-slate-700 rounded text-xs font-bold disabled:opacity-50" disabled="">Anterior</button>
+<button class="px-3 py-1 bg-primary text-white rounded text-xs font-bold">Siguiente</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

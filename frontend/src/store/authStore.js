@@ -6,6 +6,17 @@
 import { create } from 'zustand';
 import * as authService from '@services/auth.service';
 
+const ADMIN_ROLE = 'Administrador';
+
+const normalizeRole = (roleName = '') => {
+  return roleName
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
+
 const useAuthStore = create((set, get) => ({
   // Estado
   user: null,
@@ -27,8 +38,10 @@ const useAuthStore = create((set, get) => ({
       if (isAuth && storedUser) {
         // Verificar que el token sea válido
         const isValid = await authService.verifyToken();
+        const isAdmin =
+          normalizeRole(storedUser?.rol_nombre) === normalizeRole(ADMIN_ROLE);
         
-        if (isValid) {
+        if (isValid && isAdmin) {
           set({
             user: storedUser,
             isAuthenticated: true,
@@ -36,12 +49,15 @@ const useAuthStore = create((set, get) => ({
             error: null,
           });
         } else {
-          // Token inválido, limpiar
+          // Token inválido o rol sin autorización para dashboard, limpiar
           await authService.logout();
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
+            error: isValid
+              ? 'Acceso denegado. Solo administradores pueden entrar al dashboard.'
+              : null,
           });
         }
       } else {
@@ -63,6 +79,24 @@ const useAuthStore = create((set, get) => ({
 
     try {
       const { usuario, token } = await authService.login(nombreUsuario, contraseña);
+      const isAdmin = normalizeRole(usuario?.rol_nombre) === normalizeRole(ADMIN_ROLE);
+
+      if (!isAdmin) {
+        await authService.logout();
+
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'Acceso denegado. Solo administradores pueden entrar al dashboard.',
+        });
+
+        return {
+          success: false,
+          error: 'Acceso denegado. Solo administradores pueden entrar al dashboard.',
+        };
+      }
 
       set({
         user: usuario,
@@ -72,7 +106,7 @@ const useAuthStore = create((set, get) => ({
         error: null,
       });
 
-      return { success: true };
+      return { success: true, usuario };
     } catch (error) {
       set({
         isLoading: false,
@@ -145,7 +179,7 @@ const useAuthStore = create((set, get) => ({
    */
   hasRole: (rol) => {
     const { user } = get();
-    return user?.rol_nombre === rol;
+    return normalizeRole(user?.rol_nombre) === normalizeRole(rol);
   },
 }));
 

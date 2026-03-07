@@ -1,134 +1,108 @@
 /**
- * Página del Dashboard principal
- * Vista principal del sistema después del login
+ * Dashboard administrativo
+ * Reemplaza el dashboard legacy con una version modular basada en componentes.
  */
 
 import { useAuth } from '@hooks/useAuth';
-import './Dashboard.css';
+import { useAdminDashboard } from '@hooks/useAdminDashboard';
+import AdminSidebar from '@components/dashboard/AdminSidebar';
+import AdminTopNavbar from '@components/dashboard/AdminTopNavbar';
+import UnitCards from '@components/dashboard/UnitCards';
+import DashboardMetrics from '@components/dashboard/DashboardMetrics';
+import RecentDocumentsTable from '@components/dashboard/RecentDocumentsTable';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const {
+    datos,
+    registros,
+    totals,
+    tabs,
+    searchTerm,
+    setSearchTerm,
+    activeTab,
+    setActiveTab,
+    selectedUnit,
+    selectedUnitId,
+    setSelectedUnitId,
+    isLoading,
+    isSubmitting,
+    error,
+    handleCreateRegistro,
+  } = useAdminDashboard();
 
-  const handleLogout = async () => {
-    await logout();
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center gap-4 flex-col bg-background-light dark:bg-background-dark">
+        <div className="spinner" />
+        <p className="text-slate-500">Cargando dashboard administrativo...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="header-left">
-            <h1>SIGA</h1>
-            <p>Sistema Integral de Gestión Administrativa</p>
-          </div>
-          <div className="header-right">
-            <div className="user-info">
-              <div className="user-avatar">
-                {user?.nombre?.[0]}{user?.apellidos?.[0]}
-              </div>
-              <div className="user-details">
-                <p className="user-name">{user?.nombre} {user?.apellidos}</p>
-                <p className="user-role">{user?.rol_nombre}</p>
-                <p className="user-area">{user?.area_nombre}</p>
-              </div>
+    <div className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+      <AdminSidebar user={user} onLogout={logout} />
+
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <AdminTopNavbar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedUnitName={selectedUnit?.nombre || user?.area_nombre || 'Sede Central'}
+        />
+
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+          <section>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              Unidades Administrativas
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">
+              Seleccione una unidad para gestionar su correspondencia y metricas operativas.
+            </p>
+          </section>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+              {error}
             </div>
-            <button className="logout-button" onClick={handleLogout}>
-              Cerrar Sesión
-            </button>
-          </div>
+          )}
+
+          <UnitCards
+            units={datos.unidades}
+            selectedUnitId={selectedUnitId}
+            onSelectUnit={setSelectedUnitId}
+          />
+          <DashboardMetrics
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            selectedUnit={selectedUnit}
+            weekMetrics={datos.metricasSemanales}
+            distribution={datos.distribucionEstados}
+          />
+
+          <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+              <p className="text-xs uppercase font-semibold text-slate-400">Registros Totales</p>
+              <p className="text-2xl font-black mt-2">{totals.total}</p>
+            </article>
+            <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+              <p className="text-xs uppercase font-semibold text-slate-400">En Proceso</p>
+              <p className="text-2xl font-black mt-2 text-amber-500">{totals.enProceso}</p>
+            </article>
+            <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+              <p className="text-xs uppercase font-semibold text-slate-400">Completados</p>
+              <p className="text-2xl font-black mt-2 text-emerald-500">{totals.completado}</p>
+            </article>
+            <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+              <p className="text-xs uppercase font-semibold text-slate-400">Cancelados</p>
+              <p className="text-2xl font-black mt-2 text-red-500">{totals.cancelado}</p>
+            </article>
+          </section>
+
+          <RecentDocumentsTable registros={registros} />
         </div>
-      </header>
-
-      <div className="dashboard-content">
-        <aside className="dashboard-sidebar">
-          <nav className="sidebar-nav">
-            <h3>Menú</h3>
-            <ul>
-              <li className="nav-item active">
-                <a href="#inicio">🏠 Inicio</a>
-              </li>
-              <li className="nav-item">
-                <a href="#documentos">📄 Documentos</a>
-              </li>
-              <li className="nav-item">
-                <a href="#turnos">🔄 Turnos</a>
-              </li>
-              <li className="nav-item">
-                <a href="#usuarios">👥 Usuarios</a>
-              </li>
-              <li className="nav-item">
-                <a href="#reportes">📊 Reportes</a>
-              </li>
-              <li className="nav-item">
-                <a href="#configuracion">⚙️ Configuración</a>
-              </li>
-            </ul>
-          </nav>
-        </aside>
-
-        <main className="dashboard-main">
-          <div className="welcome-section">
-            <h2>Bienvenido, {user?.nombre}</h2>
-            <p>Sistema base listo para desarrollo</p>
-          </div>
-
-          <div className="dashboard-cards">
-            <div className="dashboard-card">
-              <div className="card-icon">📥</div>
-              <h3>Documentos Recibidos</h3>
-              <p className="card-number">0</p>
-              <p className="card-subtitle">Pendientes de atender</p>
-            </div>
-
-            <div className="dashboard-card">
-              <div className="card-icon">📤</div>
-              <h3>Documentos Enviados</h3>
-              <p className="card-number">0</p>
-              <p className="card-subtitle">En proceso</p>
-            </div>
-
-            <div className="dashboard-card">
-              <div className="card-icon">⏰</div>
-              <h3>Por Vencer</h3>
-              <p className="card-number">0</p>
-              <p className="card-subtitle">Próximos a fecha límite</p>
-            </div>
-
-            <div className="dashboard-card">
-              <div className="card-icon">✅</div>
-              <h3>Completados</h3>
-              <p className="card-number">0</p>
-              <p className="card-subtitle">Este mes</p>
-            </div>
-          </div>
-
-          <div className="info-section">
-            <div className="info-card">
-              <h3>ℹ️ Información del Sistema</h3>
-              <ul>
-                <li><strong>Usuario:</strong> {user?.nombre_usuario}</li>
-                <li><strong>Email:</strong> {user?.email}</li>
-                <li><strong>Rol:</strong> {user?.rol_nombre}</li>
-                <li><strong>Área:</strong> {user?.area_nombre} ({user?.area_clave})</li>
-                <li><strong>Tipo de Área:</strong> {user?.area_tipo}</li>
-              </ul>
-            </div>
-
-            <div className="info-card">
-              <h3>🚀 Estado del Proyecto</h3>
-              <ul>
-                <li>✅ Autenticación implementada</li>
-                <li>✅ Conexión a base de datos</li>
-                <li>✅ Sistema de permisos</li>
-                <li>✅ Rutas protegidas</li>
-                <li>⏳ Gestión de documentos (pendiente)</li>
-                <li>⏳ Sistema de turnos (pendiente)</li>
-                <li>⏳ Reportes (pendiente)</li>
-              </ul>
-            </div>
-          </div>
-        </main>
-      </div>
+      </main>
     </div>
   );
 };

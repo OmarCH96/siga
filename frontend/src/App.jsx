@@ -9,6 +9,7 @@ import useAuthStore from '@store/authStore';
 import ProtectedRoute from '@components/ProtectedRoute';
 import Login from '@pages/Login/Login';
 import Dashboard from '@pages/Dashboard/Dashboard';
+import Unauthorized from '@pages/Unauthorized/Unauthorized';
 
 function App() {
   const initAuth = useAuthStore((state) => state.initAuth);
@@ -27,8 +28,11 @@ function App() {
         {/* Ruta pública de login */}
         <Route path="/login" element={<Login />} />
 
+        {/* Ruta de acceso no autorizado */}
+        <Route path="/unauthorized" element={<Unauthorized />} />
+
         {/* Rutas protegidas */}
-        <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute requiredRole="Administrador" />}>
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
 

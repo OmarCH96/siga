@@ -10,7 +10,7 @@ import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const { login, isAuthenticated, isLoading, error, clearError, hasRole } = useAuth();
 
   const [formData, setFormData] = useState({
     nombreUsuario: '',
@@ -23,9 +23,13 @@ const Login = () => {
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      if (hasRole('Administrador')) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        navigate('/unauthorized', { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, hasRole, navigate]);
 
   // Limpiar error al desmontar
   useEffect(() => {
@@ -51,6 +55,11 @@ const Login = () => {
 
     if (result.success) {
       navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    if (result.error?.includes('Acceso denegado')) {
+      navigate('/unauthorized', { replace: true });
     }
   };
 
