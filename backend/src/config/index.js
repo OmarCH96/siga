@@ -17,16 +17,18 @@ const config = {
     database: process.env.DB_NAME || 'gestordocumental',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD,
-    max: 20, // máximo de conexiones en el pool
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    max: parseInt(process.env.DB_POOL_MAX, 10) || 20,
+    idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT, 10) || 30000,
+    connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT, 10) || 2000,
   },
 
   // Configuración de JWT
+  // NOTA: Sin fallback inseguro - JWT_SECRET es obligatorio
   jwt: {
-    secret: process.env.JWT_SECRET || 'default_secret_change_in_production',
-    expiresIn: process.env.JWT_EXPIRES_IN || '8h',
+    secret: process.env.JWT_SECRET, // OBLIGATORIO - validado en validateConfig()
+    expiresIn: process.env.JWT_EXPIRES_IN || '15m', // 15 minutos recomendado
   },
+
 
   // Configuración de archivos
   upload: {
@@ -50,6 +52,19 @@ const config = {
     enabled: process.env.SIGNATURE_ENABLED === 'true',
     algorithm: process.env.SIGNATURE_ALGORITHM || 'RSA-SHA256',
   },
+
+  // Configuración de seguridad
+  security: {
+    maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS, 10) || 5,
+    lockTimeMinutes: parseInt(process.env.LOCK_TIME_MINUTES, 10) || 15,
+  },
+
+  // Configuración de HTTPS (producción)
+  https: {
+    enabled: process.env.HTTPS_ENABLED === 'true',
+    certPath: process.env.SSL_CERT_PATH,
+    keyPath: process.env.SSL_KEY_PATH,
+  },
 };
 
 /**
@@ -57,27 +72,75 @@ const config = {
  * @throws {Error} Si falta alguna configuración crítica
  */
 function validateConfig() {
-  const required = [
-    'DB_HOST',
-    'DB_NAME',
-    'DB_USER',
-    'DB_PASSWORD',
-    'JWT_SECRET',
-  ];
+  const errors = [];
 
-  const missing = required.filter(key => !process.env[key]);
+  // Variables obligatorias
+  const required = {
+    DB_HOST: process.env.DB_HOST,
+    DB_NAME: process.env.DB_NAME,
+    DB_USER: process.env.DB_USER,
+    DB_PASSWORD: process.env.DB_PASSWORD,
+    JWT_SECRET: process.env.JWT_SECRET,
+  };
 
-  if (missing.length > 0) {
+  // Verificar variables obligatorias
+  for (const [key, value] of Object.entries(required)) {
+    if (!value) {
+      errors.push(`Falta la variable de entorno: ${key}`);
+    }
+  }
+
+  // Validar JWT_SECRET
+  if (process.env.JWT_SECRET) {
+    if (process.env.JWT_SECRET.length < 32) {
+      errors.push('JWT_SECRET debe tener al menos 32 caracteres');
+    }
+
+    // Verificar que no sea un secreto débil conocido
+    const weakSecrets = [
+      'secret',
+      'default',
+      'change_me',
+      'change_in_production',
+      'default_secret_change_in_production',
+    ];
+
+    if (weakSecrets.some(weak => process.env.JWT_SECRET.toLowerCase().includes(weak))) {
+      errors.push('JWT_SECRET no debe contener palabras como "secret", "default" o "change_me"');
+    }
+  }
+
+  // Validar configuración de producción
+  if (config.env === 'production') {
+    if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN.includes('localhost')) {
+      errors.push('CORS_ORIGIN debe configurarse correctamente para producción (sin localhost)');
+    }
+
+    if (config.jwt.expiresIn !== '15m') {
+      console.warn('⚠️  ADVERTENCIA: Se recomienda JWT_EXPIRES_IN=15m en producción');
+    }
+
+    // Advertir si HTTPS no está habilitado
+    if (!config.https.enabled) {
+      console.warn('⚠️  ADVERTENCIA: HTTPS no está habilitado. Se recomienda fuertemente para producción');
+    }
+  }
+
+  // Si hay errores, lanzar excepción
+  if (errors.length > 0) {
     throw new Error(
-      `Faltan las siguientes variables de entorno: ${missing.join(', ')}\n` +
-      'Por favor, copia .env.example a .env y configura los valores.'
+      `❌ Errores en configuración:\n${errors.map(e => `  - ${e}`).join('\n')}\n\n` +
+      '💡 Consulta el archivo .env.example para ver todas las variables necesarias.'
     );
   }
 
-  // Advertencia en desarrollo si se usa el secreto por defecto
-  if (config.env === 'production' && config.jwt.secret === 'default_secret_change_in_production') {
-    throw new Error('JWT_SECRET debe ser cambiado en producción');
-  }
+  // Mostrar configuración exitosa
+  console.log('✓ Configuración validada correctamente');
+  console.log(`  Entorno: ${config.env}`);
+  console.log(`  Puerto: ${config.port}`);
+  console.log(`  Base de datos: ${config.database.database}@${config.database.host}`);
+  console.log(`  JWT Expiration: ${config.jwt.expiresIn}`);
+  console.log(`  CORS: ${config.cors.origin}`);
 }
 
 // Validar configuración al cargar el módulo

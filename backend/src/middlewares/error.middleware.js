@@ -1,10 +1,11 @@
 /**
  * Middleware de manejo de errores
- * Captura y procesa todos los errores de la aplicación
+ * Captura y procesa todos los errores de la aplicación de forma segura
  */
 
 const { AppError } = require('../utils/errors');
 const config = require('../config');
+const log = require('../utils/logger');
 
 /**
  * Maneja errores de base de datos PostgreSQL
@@ -43,13 +44,15 @@ function handleDatabaseError(err) {
 function errorHandler(err, req, res, next) {
   let error = err;
 
-  // Log del error
-  console.error('Error capturado:', {
+  // Log del error (sanitizado - sin info sensible)
+  log.error('Error handled', {
     message: err.message,
+    statusCode: err.statusCode,
     stack: config.env === 'development' ? err.stack : undefined,
     url: req.originalUrl,
     method: req.method,
-    user: req.user?.id,
+    userId: req.user?.id,
+    ip: req.ip,
   });
 
   // Convertir errores de base de datos
@@ -59,18 +62,25 @@ function errorHandler(err, req, res, next) {
 
   // Si no es un error operacional, convertirlo
   if (!(error instanceof AppError)) {
-    error = new AppError('Error interno del servidor', 500);
+    // No exponer detalles internos en producción
+    const message = config.env === 'development' 
+      ? error.message 
+      : 'Error interno del servidor';
+    error = new AppError(message, 500);
   }
 
   // Respuesta de error
   const response = {
+    success: false,
     status: error.status,
     message: error.message,
+    code: error.code || 'INTERNAL_ERROR',
   };
 
   // Incluir stack trace solo en desarrollo
   if (config.env === 'development') {
     response.stack = error.stack;
+    response.originalError = err.message;
   }
 
   res.status(error.statusCode).json(response);
@@ -80,6 +90,12 @@ function errorHandler(err, req, res, next) {
  * Middleware para rutas no encontradas
  */
 function notFoundHandler(req, res, next) {
+  log.warn('Route not found', {
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip,
+  });
+
   const error = new AppError(
     `Ruta no encontrada: ${req.method} ${req.originalUrl}`,
     404

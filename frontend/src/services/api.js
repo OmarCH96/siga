@@ -1,113 +1,28 @@
 /**
  * Cliente API centralizado con Axios
- * Maneja todas las peticiones HTTP al backend
+ * Maneja todas las peticiones HTTP con refresh automático de tokens y CSRF
  */
 
 import axios from 'axios';
 import secureStorage from '@utils/secureStorage';
 
-const MOCK_USUARIOS = [
-  {
-    id: 1,
-    nombre: 'Juan',
-    apellidos: 'Perez',
-    nombre_usuario: 'jperez',
-    email: 'juan.perez@siga.gob.mx',
-    rol_nombre: 'Administrador',
-    area_nombre: 'Direccion General',
-  },
-  {
-    id: 2,
-    nombre: 'Maria',
-    apellidos: 'Gonzalez',
-    nombre_usuario: 'mgonzalez',
-    email: 'maria.gonzalez@siga.gob.mx',
-    rol_nombre: 'Secretario',
-    area_nombre: 'Secretaria de Finanzas',
-  },
-];
-
-const MOCK_DATOS = {
-  unidades: [
-    {
-      id: 101,
-      nombre: 'Secretaria de Finanzas',
-      descripcion: 'Gestion presupuestaria y auditoria interna institucional.',
-      estado: 'Activo',
-      totalDocumentos: 1240,
-      pendientes: 12,
-    },
-    {
-      id: 102,
-      nombre: 'Direccion General',
-      descripcion: 'Coordinacion estrategica y supervision de proyectos criticos.',
-      estado: 'Activo',
-      totalDocumentos: 850,
-      pendientes: 45,
-    },
-    {
-      id: 103,
-      nombre: 'Recursos Humanos',
-      descripcion: 'Gestion de talento, nomina y servicios al personal administrativo.',
-      estado: 'Activo',
-      totalDocumentos: 420,
-      pendientes: 5,
-    },
-  ],
-  metricasSemanales: [
-    { day: 'LUN', total: 60, entrantesRatio: 50 },
-    { day: 'MAR', total: 85, entrantesRatio: 35 },
-    { day: 'MIE', total: 45, entrantesRatio: 25 },
-    { day: 'JUE', total: 100, entrantesRatio: 50 },
-    { day: 'VIE', total: 70, entrantesRatio: 40 },
-    { day: 'SAB', total: 30, entrantesRatio: 50 },
-    { day: 'DOM', total: 20, entrantesRatio: 50 },
-  ],
-  distribucionEstados: [
-    { label: 'Completado', value: 420 },
-    { label: 'En Proceso', value: 220 },
-    { label: 'Enviado', value: 170 },
-    { label: 'Devuelto', value: 40 },
-  ],
-};
-
-const MOCK_REGISTROS = [
-  {
-    id: 1,
-    folio: 'DG-2023-001',
-    asunto: 'Solicitud de Auditoria Trimestral',
-    origenDestino: 'Secretaria de Finanzas',
-    fecha: '24 Oct 2023',
-    estado: 'En Proceso',
-    prioridad: 'Alta',
-  },
-  {
-    id: 2,
-    folio: 'DG-2023-014',
-    asunto: 'Nombramiento Jefe de Area B',
-    origenDestino: 'Recursos Humanos',
-    fecha: '22 Oct 2023',
-    estado: 'Completado',
-    prioridad: 'Media',
-  },
-  {
-    id: 3,
-    folio: 'DG-2023-019',
-    asunto: 'Oficio de Comision: Tlaxcala',
-    origenDestino: 'Coordinacion Regional',
-    fecha: '21 Oct 2023',
-    estado: 'Cancelado',
-    prioridad: 'Baja',
-  },
-];
-
-const unwrapApiData = (response) => {
-  if (!response) return null;
-  return response?.data?.data ?? response?.data ?? null;
-};
-
 // URL base de la API
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+// Flag para evitar múltiples refresh simultáneos
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 /**
  * Instancia de Axios configurada
@@ -122,15 +37,24 @@ const apiClient = axios.create({
 
 /**
  * Interceptor de peticiones
- * Agrega el token JWT automáticamente
+ * Agrega el token JWT y CSRF token automáticamente
  */
 apiClient.interceptors.request.use(
   async (config) => {
-    // Obtener token del almacenamiento seguro
+    // Obtener access token del almacenamiento seguro
     const token = await secureStorage.getItem('authToken');
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // Si es una petición de modificación (POST, PUT, DELETE), agregar CSRF token
+    if (['post', 'put', 'delete', 'patch'].includes(config.method?.toLowerCase())) {
+      const csrfToken = await secureStorage.getItem('csrfToken');
+      
+      if (csrfToken) {
+        config.headers['X-CSRF-Token'] = csrfToken;
+      }
     }
     
     return config;
@@ -142,7 +66,7 @@ apiClient.interceptors.request.use(
 
 /**
  * Interceptor de respuestas
- * Maneja errores globalmente
+ * Maneja refresh automático de tokens y errores globalmente
  */
 apiClient.interceptors.response.use(
   (response) => {
@@ -151,29 +75,114 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Si el error es 401 (no autorizado), limpiar sesión
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      // Limpiar token y redirigir a login
-      await secureStorage.removeItem('authToken');
-      await secureStorage.removeItem('user');
-      
-      // Redirigir a login
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+    // Si el error es 401 (no autorizado) y no es la ruta de login/refresh
+    if (
+      error.response?.status === 401 && 
+      !originalRequest._retry &&
+      !originalRequest.url.includes('/auth/login') &&
+      !originalRequest.url.includes('/auth/refresh')
+    ) {
+      // Si ya estamos refrescando, agregar la petición a la cola
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return apiClient(originalRequest);
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
       }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Intentar refrescar el token
+        const refreshToken = await secureStorage.getItem('refreshToken');
+        
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          refreshToken,
+        });
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+
+        // Guardar nuevos tokens
+        await secureStorage.setItem('authToken', accessToken);
+        await secureStorage.setItem('refreshToken', newRefreshToken);
+
+        // Actualizar header y reintentar petición original
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+
+        processQueue(null, accessToken);
+
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+
+        // Si falla el refresh, limpiar sesión y redirigir a login
+        await secureStorage.removeItem('authToken');
+        await secureStorage.removeItem('refreshToken');
+        await secureStorage.removeItem('user');
+        await secureStorage.removeItem('csrfToken');
+
+        // Redirigir a login si no estamos ya allí
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login?expired=true';
+        }
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    // Si es error 403 CSRF, recargar token CSRF
+    if (error.response?.status === 403 && error.response?.data?.code === 'INVALID_CSRF_TOKEN') {
+      try {
+        // Recargar CSRF token
+        const csrfResponse = await apiClient.get('/auth/csrf-token');
+        const newCsrfToken = csrfResponse.data.data.csrfToken;
+        await secureStorage.setItem('csrfToken', newCsrfToken);
+
+        // Reintentar petición original
+        originalRequest.headers['X-CSRF-Token'] = newCsrfToken;
+        return apiClient(originalRequest);
+      } catch (csrfError) {
+        console.error('Error refreshing CSRF token:', csrfError);
+      }
+    }
+
+    // Si es error 429 (rate limit)
+    if (error.response?.status === 429) {
+      const message = error.response?.data?.message || 'Demasiadas peticiones. Intente más tarde.';
+      
+      console.warn('Rate limit exceeded:', message);
+      
+      return Promise.reject({
+        message,
+        status: 429,
+        data: error.response?.data,
+      });
     }
 
     // Formato de error consistente
     const errorMessage = error.response?.data?.message || 
                         error.message || 
-                        'Error de conexión';
+                        'Error de conexión con el servidor';
 
     return Promise.reject({
       message: errorMessage,
       status: error.response?.status,
       data: error.response?.data,
+      code: error.response?.data?.code,
     });
   }
 );
@@ -200,17 +209,27 @@ export const removeToken = async () => {
 };
 
 /**
+ * Extrae los datos de la respuesta de la API
+ * @param {Object} response - Respuesta de Axios
+ * @returns {*} Los datos extraídos
+ */
+const unwrapApiData = (response) => {
+  // La estructura típica es response.data.data o response.data
+  return response?.data?.data || response?.data;
+};
+
+/**
  * API de dashboard administrativo.
  * Incluye fallback de datos mock para etapas tempranas de integracion.
  */
 export const dashboardApi = {
   async getUsuarios() {
     try {
-      const response = await apiClient.get('/usuarios');
+      const response = await apiClient.get('/dashboard/usuarios');
       return unwrapApiData(response) || [];
     } catch (error) {
       if (error.status === 404) {
-        return MOCK_USUARIOS;
+        return [];
       }
       throw error;
     }
@@ -218,11 +237,11 @@ export const dashboardApi = {
 
   async getDatos() {
     try {
-      const response = await apiClient.get('/datos');
-      return unwrapApiData(response) || MOCK_DATOS;
+      const response = await apiClient.get('/dashboard/datos');
+      return unwrapApiData(response) || { unidades: [], metricasSemanales: [], distribucionEstados: [] };
     } catch (error) {
       if (error.status === 404) {
-        return MOCK_DATOS;
+        return { unidades: [], metricasSemanales: [], distribucionEstados: [] };
       }
       throw error;
     }
@@ -230,11 +249,11 @@ export const dashboardApi = {
 
   async getRegistros() {
     try {
-      const response = await apiClient.get('/registros');
+      const response = await apiClient.get('/dashboard/registros');
       return unwrapApiData(response) || [];
     } catch (error) {
       if (error.status === 404) {
-        return MOCK_REGISTROS;
+        return [];
       }
       throw error;
     }

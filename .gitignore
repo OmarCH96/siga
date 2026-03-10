@@ -35,3 +35,8 @@ Thumbs.db
 # Uploads
 backend/uploads/
 backend/temp/
+
+*.md
+*.ps1
+*.sh
+*.sql

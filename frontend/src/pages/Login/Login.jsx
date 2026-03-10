@@ -26,7 +26,7 @@ const Login = () => {
       if (hasRole('Administrador')) {
         navigate('/dashboard', { replace: true });
       } else {
-        navigate('/unauthorized', { replace: true });
+        navigate('/recepciones', { replace: true });
       }
     }
   }, [isAuthenticated, hasRole, navigate]);
@@ -54,12 +54,8 @@ const Login = () => {
     const result = await login(formData.nombreUsuario, formData.contraseña);
 
     if (result.success) {
-      navigate('/dashboard', { replace: true });
+      // La redirección la maneja el useEffect de isAuthenticated
       return;
-    }
-
-    if (result.error?.includes('Acceso denegado')) {
-      navigate('/unauthorized', { replace: true });
     }
   };
 

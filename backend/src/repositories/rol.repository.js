@@ -70,6 +70,11 @@ class RolRepository {
 
     const permisos = result.rows[0].permisos;
     
+    // Si no hay permisos definidos
+    if (!permisos) {
+      return false;
+    }
+    
     // Si tiene permiso de todo (*)
     if (permisos === '*') {
       return true;

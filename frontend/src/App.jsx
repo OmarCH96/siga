@@ -9,7 +9,21 @@ import useAuthStore from '@store/authStore';
 import ProtectedRoute from '@components/ProtectedRoute';
 import Login from '@pages/Login/Login';
 import Dashboard from '@pages/Dashboard/Dashboard';
+import Usuarios from '@pages/Usuarios/Usuarios';
+import TiposDocumento from '@pages/TiposDocumento/TiposDocumento';
 import Unauthorized from '@pages/Unauthorized/Unauthorized';
+import { BandejaRecepcionLayout } from './pages/BandejaRecepcion';
+
+
+const RootRedirect = () => {
+  const user = useAuthStore((state) => state.user);
+  const rolNombre = user?.rol?.nombre || user?.rolNombre || '';
+  const isAdmin = normalizeRole(rolNombre) === 'administrador';
+  return <Navigate to={isAdmin ? '/dashboard' : '/recepciones'} replace />;
+};
+
+const normalizeRole = (roleName = '') =>
+  roleName.toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 function App() {
   const initAuth = useAuthStore((state) => state.initAuth);
@@ -22,8 +36,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ruta raíz redirige a dashboard */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* Ruta raíz redirige según rol */}
+        <Route path="/" element={<RootRedirect />} />
 
         {/* Ruta pública de login */}
         <Route path="/login" element={<Login />} />
@@ -34,6 +48,12 @@ function App() {
         {/* Rutas protegidas */}
         <Route element={<ProtectedRoute requiredRole="Administrador" />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/usuarios" element={<Usuarios />} />
+          <Route path="/documentos" element={<TiposDocumento />} />
+        </Route>
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/recepciones" element={<BandejaRecepcionLayout />} />
         </Route>
 
         {/* Ruta 404 */}

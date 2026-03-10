@@ -4,10 +4,12 @@
  */
 
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const config = require('../config');
 const usuarioRepository = require('../repositories/usuario.repository');
 const auditoriaRepository = require('../repositories/auditoria.repository');
+const tokenService = require('./token.service');
+const UsuarioDTO = require('../dtos/usuario.dto');
+const log = require('../utils/logger');
 const {
   AuthenticationError,
   ValidationError,
@@ -22,13 +24,14 @@ const {
 
 class AuthService {
   /**
-   * Autentica un usuario y genera un token JWT
+   * Autentica un usuario y genera tokens (access + refresh)
    * @param {string} nombreUsuario - Nombre de usuario
    * @param {string} contraseña - Contraseña en texto plano
    * @param {string} ipAddress - IP del cliente
-   * @returns {Promise<Object>} Usuario y token
+   * @param {string} userAgent - User agent del cliente
+   * @returns {Promise<Object>} Usuario, tokens y metadata
    */
-  async login(nombreUsuario, contraseña, ipAddress = null) {
+  async login(nombreUsuario, contraseña, ipAddress = null, userAgent = null) {
     // Validar campos requeridos
     if (!nombreUsuario || !contraseña) {
       throw new ValidationError('Nombre de usuario y contraseña son requeridos');
@@ -38,11 +41,20 @@ class AuthService {
     const usuario = await usuarioRepository.findByUsername(nombreUsuario);
 
     if (!usuario) {
+      log.security('Login attempt with non-existent user', {
+        nombreUsuario,
+        ipAddress,
+      });
       throw new AuthenticationError('Credenciales inválidas');
     }
 
     // Verificar si el usuario está activo
     if (!usuario.activo) {
+      log.security('Login attempt on inactive account', {
+        usuarioId: usuario.id,
+        nombreUsuario,
+        ipAddress,
+      });
       throw new AuthenticationError('Usuario inactivo. Contacte al administrador');
     }
 
@@ -50,7 +62,7 @@ class AuthService {
     const passwordMatch = await bcrypt.compare(contraseña, usuario.contraseña);
 
     if (!passwordMatch) {
-      // Registrar intento fallido
+      // Registrar intento fallido en auditoría (sin exponer que el usuario existe)
       try {
         await auditoriaRepository.registrarEventoSistema({
           accion: 'LOGIN_FALLIDO',
@@ -58,8 +70,7 @@ class AuthService {
           ipAddress,
         });
       } catch (auditError) {
-        // Log error pero no bloquear el proceso
-        console.error('Error al registrar auditoría de login fallido:', auditError.message);
+        log.error('Error logging failed login attempt', { error: auditError.message });
       }
 
       throw new AuthenticationError('Credenciales inválidas');
@@ -78,19 +89,24 @@ class AuthService {
         ipAddress,
       });
     } catch (auditError) {
-      // Log error pero no bloquear el proceso
-      console.error('Error al registrar auditoría de login exitoso:', auditError.message);
+      log.error('Error logging successful login', { error: auditError.message });
     }
 
-    // Generar token JWT
-    const token = this.generateToken(usuario);
+    // Generar par de tokens (access + refresh)
+    const tokens = await tokenService.generateTokenPair(usuario, {
+      ipAddress,
+      userAgent,
+    });
 
-    // Remover contraseña del objeto usuario
-    delete usuario.contraseña;
+    log.audit('User logged in', {
+      usuarioId: usuario.id,
+      nombreUsuario: usuario.nombre_usuario,
+      ipAddress,
+    });
 
     return {
-      usuario,
-      token,
+      usuario: UsuarioDTO.toPublic(usuario),
+      ...tokens,
     };
   }
 
@@ -171,51 +187,64 @@ class AuthService {
       }),
     });
 
-    // Remover contraseña del resultado
-    delete nuevoUsuario.contraseña;
+    log.audit('User created', {
+      createdUserId: nuevoUsuario.id,
+      createdByUserId: adminUser.id,
+      username: nuevoUsuario.nombre_usuario,
+    });
 
-    return nuevoUsuario;
+    // Retornar usuario con DTO
+    return UsuarioDTO.toPublic(nuevoUsuario);
   }
 
   /**
-   * Genera un token JWT para un usuario
-   * @param {Object} usuario - Usuario
-   * @returns {string} Token JWT
+   * Refresca un access token usando un refresh token
+   * @param {string} refreshToken - Refresh token
+   * @param {string} ipAddress - IP del cliente
+   * @param {string} userAgent - User agent del cliente
+   * @returns {Promise<Object>} Nuevo par de tokens
    */
-  generateToken(usuario) {
-    const payload = {
-      id: usuario.id,
-      nombreUsuario: usuario.nombre_usuario,
-      email: usuario.email,
-      rolId: usuario.rol_id,
-      rolNombre: usuario.rol_nombre,
-      permisos: usuario.rol_permisos,
-      areaId: usuario.area_id,
-      areaNombre: usuario.area_nombre,
-    };
-
-    return jwt.sign(payload, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn,
+  async refreshToken(refreshToken, ipAddress = null, userAgent = null) {
+    return tokenService.refreshAccessToken(refreshToken, {
+      ipAddress,
+      userAgent,
     });
   }
 
   /**
-   * Verifica y decodifica un token JWT
-   * @param {string} token - Token JWT
+   * Cierra sesión (revoca refresh token)
+   * @param {string} refreshToken - Refresh token a revocar
+   * @param {number} usuarioId - ID del usuario
+   * @returns {Promise<void>}
+   */
+  async logout(refreshToken, usuarioId) {
+    if (refreshToken) {
+      await tokenService.revokeRefreshToken(refreshToken);
+    }
+
+    log.audit('User logged out', { usuarioId });
+  }
+
+  /**
+   * Cierra todas las sesiones de un usuario
+   * @param {number} usuarioId - ID del usuario
+   * @returns {Promise<number>} Número de sesiones cerradas
+   */
+  async logoutAll(usuarioId) {
+    const count = await tokenService.revokeAllUserTokens(usuarioId);
+
+    log.audit('All user sessions terminated', { usuarioId, count });
+
+    return count;
+  }
+
+  /**
+   * Verifica un access token (para middleware)
+   * @param {string} token - Access token JWT
    * @returns {Object} Payload del token
    */
   verifyToken(token) {
-    try {
-      return jwt.verify(token, config.jwt.secret);
-    } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        throw new AuthenticationError('Token expirado');
-      }
-      if (error.name === 'JsonWebTokenError') {
-        throw new AuthenticationError('Token inválido');
-      }
-      throw new AuthenticationError('Error al verificar token');
-    }
+    return tokenService.verifyAccessToken(token);
   }
 
   /**
@@ -234,7 +263,16 @@ class AuthService {
       throw new AuthenticationError('Usuario inactivo');
     }
 
-    return usuario;
+    return UsuarioDTO.toPublic(usuario);
+  }
+
+  /**
+   * Obtiene las sesiones activas de un usuario
+   * @param {number} usuarioId - ID del usuario
+   * @returns {Promise<Array>} Lista de sesiones
+   */
+  async getActiveSessions(usuarioId) {
+    return tokenService.getActiveSessions(usuarioId);
   }
 }
 

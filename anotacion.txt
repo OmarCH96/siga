@@ -1,0 +1,3 @@
+// En cada request autenticado, ANTES de cualquier query
+Integrar RLS en el Backend
+await pool.query('SELECT fn_establecer_usuario_actual($1)', [req.user.id]);

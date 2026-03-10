@@ -1,10 +1,11 @@
 /**
  * Controlador de Autenticación
- * Maneja las operaciones de login, registro y perfil de usuario
+ * Maneja las operaciones de login, registro, logout y gestión de sesiones
  */
 
 const authService = require('../services/auth.service');
 const { asyncHandler } = require('../middlewares/error.middleware');
+const log = require('../utils/logger');
 
 /**
  * Login de usuario
@@ -13,17 +14,11 @@ const { asyncHandler } = require('../middlewares/error.middleware');
 const login = asyncHandler(async (req, res) => {
   const { nombreUsuario, contraseña } = req.body;
   const ipAddress = req.ip || req.connection.remoteAddress;
+  const userAgent = req.headers['user-agent'];
 
-  // DEBUG: Mostrar exactamente qué llega desde el frontend
-  console.log('\n🔍 DEBUG LOGIN - Datos recibidos:');
-  console.log('  Body completo:', JSON.stringify(req.body, null, 2));
-  console.log('  nombreUsuario:', `"${nombreUsuario}"`);
-  console.log('  Longitud nombreUsuario:', nombreUsuario?.length);
-  console.log('  contraseña definida:', contraseña ? 'Sí' : 'No');
-  console.log('  contraseña longitud:', contraseña?.length);
-  console.log('');
+  log.debug('Login attempt', { nombreUsuario, ipAddress });
 
-  const result = await authService.login(nombreUsuario, contraseña, ipAddress);
+  const result = await authService.login(nombreUsuario, contraseña, ipAddress, userAgent);
 
   res.status(200).json({
     success: true,
@@ -50,6 +45,65 @@ const register = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Refresca el access token usando un refresh token
+ * POST /auth/refresh
+ */
+const refreshToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  const ipAddress = req.ip || req.connection.remoteAddress;
+  const userAgent = req.headers['user-agent'];
+
+  if (!refreshToken) {
+    return res.status(400).json({
+      success: false,
+      message: 'Refresh token requerido',
+    });
+  }
+
+  log.debug('Token refresh attempt', { ipAddress });
+
+  const result = await authService.refreshToken(refreshToken, ipAddress, userAgent);
+
+  res.status(200).json({
+    success: true,
+    message: 'Token refrescado exitosamente',
+    data: result,
+  });
+});
+
+/**
+ * Logout - cierra sesión actual
+ * POST /auth/logout
+ */
+const logout = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  const usuarioId = req.user?.id;
+
+  await authService.logout(refreshToken, usuarioId);
+
+  res.status(200).json({
+    success: true,
+    message: 'Sesión cerrada exitosamente',
+  });
+});
+
+/**
+ * Logout de todas las sesiones
+ * POST /auth/logout-all
+ */
+const logoutAll = asyncHandler(async (req, res) => {
+  const usuarioId = req.user.id;
+
+  const count = await authService.logoutAll(usuarioId);
+
+  res.status(200).json({
+    success: true,
+    message: `${count} sesión(es) cerrada(s) exitosamente`,
+    data: { sessionsTerminated: count },
+  });
+});
+
+/**
  * Obtener información del usuario autenticado
  * GET /auth/me
  */
@@ -59,6 +113,19 @@ const getProfile = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     data: usuario,
+  });
+});
+
+/**
+ * Obtener sesiones activas del usuario
+ * GET /auth/sessions
+ */
+const getSessions = asyncHandler(async (req, res) => {
+  const sessions = await authService.getActiveSessions(req.user.id);
+
+  res.status(200).json({
+    success: true,
+    data: sessions,
   });
 });
 
@@ -73,10 +140,10 @@ const verifyToken = asyncHandler(async (req, res) => {
     message: 'Token válido',
     data: {
       id: req.user.id,
-      nombreUsuario: req.user.nombre_usuario,
+      nombreUsuario: req.user.nombreUsuario,
       email: req.user.email,
-      rol: req.user.rol_nombre,
-      area: req.user.area_nombre,
+      rol: req.user.rolNombre,
+      area: req.user.areaNombre,
     },
   });
 });
@@ -84,6 +151,10 @@ const verifyToken = asyncHandler(async (req, res) => {
 module.exports = {
   login,
   register,
+  refreshToken,
+  logout,
+  logoutAll,
   getProfile,
+  getSessions,
   verifyToken,
 };

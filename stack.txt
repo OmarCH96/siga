@@ -1,0 +1,16 @@
+Tecnología,Versión,Propósito
+React,18.x,UI Library
+Tauri,1.5+,Desktop Framework
+Vite,5.x,Build Tool
+Rust,1.70+,Tauri Backend
+
+Tecnología,Versión,Propósito
+Node.js,18+,Runtime
+Express,4.x,Web Framework
+node-forge,1.x,Cryptography
+Multer,1.4+,File Upload
+CORS,2.8+,Cross-Origin
+Helmet,7.x,Security Headers
+
+Tecnología,Propósito
+PostgreSQL 13+,Producción

@@ -1,4 +1,4 @@
-PS F:\GESTOR REACT-TAURI\SIGA\backend> npm run dev
+PS F:\siga\backend> npm run dev
 
 > siga-backend@1.0.0 dev
 > nodemon src/index.js
@@ -8,19 +8,32 @@ PS F:\GESTOR REACT-TAURI\SIGA\backend> npm run dev
 [nodemon] watching path(s): *.*
 [nodemon] watching extensions: js,mjs,cjs,json
 [nodemon] starting `node src/index.js`
+✓ Configuración validada correctamente
+  Entorno: development
+  Puerto: 3000
+  Base de datos: gestor_db@localhost
+  JWT Expiration: 8h
+  CORS: http://localhost:5173
 Consulta ejecutada: { text: 'SELECT NOW() as now', duration: '44ms', rows: 1 }
-✓ Conexión a base de datos exitosa: 2026-03-06T18:52:41.157Z
+✓ Conexión a base de datos exitosa: 2026-03-08T02:22:26.473Z
+]: Server started {"port":3000,"environment":"development"}
 ╔════════════════════════════════════════════════════════════╗
 ║   Sistema Integral de Gestión Administrativa (SIGA)       ║
 ╚════════════════════════════════════════════════════════════╝
 
-✓ Servidor corriendo en puerto 3000
+✓ Servidor: HTTP
+✓ Puerto: 3000
 ✓ Entorno: development
 ✓ Base de datos: gestor_db@localhost
+✓ JWT Expiration: 8h
 
-API disponible en: http://localhost:3000/api
-Health check: http://localhost:3000/health
+API: http://localhost:3000/api
+Health: http://localhost:3000/health
 
+⚠️  MODO DESARROLLO - No usar en producción
+
+]: Incoming request {"method":"POST","path":"/api/auth/login","ip":"::1"}
+]: Login attempt {"nombreUsuario":"admin","ipAddress":"::1"}
 Consulta ejecutada: {
   text: '\n' +
     '      SELECT \n' +
@@ -32,133 +45,1983 @@ Consulta ejecutada: {
     '      INNER JOIN rol r ON u.rol_id = r.id\n' +
     '      INNER JOIN area a ON u.area_id = a.id\n' +
     '      WHERE u.nombre_usuario = $1\n' +
+    '    ',
+  duration: '6ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      UPDATE usuario \n' +
+    '      SET fecha_ultimo_acceso = CURRENT_TIMESTAMP \n' +
+    '      WHERE id = $1\n' +
+    '    ',
+  duration: '5ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '        INSERT INTO auditoria_sistema (\n' +
+    '          accion, descripcion, usuario_id, area_id, detalles, ip_address, user_agent\n' +
+    '        )\n' +
+    '        VALUES ($1, $2, $3, $4, $5, $6, $7)\n' +
+    '        RETURNING *\n' +
+    '      ',
+  duration: '6ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      INSERT INTO refresh_tokens (token, usuario_id, expires_at, ip_address, user_agent)\n' +
+    '      VALUES ($1, $2, $3, $4, $5)\n' +
+    '      RETURNING id, token, usuario_id, expires_at, created_at\n' +
+    '    ',
+  duration: '7ms',
+  rows: 1
+}
+]: Refresh token created {"usuarioId":23,"tokenId":"***REDACTED***"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, token, expires_at, created_at, ip_address, user_agent\n' +
+    '      FROM refresh_tokens\n' +
+    '      WHERE usuario_id = $1 AND revoked = FALSE AND expires_at > NOW()\n' +
+    '      ORDER BY created_at DESC\n' +
+    '    ',
+  duration: '3ms',
+  rows: 6
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      UPDATE refresh_tokens\n' +
+    '      SET revoked = TRUE,\n' +
+    '          revoked_at = NOW(),\n' +
+    '          replaced_by_token = $2\n' +
+    '      WHERE token = $1\n' +
+    '      RETURNING id\n' +
+    '    ',
+  duration: '6ms',
+  rows: 1
+}
+]: Refresh token revoked {"token":"***REDACTED***"}
+]: Old tokens revoked due to limit {"usuarioId":23,"revoked":1}
+]: Token pair generated {"usuarioId":23,"expiresAt":"2026-03-15T02:22:48.796Z"}
+]: [AUDIT] User logged in {"usuarioId":23,"nombreUsuario":"admin","ipAddress":"::1","type":"audit"}
+]: Incoming request {"method":"GET","path":"/api/auth/csrf-token","ip":"::1"}
+]: CSRF token created {"identifier":"user:23"}
+]: Incoming request {"method":"GET","path":"/api/dashboard/datos","ip":"::1"}
+]: Obteniendo datos del dashboard {"usuarioId":23}
+]: Incoming request {"method":"GET","path":"/api/dashboard/usuarios","ip":"::1"}
+]: Obteniendo usuarios del dashboard {"usuarioId":23}
+]: Incoming request {"method":"GET","path":"/api/dashboard/registros","ip":"::1"}
+]: Obteniendo registros del dashboard {"usuarioId":23}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      a.id,\n' +
+    '      a.nombre,\n' +
+    '      a.clave,\n' +
+    '      a.tipo,\n' +
+    '      COUNT(DISTINCT d.id) as total_documentos,\n' +
+    '      COUNT(DISTINCT u.id) as total_usuarios\n' +
+    '    FROM area a\n' +
+    '    LEFT JOIN documento d ON d.area_origen_id = a.id\n' +
+    '    LEFT JOIN usuario u ON u.area_id = a.id AND u.activo = true\n' +
+    '    WHERE a.activa = true\n' +
+    '    GROUP BY a.id, a.nombre, a.clave, a.tipo\n' +
+    '    ORDER BY a.nombre\n' +
+    '  ',
+  duration: '11ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      DATE(fecha_creacion) as fecha,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '7 days'\n" +
+    '    GROUP BY DATE(fecha_creacion)\n' +
+    '    ORDER BY fecha\n' +
+    '  ',
+  duration: '3ms',
+  rows: 2
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      estado,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '30 days'\n" +
+    '    GROUP BY estado\n' +
+    '    ORDER BY total DESC\n' +
+    '  ',
+  duration: '3ms',
+  rows: 7
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      u.id,\n' +
+    '      u.nombre,\n' +
+    '      u.apellidos,\n' +
+    '      u.nombre_usuario,\n' +
+    '      u.email,\n' +
+    '      u.activo,\n' +
+    '      r.nombre as rol,\n' +
+    '      a.nombre as area\n' +
+    '    FROM usuario u\n' +
+    '    INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '    INNER JOIN area a ON u.area_id = a.id\n' +
+    '    WHERE u.activo = true\n' +
+    '    ORDER BY u.nombre, u.apellidos\n' +
+    '  ',
+  duration: '37ms',
+  rows: 23
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      d.id,\n' +
+    '      d.folio,\n' +
+    '      d.asunto,\n' +
+    '      d.estado,\n' +
+    '      d.prioridad,\n' +
+    '      d.fecha_creacion,\n' +
+    '      d.fecha_limite as fecha_vencimiento,\n' +
+    '      ao.nombre as area_origen,\n' +
+    '      td.nombre as tipo_documento,\n' +
+    "      u.nombre || ' ' || u.apellidos as creado_por\n" +
+    '    FROM documento d\n' +
+    '    LEFT JOIN area ao ON d.area_origen_id = ao.id\n' +
+    '    LEFT JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
+    '    LEFT JOIN usuario u ON d.usuario_creador_id = u.id\n' +
+    '    ORDER BY d.fecha_creacion DESC\n' +
+    '    LIMIT 50\n' +
+    '  ',
+  duration: '36ms',
+  rows: 8
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '8ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '5ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '5ms',
+  rows: 24
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '10ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
     '    ',
   duration: '9ms',
-  rows: 0
+  rows: 80
 }
-Error capturado: {
-  message: 'Credenciales inválidas',
-  stack: 'Error: Credenciales inválidas\n' +
-    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
-    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
-    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
-  url: '/api/auth/login',
-  method: 'POST',
-  user: undefined
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '17ms',
+  rows: 10
 }
-[nodemon] restarting due to changes...
-[nodemon] restarting due to changes...
-[nodemon] starting `node src/index.js`
-Consulta ejecutada: { text: 'SELECT NOW() as now', duration: '35ms', rows: 1 }
-✓ Conexión a base de datos exitosa: 2026-03-06T18:53:30.471Z
-╔════════════════════════════════════════════════════════════╗
-║   Sistema Integral de Gestión Administrativa (SIGA)       ║
-╚════════════════════════════════════════════════════════════╝
-
-✓ Servidor corriendo en puerto 3000
-✓ Entorno: development
-✓ Base de datos: gestor_db@localhost
-
-API disponible en: http://localhost:3000/api
-Health check: http://localhost:3000/health
-
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
 Consulta ejecutada: {
   text: '\n' +
     '      SELECT \n' +
-    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
-    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
-    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
-    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
-    '      FROM usuario u\n' +
-    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
-    '      INNER JOIN area a ON u.area_id = a.id\n' +
-    '      WHERE u.nombre_usuario = $1\n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
     '    ',
-  duration: '9ms',
-  rows: 0
-}
-Error capturado: {
-  message: 'Credenciales inválidas',
-  stack: 'Error: Credenciales inválidas\n' +
-    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
-    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
-    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
-  url: '/api/auth/login',
-  method: 'POST',
-  user: undefined
+  duration: '3ms',
+  rows: 1
 }
 Consulta ejecutada: {
   text: '\n' +
     '      SELECT \n' +
     '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
-    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
     '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
-    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
     '      FROM usuario u\n' +
     '      INNER JOIN rol r ON u.rol_id = r.id\n' +
     '      INNER JOIN area a ON u.area_id = a.id\n' +
-    '      WHERE u.nombre_usuario = $1\n' +
+    '      WHERE 1=1\n' +
     '    ',
-  duration: '1ms',
-  rows: 0
-}
-Error capturado: {
-  message: 'Credenciales inválidas',
-  stack: 'Error: Credenciales inválidas\n' +
-    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
-    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
-    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
-  url: '/api/auth/login',
-  method: 'POST',
-  user: undefined
+  duration: '3ms',
+  rows: 24
 }
 Consulta ejecutada: {
   text: '\n' +
     '      SELECT \n' +
     '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
-    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
     '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
-    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
     '      FROM usuario u\n' +
     '      INNER JOIN rol r ON u.rol_id = r.id\n' +
     '      INNER JOIN area a ON u.area_id = a.id\n' +
-    '      WHERE u.nombre_usuario = $1\n' +
-    '    ',
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '3ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.area_id = $1',
   duration: '2ms',
   rows: 0
 }
-Error capturado: {
-  message: 'Credenciales inválidas',
-  stack: 'Error: Credenciales inválidas\n' +
-    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
-    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
-    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
-  url: '/api/auth/login',
-  method: 'POST',
-  user: undefined
+]: Error handled Cannot read properties of undefined (reading 'total') {"url":"/api/usuarios?areaId=72&limit=10&offset=0","method":"GET","userId":23,"ip":"::1"}
+TypeError: Cannot read properties of undefined (reading 'total')
+    at UsuarioRepository.findAll (F:\siga\backend\src\repositories\usuario.repository.js:287:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async F:\siga\backend\src\controllers\usuario.controller.js:24:18
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.area_id = $1',
+  duration: '3ms',
+  rows: 1
 }
 Consulta ejecutada: {
   text: '\n' +
     '      SELECT \n' +
     '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
-    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.area_id = $1 ORDER BY u.apellidos, u.nombre LIMIT $2',
+  duration: '2ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/dashboard/usuarios","ip":"::1"}
+]: Obteniendo usuarios del dashboard {"usuarioId":23}
+]: Incoming request {"method":"GET","path":"/api/dashboard/datos","ip":"::1"}
+]: Obteniendo datos del dashboard {"usuarioId":23}
+]: Incoming request {"method":"GET","path":"/api/dashboard/registros","ip":"::1"}
+]: Obteniendo registros del dashboard {"usuarioId":23}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      u.id,\n' +
+    '      u.nombre,\n' +
+    '      u.apellidos,\n' +
+    '      u.nombre_usuario,\n' +
+    '      u.email,\n' +
+    '      u.activo,\n' +
+    '      r.nombre as rol,\n' +
+    '      a.nombre as area\n' +
+    '    FROM usuario u\n' +
+    '    INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '    INNER JOIN area a ON u.area_id = a.id\n' +
+    '    WHERE u.activo = true\n' +
+    '    ORDER BY u.nombre, u.apellidos\n' +
+    '  ',
+  duration: '8ms',
+  rows: 23
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      a.id,\n' +
+    '      a.nombre,\n' +
+    '      a.clave,\n' +
+    '      a.tipo,\n' +
+    '      COUNT(DISTINCT d.id) as total_documentos,\n' +
+    '      COUNT(DISTINCT u.id) as total_usuarios\n' +
+    '    FROM area a\n' +
+    '    LEFT JOIN documento d ON d.area_origen_id = a.id\n' +
+    '    LEFT JOIN usuario u ON u.area_id = a.id AND u.activo = true\n' +
+    '    WHERE a.activa = true\n' +
+    '    GROUP BY a.id, a.nombre, a.clave, a.tipo\n' +
+    '    ORDER BY a.nombre\n' +
+    '  ',
+  duration: '7ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      d.id,\n' +
+    '      d.folio,\n' +
+    '      d.asunto,\n' +
+    '      d.estado,\n' +
+    '      d.prioridad,\n' +
+    '      d.fecha_creacion,\n' +
+    '      d.fecha_limite as fecha_vencimiento,\n' +
+    '      ao.nombre as area_origen,\n' +
+    '      td.nombre as tipo_documento,\n' +
+    "      u.nombre || ' ' || u.apellidos as creado_por\n" +
+    '    FROM documento d\n' +
+    '    LEFT JOIN area ao ON d.area_origen_id = ao.id\n' +
+    '    LEFT JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
+    '    LEFT JOIN usuario u ON d.usuario_creador_id = u.id\n' +
+    '    ORDER BY d.fecha_creacion DESC\n' +
+    '    LIMIT 50\n' +
+    '  ',
+  duration: '6ms',
+  rows: 8
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      DATE(fecha_creacion) as fecha,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '7 days'\n" +
+    '    GROUP BY DATE(fecha_creacion)\n' +
+    '    ORDER BY fecha\n' +
+    '  ',
+  duration: '9ms',
+  rows: 2
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      estado,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '30 days'\n" +
+    '    GROUP BY estado\n' +
+    '    ORDER BY total DESC\n' +
+    '  ',
+  duration: '2ms',
+  rows: 7
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM tipo_documento\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '10ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $1 OFFSET $2',
+  duration: '8ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM tipo_documento\n' +
+    '    ',
+  duration: '3ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $1 OFFSET $2',
+  duration: '2ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '20ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '14ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '14ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '7ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '7ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '7ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '49ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '5ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '3ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '4ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM tipo_documento\n' +
+    '    ',
+  duration: '5ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $1 OFFSET $2',
+  duration: '2ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM tipo_documento\n' +
+    '    ',
+  duration: '3ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '3ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $1 OFFSET $2',
+  duration: '3ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '22ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '12ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '14ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '9ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '8ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '10ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '10ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '3ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '38ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '49ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '59ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '75ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '8ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM tipo_documento\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $1 OFFSET $2',
+  duration: '6ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM tipo_documento\n' +
+    '    ',
+  duration: '3ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $1 OFFSET $2',
+  duration: '2ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '5ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '9ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '7ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '11ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '23ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '13ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '18ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '9ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '3ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '2ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/dashboard/usuarios","ip":"::1"}
+]: Obteniendo usuarios del dashboard {"usuarioId":23}
+]: Incoming request {"method":"GET","path":"/api/dashboard/datos","ip":"::1"}
+]: Obteniendo datos del dashboard {"usuarioId":23}
+]: Incoming request {"method":"GET","path":"/api/dashboard/registros","ip":"::1"}
+]: Obteniendo registros del dashboard {"usuarioId":23}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      u.id,\n' +
+    '      u.nombre,\n' +
+    '      u.apellidos,\n' +
+    '      u.nombre_usuario,\n' +
+    '      u.email,\n' +
+    '      u.activo,\n' +
+    '      r.nombre as rol,\n' +
+    '      a.nombre as area\n' +
+    '    FROM usuario u\n' +
+    '    INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '    INNER JOIN area a ON u.area_id = a.id\n' +
+    '    WHERE u.activo = true\n' +
+    '    ORDER BY u.nombre, u.apellidos\n' +
+    '  ',
+  duration: '5ms',
+  rows: 23
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      d.id,\n' +
+    '      d.folio,\n' +
+    '      d.asunto,\n' +
+    '      d.estado,\n' +
+    '      d.prioridad,\n' +
+    '      d.fecha_creacion,\n' +
+    '      d.fecha_limite as fecha_vencimiento,\n' +
+    '      ao.nombre as area_origen,\n' +
+    '      td.nombre as tipo_documento,\n' +
+    "      u.nombre || ' ' || u.apellidos as creado_por\n" +
+    '    FROM documento d\n' +
+    '    LEFT JOIN area ao ON d.area_origen_id = ao.id\n' +
+    '    LEFT JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
+    '    LEFT JOIN usuario u ON d.usuario_creador_id = u.id\n' +
+    '    ORDER BY d.fecha_creacion DESC\n' +
+    '    LIMIT 50\n' +
+    '  ',
+  duration: '5ms',
+  rows: 8
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      a.id,\n' +
+    '      a.nombre,\n' +
+    '      a.clave,\n' +
+    '      a.tipo,\n' +
+    '      COUNT(DISTINCT d.id) as total_documentos,\n' +
+    '      COUNT(DISTINCT u.id) as total_usuarios\n' +
+    '    FROM area a\n' +
+    '    LEFT JOIN documento d ON d.area_origen_id = a.id\n' +
+    '    LEFT JOIN usuario u ON u.area_id = a.id AND u.activo = true\n' +
+    '    WHERE a.activa = true\n' +
+    '    GROUP BY a.id, a.nombre, a.clave, a.tipo\n' +
+    '    ORDER BY a.nombre\n' +
+    '  ',
+  duration: '10ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      DATE(fecha_creacion) as fecha,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '7 days'\n" +
+    '    GROUP BY DATE(fecha_creacion)\n' +
+    '    ORDER BY fecha\n' +
+    '  ',
+  duration: '2ms',
+  rows: 2
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      estado,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '30 days'\n" +
+    '    GROUP BY estado\n' +
+    '    ORDER BY total DESC\n' +
+    '  ',
+  duration: '2ms',
+  rows: 7
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '3ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '3ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '5ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '3ms',
+  rows: 24
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '7ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '6ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '5ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '3ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '30ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.rol_id = $1',
+  duration: '4ms',
+  rows: 2
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.rol_id = $1 ORDER BY u.apellidos, u.nombre LIMIT $2',
+  duration: '3ms',
+  rows: 2
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.activo = $1 AND u.rol_id = $2',
+  duration: '5ms',
+  rows: 2
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.activo = $1 AND u.rol_id = $2 ORDER BY u.apellidos, u.nombre LIMIT $3',
+  duration: '2ms',
+  rows: 2
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.activo = $1 AND u.rol_id = $2',
+  duration: '2ms',
+  rows: 0
+}
+]: Error handled Cannot read properties of undefined (reading 'total') {"url":"/api/usuarios?activo=false&rolId=1&limit=25&offset=0","method":"GET","userId":23,"ip":"::1"}
+TypeError: Cannot read properties of undefined (reading 'total')
+    at UsuarioRepository.findAll (F:\siga\backend\src\repositories\usuario.repository.js:287:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async F:\siga\backend\src\controllers\usuario.controller.js:24:18
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.activo = $1',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.activo = $1 ORDER BY u.apellidos, u.nombre LIMIT $2',
+  duration: '2ms',
+  rows: 1
+}
+]: Incoming request {"method":"PATCH","path":"/api/usuarios/17/status","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.telefono, u.celular, u.activo, u.fecha_alta,\n' +
+    '        u.fecha_ultimo_acceso, u.area_id, u.rol_id,\n' +
     '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
     '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
     '      FROM usuario u\n' +
     '      INNER JOIN rol r ON u.rol_id = r.id\n' +
     '      INNER JOIN area a ON u.area_id = a.id\n' +
-    '      WHERE u.nombre_usuario = $1\n' +
+    '      WHERE u.id = $1\n' +
     '    ',
+  duration: '3ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n      UPDATE usuario SET activo = $1 WHERE id = $2\n    ',
+  duration: '18ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '1ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '2ms',
+  rows: 24
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM tipo_documento\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM tipo_documento\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '25ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $1 OFFSET $2',
+  duration: '2ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/tipo-documento","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $1 OFFSET $2',
+  duration: '1ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '8ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '8ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '7ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '4ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '30ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '32ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '3ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '2ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.activo = $1',
+  duration: '3ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     AND u.activo = $1 ORDER BY u.apellidos, u.nombre LIMIT $2',
+  duration: '3ms',
+  rows: 24
+}
+]: Incoming request {"method":"GET","path":"/api/dashboard/usuarios","ip":"::1"}
+]: Obteniendo usuarios del dashboard {"usuarioId":23}
+]: Incoming request {"method":"GET","path":"/api/dashboard/datos","ip":"::1"}
+]: Obteniendo datos del dashboard {"usuarioId":23}
+]: Incoming request {"method":"GET","path":"/api/dashboard/registros","ip":"::1"}
+]: Obteniendo registros del dashboard {"usuarioId":23}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      u.id,\n' +
+    '      u.nombre,\n' +
+    '      u.apellidos,\n' +
+    '      u.nombre_usuario,\n' +
+    '      u.email,\n' +
+    '      u.activo,\n' +
+    '      r.nombre as rol,\n' +
+    '      a.nombre as area\n' +
+    '    FROM usuario u\n' +
+    '    INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '    INNER JOIN area a ON u.area_id = a.id\n' +
+    '    WHERE u.activo = true\n' +
+    '    ORDER BY u.nombre, u.apellidos\n' +
+    '  ',
+  duration: '29ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      d.id,\n' +
+    '      d.folio,\n' +
+    '      d.asunto,\n' +
+    '      d.estado,\n' +
+    '      d.prioridad,\n' +
+    '      d.fecha_creacion,\n' +
+    '      d.fecha_limite as fecha_vencimiento,\n' +
+    '      ao.nombre as area_origen,\n' +
+    '      td.nombre as tipo_documento,\n' +
+    "      u.nombre || ' ' || u.apellidos as creado_por\n" +
+    '    FROM documento d\n' +
+    '    LEFT JOIN area ao ON d.area_origen_id = ao.id\n' +
+    '    LEFT JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
+    '    LEFT JOIN usuario u ON d.usuario_creador_id = u.id\n' +
+    '    ORDER BY d.fecha_creacion DESC\n' +
+    '    LIMIT 50\n' +
+    '  ',
   duration: '33ms',
-  rows: 0
+  rows: 8
 }
-Error capturado: {
-  message: 'Credenciales inválidas',
-  stack: 'Error: Credenciales inválidas\n' +
-    '    at AuthService.login (F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\services\\auth.service.js:41:13)\n' +
-    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
-    '    at async F:\\GESTOR REACT-TAURI\\SIGA\\backend\\src\\controllers\\auth.controller.js:17:18',
-  url: '/api/auth/login',
-  method: 'POST',
-  user: undefined
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      a.id,\n' +
+    '      a.nombre,\n' +
+    '      a.clave,\n' +
+    '      a.tipo,\n' +
+    '      COUNT(DISTINCT d.id) as total_documentos,\n' +
+    '      COUNT(DISTINCT u.id) as total_usuarios\n' +
+    '    FROM area a\n' +
+    '    LEFT JOIN documento d ON d.area_origen_id = a.id\n' +
+    '    LEFT JOIN usuario u ON u.area_id = a.id AND u.activo = true\n' +
+    '    WHERE a.activa = true\n' +
+    '    GROUP BY a.id, a.nombre, a.clave, a.tipo\n' +
+    '    ORDER BY a.nombre\n' +
+    '  ',
+  duration: '40ms',
+  rows: 80
 }
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      DATE(fecha_creacion) as fecha,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '7 days'\n" +
+    '    GROUP BY DATE(fecha_creacion)\n' +
+    '    ORDER BY fecha\n' +
+    '  ',
+  duration: '2ms',
+  rows: 2
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      estado,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '30 days'\n" +
+    '    GROUP BY estado\n' +
+    '    ORDER BY total DESC\n' +
+    '  ',
+  duration: '1ms',
+  rows: 7
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '9ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '8ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '8ms',
+  rows: 1
+}
+]: Incoming request {"method":"GET","path":"/api/areas","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/roles","ip":"::1"}
+]: Incoming request {"method":"GET","path":"/api/usuarios/stats","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, tipo, area_padre_id, nivel, activa, descripcion\n' +
+    '      FROM area\n' +
+    '      WHERE activa = true\n' +
+    '      ORDER BY nivel, nombre\n' +
+    '    ',
+  duration: '6ms',
+  rows: 80
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, nombre, descripcion, permisos, activo, fecha_creacion\n' +
+    '      FROM rol\n' +
+    '      WHERE activo = true\n' +
+    '      ORDER BY nombre\n' +
+    '    ',
+  duration: '7ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        COUNT(*) as total,\n' +
+    '        COUNT(*) FILTER (WHERE activo = true) as activos,\n' +
+    '        COUNT(*) FILTER (WHERE activo = false) as inactivos\n' +
+    '      FROM usuario\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '35ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '3ms',
+  rows: 10
+}
+]: Incoming request {"method":"GET","path":"/api/usuarios","ip":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.activo, u.fecha_alta, u.area_id, u.rol_id, u.telefono, u.celular,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY u.apellidos, u.nombre LIMIT $1',
+  duration: '2ms',
+  rows: 10
+}
+]: [SECURITY] Rate limit exceeded - General {"ip":"::1","path":"/usuarios","type":"security"}
+]: [SECURITY] Rate limit exceeded - General {"ip":"::1","path":"/usuarios","type":"security"}

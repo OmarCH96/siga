@@ -1,31 +1,59 @@
+import { memo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import { getInitials } from '@utils/dataFormatters';
+
 const navMain = [
-  { id: 'inicio', label: 'Inicio', icon: 'home', active: true },
-  { id: 'unidades', label: 'Unidades', icon: 'business' },
-  { id: 'reportes', label: 'Reportes', icon: 'bar_chart' },
+  { id: 'inicio', label: 'Inicio', icon: 'home', path: '/dashboard' },
+  { id: 'unidades', label: 'Unidades', icon: 'business', path: '/unidades' },
+  { id: 'reportes', label: 'Reportes', icon: 'bar_chart', path: '/reportes' },
+  { id: 'usuarios', label: 'Usuarios', icon: 'people', path: '/usuarios' },
 ];
 
 const navGestion = [
-  { id: 'documentos', label: 'Documentos', icon: 'description' },
-  { id: 'configuracion', label: 'Configuracion', icon: 'settings' },
+  { id: 'documentos', label: 'Documentos', icon: 'description', path: '/documentos' },
+  { id: 'configuracion', label: 'Configuracion', icon: 'settings', path: '/configuracion' },
 ];
 
-function SidebarLink({ item }) {
+function SidebarLink({ item, isActive, onClick }) {
   const baseClass =
     'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm';
 
-  const stateClass = item.active
+  const stateClass = isActive
     ? 'bg-primary/10 text-primary font-medium'
     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800';
 
   return (
-    <button type="button" className={`${baseClass} ${stateClass} w-full text-left`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${baseClass} ${stateClass} w-full text-left`}
+    >
       <span className="material-symbols-outlined">{item.icon}</span>
       <span>{item.label}</span>
     </button>
   );
 }
 
+SidebarLink.propTypes = {
+  item: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    icon: PropTypes.string.isRequired,
+    path: PropTypes.string.isRequired,
+  }).isRequired,
+  isActive: PropTypes.bool.isRequired,
+  onClick: PropTypes.func.isRequired,
+};
+
 const AdminSidebar = ({ user, onLogout }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
   return (
     <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex-col shrink-0 hidden md:flex">
       <div className="p-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800">
@@ -42,7 +70,12 @@ const AdminSidebar = ({ user, onLogout }) => {
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navMain.map((item) => (
-          <SidebarLink key={item.id} item={item} />
+          <SidebarLink
+            key={item.id}
+            item={item}
+            isActive={location.pathname === item.path}
+            onClick={() => handleNavigation(item.path)}
+          />
         ))}
 
         <div className="pt-4 pb-2">
@@ -50,15 +83,19 @@ const AdminSidebar = ({ user, onLogout }) => {
         </div>
 
         {navGestion.map((item) => (
-          <SidebarLink key={item.id} item={item} />
+          <SidebarLink
+            key={item.id}
+            item={item}
+            isActive={location.pathname === item.path}
+            onClick={() => handleNavigation(item.path)}
+          />
         ))}
       </nav>
 
       <div className="p-4 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3 p-2">
           <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center text-xs font-bold">
-            {user?.nombre?.[0] || 'A'}
-            {user?.apellidos?.[0] || 'D'}
+            {getInitials(user?.nombre, user?.apellidos)}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold truncate">
@@ -66,7 +103,12 @@ const AdminSidebar = ({ user, onLogout }) => {
             </p>
             <p className="text-[10px] text-slate-500 truncate">{user?.rol_nombre || 'Administrador'}</p>
           </div>
-          <button type="button" onClick={onLogout} className="text-slate-400 hover:text-primary">
+          <button 
+            type="button" 
+            onClick={onLogout} 
+            className="text-slate-400 hover:text-primary transition-colors"
+            aria-label="Cerrar sesión"
+          >
             <span className="material-symbols-outlined text-sm">logout</span>
           </button>
         </div>
@@ -75,4 +117,17 @@ const AdminSidebar = ({ user, onLogout }) => {
   );
 };
 
-export default AdminSidebar;
+AdminSidebar.propTypes = {
+  user: PropTypes.shape({
+    nombre: PropTypes.string,
+    apellidos: PropTypes.string,
+    rol_nombre: PropTypes.string,
+  }),
+  onLogout: PropTypes.func.isRequired,
+};
+
+AdminSidebar.defaultProps = {
+  user: null,
+};
+
+export default memo(AdminSidebar);

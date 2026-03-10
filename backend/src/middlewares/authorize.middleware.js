@@ -4,7 +4,7 @@
  */
 
 const { AuthorizationError } = require('../utils/errors');
-const rolRepository = require('../repositories/rol.repository');
+const log = require('../utils/logger');
 
 function normalizeText(value = '') {
   return value
@@ -26,12 +26,19 @@ function requireRole(...rolesPermitidos) {
         throw new AuthorizationError('Usuario no autenticado');
       }
 
-      const rolUsuario = req.user.rol_nombre;
+      const rolUsuario = req.user.rolNombre || req.user.rol?.nombre;
 
       const rolesNormalizados = rolesPermitidos.map((rol) => normalizeText(rol));
       const rolUsuarioNormalizado = normalizeText(rolUsuario);
 
       if (!rolesNormalizados.includes(rolUsuarioNormalizado)) {
+        log.security('Authorization denied - insufficient role', {
+          usuarioId: req.user.id,
+          rolUsuario,
+          rolesRequeridos: rolesPermitidos,
+          path: req.path,
+        });
+
         throw new AuthorizationError(
           `Acceso denegado. Rol requerido: ${rolesPermitidos.join(' o ')}`
         );
@@ -55,7 +62,14 @@ function requirePermission(permiso) {
         throw new AuthorizationError('Usuario no autenticado');
       }
 
-      const permisos = req.user.rol_permisos;
+      const permisos = req.user.rol?.permisos || req.user.rol_permisos;
+
+      // Si no hay permisos definidos, denegar acceso
+      if (!permisos) {
+        throw new AuthorizationError(
+          'No se han definido permisos para este usuario'
+        );
+      }
 
       // Verificar si tiene permiso total (*)
       if (permisos === '*') {

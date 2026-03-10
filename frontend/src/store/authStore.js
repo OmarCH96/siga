@@ -1,6 +1,6 @@
 /**
  * Store de autenticación con Zustand
- * Maneja el estado global de autenticación
+ * Maneja el estado global de autenticación con Access + Refresh Tokens
  */
 
 import { create } from 'zustand';
@@ -20,10 +20,12 @@ const normalizeRole = (roleName = '') => {
 const useAuthStore = create((set, get) => ({
   // Estado
   user: null,
-  token: null,
+  accessToken: null,
+  refreshToken: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  tokenRefreshInProgress: false,
 
   /**
    * Inicializa el estado de autenticación desde el almacenamiento
@@ -33,37 +35,58 @@ const useAuthStore = create((set, get) => ({
     
     try {
       const storedUser = await authService.getStoredUser();
-      const isAuth = await authService.isAuthenticated();
+      const storedTokens = await authService.getStoredTokens();
 
-      if (isAuth && storedUser) {
+      if (storedUser && storedTokens?.accessToken) {
         // Verificar que el token sea válido
-        const isValid = await authService.verifyToken();
-        const isAdmin =
-          normalizeRole(storedUser?.rol_nombre) === normalizeRole(ADMIN_ROLE);
-        
-        if (isValid && isAdmin) {
-          set({
-            user: storedUser,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-        } else {
-          // Token inválido o rol sin autorización para dashboard, limpiar
-          await authService.logout();
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: isValid
-              ? 'Acceso denegado. Solo administradores pueden entrar al dashboard.'
-              : null,
-          });
+        try {
+          const isValid = await authService.verifyToken();
+          
+          if (isValid) {
+            set({
+              user: storedUser,
+              accessToken: storedTokens.accessToken,
+              refreshToken: storedTokens.refreshToken,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+          } else {
+            // Token inválido
+            await authService.logout();
+            set({
+              user: null,
+              accessToken: null,
+              refreshToken: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: null,
+            });
+          }
+        } catch (error) {
+          // Token inválido, intentar refrescar
+          if (storedTokens?.refreshToken) {
+            const refreshed = await get().refreshAccessToken();
+            if (!refreshed) {
+              await authService.logout();
+              set({
+                user: null,
+                accessToken: null,
+                refreshToken: null,
+                isAuthenticated: false,
+                isLoading: false,
+              });
+            }
+          } else {
+            await authService.logout();
+            set({ isLoading: false });
+          }
         }
       } else {
         set({ isLoading: false });
       }
     } catch (error) {
+      console.error('Error initializing auth:', error);
       set({
         isLoading: false,
         error: 'Error al inicializar sesión',
@@ -78,29 +101,17 @@ const useAuthStore = create((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const { usuario, token } = await authService.login(nombreUsuario, contraseña);
-      const isAdmin = normalizeRole(usuario?.rol_nombre) === normalizeRole(ADMIN_ROLE);
-
-      if (!isAdmin) {
-        await authService.logout();
-
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: 'Acceso denegado. Solo administradores pueden entrar al dashboard.',
-        });
-
-        return {
-          success: false,
-          error: 'Acceso denegado. Solo administradores pueden entrar al dashboard.',
-        };
-      }
+      const result = await authService.login(nombreUsuario, contraseña);
+      const { usuario, accessToken, refreshToken } = result;
+      
+      console.log('📝 Login response:', { usuario, accessToken: accessToken?.substring(0, 20) + '...', refreshToken: refreshToken?.substring(0, 20) + '...' });
+      
+      console.log('📝 Login response:', { usuario, accessToken: accessToken?.substring(0, 20) + '...', refreshToken: refreshToken?.substring(0, 20) + '...' });
 
       set({
         user: usuario,
-        token,
+        accessToken,
+        refreshToken,
         isAuthenticated: true,
         isLoading: false,
         error: null,
@@ -121,20 +132,91 @@ const useAuthStore = create((set, get) => ({
   },
 
   /**
+   * Refresca el access token usando el refresh token
+   */
+  refreshAccessToken: async () => {
+    const state = get();
+    
+    // Evitar múltiples refreshes simultáneos
+    if (state.tokenRefreshInProgress) {
+      return false;
+    }
+
+    set({ tokenRefreshInProgress: true });
+
+    try {
+      const refreshToken = state.refreshToken;
+      
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const result = await authService.refreshToken(refreshToken);
+      const { usuario, accessToken, refreshToken: newRefreshToken } = result;
+
+      set({
+        user: usuario,
+        accessToken,
+        refreshToken: newRefreshToken,
+        isAuthenticated: true,
+        tokenRefreshInProgress: false,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      
+      // Si falla el refresh, cerrar sesión
+      await authService.logout();
+      set({
+        user: null,
+        accessToken: null,
+        refreshToken: null,
+        isAuthenticated: false,
+        tokenRefreshInProgress: false,
+        error: 'Sesión expirada. Por favor, inicia sesión nuevamente.',
+      });
+
+      return false;
+    }
+  },
+
+  /**
    * Logout de usuario
    */
   logout: async () => {
     try {
-      await authService.logout();
+      const refreshToken = get().refreshToken;
+      await authService.logout(refreshToken);
       
       set({
         user: null,
-        token: null,
+        accessToken: null,
+        refreshToken: null,
         isAuthenticated: false,
         error: null,
       });
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
+    }
+  },
+
+  /**
+   * Logout de todas las sesiones
+   */
+  logoutAll: async () => {
+    try {
+      await authService.logoutAll();
+      
+      set({
+        user: null,
+        accessToken: null,
+        refreshToken: null,
+        isAuthenticated: false,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Error al cerrar todas las sesiones:', error);
     }
   },
 
@@ -160,18 +242,24 @@ const useAuthStore = create((set, get) => ({
   hasPermission: (permiso) => {
     const { user } = get();
     
-    if (!user || !user.rol_permisos) {
+    // Soportar tanto estructura nueva (rol.permisos) como antigua (rol_permisos)
+    const permisos = user?.rol?.permisos || user?.rol_permisos;
+    
+    if (!user || !permisos) {
       return false;
     }
 
     // Si tiene todos los permisos (*)
-    if (user.rol_permisos === '*') {
+    if (permisos === '*') {
       return true;
     }
 
     // Verificar si tiene el permiso específico
-    const permisos = user.rol_permisos.split(',').map(p => p.trim());
-    return permisos.includes(permiso);
+    const listaPermisos = Array.isArray(permisos) 
+      ? permisos 
+      : permisos.split(',').map(p => p.trim());
+    
+    return listaPermisos.includes(permiso);
   },
 
   /**
@@ -179,7 +267,23 @@ const useAuthStore = create((set, get) => ({
    */
   hasRole: (rol) => {
     const { user } = get();
-    return normalizeRole(user?.rol_nombre) === normalizeRole(rol);
+    
+    // Soportar tanto estructura nueva (rol.nombre) como antigua (rol_nombre o rolNombre)
+    const rolNombre = user?.rol?.nombre || user?.rol_nombre || user?.rolNombre;
+    
+    // Debug temporal
+    console.log('🔍 hasRole check:', {
+      requiredRole: rol,
+      userRole: rolNombre,
+      userObject: user,
+      normalized: {
+        required: normalizeRole(rol),
+        actual: normalizeRole(rolNombre)
+      },
+      matches: normalizeRole(rolNombre) === normalizeRole(rol)
+    });
+    
+    return normalizeRole(rolNombre) === normalizeRole(rol);
   },
 }));
 

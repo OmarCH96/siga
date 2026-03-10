@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { dashboardApi } from '@services/api';
+import { processWeekMetrics, processDistribution } from '@utils/dataFormatters';
+
+// Tiempo de caché en milisegundos (30 segundos)
+const CACHE_TIME = 30000;
 
 const TABS = [
     { id: 'estadisticas', label: 'Estadisticas', icon: 'analytics' },
@@ -14,6 +18,11 @@ const emptyForm = {
     prioridad: 'Media',
 };
 
+/**
+ * Hook personalizado para el dashboard administrativo
+ * Maneja el estado y la lógica del dashboard
+ * OPTIMIZADO: Incluye caché para evitar llamadas repetidas
+ */
 export function useAdminDashboard() {
     const [usuarios, setUsuarios] = useState([]);
     const [datos, setDatos] = useState({
@@ -28,9 +37,26 @@ export function useAdminDashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
+    const [newRegistro, setNewRegistro] = useState(emptyForm);
+
+    // Referencias para caché
+    const lastLoadTime = useRef(0);
+    const isLoadingRef = useRef(false);
 
     useEffect(() => {
         const loadDashboard = async () => {
+            // Verificar caché
+            const now = Date.now();
+            if (now - lastLoadTime.current < CACHE_TIME) {
+                return; // Usar datos cacheados
+            }
+
+            // Evitar solicitudes concurrentes
+            if (isLoadingRef.current) {
+                return;
+            }
+
+            isLoadingRef.current = true;
             setIsLoading(true);
             setError(null);
 
@@ -41,26 +67,42 @@ export function useAdminDashboard() {
                     dashboardApi.getRegistros(),
                 ]);
 
-                setUsuarios(usuariosData);
-                setDatos({
-                    unidades: datosData?.unidades || [],
-                    metricasSemanales: datosData?.metricasSemanales || [],
-                    distribucionEstados: datosData?.distribucionEstados || [],
-                });
-                setRegistros(registrosData);
+                // Sanitizar y validar los datos recibidos
+                const unidades = Array.isArray(datosData?.unidades) ? datosData.unidades : [];
+                const metricasSemanales = Array.isArray(datosData?.metricasSemanales) 
+                    ? datosData.metricasSemanales 
+                    : [];
+                const distribucionEstados = Array.isArray(datosData?.distribucionEstados)
+                    ? datosData.distribucionEstados
+                    : [];
 
-                if ((datosData?.unidades || []).length > 0) {
-                    setSelectedUnitId(datosData.unidades[0].id);
+                setUsuarios(Array.isArray(usuariosData) ? usuariosData : []);
+                setDatos({
+                    unidades,
+                    metricasSemanales,
+                    distribucionEstados,
+                });
+                setRegistros(Array.isArray(registrosData) ? registrosData : []);
+
+                // Seleccionar la primera unidad si hay datos
+                if (unidades.length > 0 && !selectedUnitId) {
+                    setSelectedUnitId(unidades[0].id);
                 }
+
+                // Actualizar timestamp del caché
+                lastLoadTime.current = now;
             } catch (loadError) {
+                console.error('Error loading dashboard:', loadError);
                 setError(loadError.message || 'No fue posible cargar la informacion del dashboard');
             } finally {
                 setIsLoading(false);
+                isLoadingRef.current = false;
             }
         };
 
         loadDashboard();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Solo cargar una vez al montar
 
     const selectedUnit = useMemo(() => {
         return datos.unidades.find((unidad) => unidad.id === selectedUnitId) || null;
@@ -71,13 +113,13 @@ export function useAdminDashboard() {
             return registros;
         }
 
-        const needle = searchTerm.toLowerCase();
+        const needle = searchTerm.toLowerCase().trim();
         return registros.filter((registro) => {
             const haystack = [
-                registro.folio,
-                registro.asunto,
-                registro.origenDestino,
-                registro.estado,
+                registro.folio || '',
+                registro.asunto || '',
+                registro.origenDestino || '',
+                registro.estado || '',
             ]
                 .join(' ')
                 .toLowerCase();

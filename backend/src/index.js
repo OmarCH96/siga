@@ -14,6 +14,10 @@ const { errorHandler, notFoundHandler } = require('./middlewares/error.middlewar
 // Importar rutas
 const authRoutes = require('./routes/auth.routes');
 const usuarioRoutes = require('./routes/usuario.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
+const areaRoutes = require('./routes/area.routes');
+const rolRoutes = require('./routes/rol.routes');
+const tipoDocumentoRoutes = require('./routes/tipoDocumento.routes');
 
 // Crear aplicación Express
 const app = express();
@@ -73,6 +77,10 @@ app.get('/health', (req, res) => {
 // Rutas de la API
 app.use('/api/auth', loginLimiter, authRoutes);
 app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/areas', areaRoutes);
+app.use('/api/roles', rolRoutes);
+app.use('/api/tipo-documento', tipoDocumentoRoutes);
 
 // ============================================================================
 // MANEJO DE ERRORES
