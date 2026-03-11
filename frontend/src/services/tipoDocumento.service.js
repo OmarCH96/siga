@@ -34,6 +34,16 @@ export const getAllTiposDocumento = async (filters = {}) => {
 };
 
 /**
+ * Obtener solo tipos de documento activos (sin restricción de permisos)
+ * Útil para formularios de emisión
+ * @returns {Promise<Object>} Lista de tipos de documento activos
+ */
+export const getTiposDocumentoActivos = async () => {
+  const response = await apiClient.get('/tipo-documento/activos?activo=true');
+  return response.data;
+};
+
+/**
  * Obtener un tipo de documento por ID
  * @param {number} id - ID del tipo de documento
  * @returns {Promise<Object>} Tipo de documento
@@ -97,6 +107,7 @@ export const getTiposDocumentoStats = async () => {
 
 export default {
   getAllTiposDocumento,
+  getTiposDocumentoActivos,
   getTipoDocumentoById,
   createTipoDocumento,
   updateTipoDocumento,

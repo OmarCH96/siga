@@ -29,6 +29,7 @@ class UsuarioDTO {
       area: {
         id: usuario.area_id,
         nombre: usuario.area_nombre,
+        clave: usuario.area_clave,
       },
       fechaCreacion: usuario.fecha_creacion,
       ultimoAcceso: usuario.ultimo_acceso,
@@ -53,6 +54,7 @@ class UsuarioDTO {
       permisos: usuario.rol_permisos || [],
       areaId: usuario.area_id,
       areaNombre: usuario.area_nombre,
+      areaClave: usuario.area_clave,
     };
   }
 

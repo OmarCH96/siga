@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { getInitials } from '@utils/dataFormatters';
+import { useAuth } from '@hooks/useAuth';
 
 const navMain = [
   { id: 'inicio', label: 'Inicio', icon: 'home', path: '/dashboard' },
@@ -11,6 +12,7 @@ const navMain = [
 ];
 
 const navGestion = [
+  { id: 'emision', label: 'Emitir Documento', icon: 'edit_document', path: '/emision' },
   { id: 'documentos', label: 'Documentos', icon: 'description', path: '/documentos' },
   { id: 'configuracion', label: 'Configuracion', icon: 'settings', path: '/configuracion' },
 ];
@@ -49,10 +51,21 @@ SidebarLink.propTypes = {
 const AdminSidebar = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasPermission } = useAuth();
 
   const handleNavigation = (path) => {
     navigate(path);
   };
+
+  // Filtrar enlaces de gestión según permisos
+  const navGestionFiltrado = navGestion.filter((item) => {
+    // Solo mostrar "Emitir Documento" si tiene el permiso
+    if (item.id === 'emision') {
+      return hasPermission('CREAR_DOCUMENTO');
+    }
+    // Los demás enlaces se muestran siempre (puedes agregar validaciones adicionales)
+    return true;
+  });
 
   return (
     <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex-col shrink-0 hidden md:flex">
@@ -82,7 +95,7 @@ const AdminSidebar = ({ user, onLogout }) => {
           <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gestion</p>
         </div>
 
-        {navGestion.map((item) => (
+        {navGestionFiltrado.map((item) => (
           <SidebarLink
             key={item.id}
             item={item}

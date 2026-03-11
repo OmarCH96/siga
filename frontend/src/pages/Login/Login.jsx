@@ -4,13 +4,17 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated, isLoading, error, clearError, hasRole } = useAuth();
+  
+  // Obtener la ubicación desde donde fue redirigido (si existe)
+  const from = location.state?.from || null;
 
   const [formData, setFormData] = useState({
     nombreUsuario: '',
@@ -23,13 +27,22 @@ const Login = () => {
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (isAuthenticated) {
+      // Redirigir según rol (ignorando ruta previa para primera autenticación)
       if (hasRole('Administrador')) {
+        console.log('✅ Administrador → Redirigiendo a /dashboard');
         navigate('/dashboard', { replace: true });
       } else {
-        navigate('/recepciones', { replace: true });
+        // Para usuarios no admin, verificar si venían de una ruta protegida
+        if (from && from !== '/login') {
+          console.log('🔄 Usuario normal → Redirigiendo a ruta previa:', from);
+          navigate(from, { replace: true });
+        } else {
+          console.log('⚠️ Usuario normal → Redirigiendo a /recepciones');
+          navigate('/recepciones', { replace: true });
+        }
       }
     }
-  }, [isAuthenticated, hasRole, navigate]);
+  }, [isAuthenticated, hasRole, navigate, from]);
 
   // Limpiar error al desmontar
   useEffect(() => {

@@ -1,0 +1,53 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+secureStorage.js:26 Storage inicializado en modo Web
+react-router-dom.js?v=efcc2ae6:4436 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+warnOnce @ react-router-dom.js?v=efcc2ae6:4436
+logDeprecation @ react-router-dom.js?v=efcc2ae6:4439
+logV6DeprecationWarnings @ react-router-dom.js?v=efcc2ae6:4442
+(anonymous) @ react-router-dom.js?v=efcc2ae6:5314
+commitHookEffectListMount @ chunk-PJEEZAML.js?v=efcc2ae6:16915
+commitPassiveMountOnFiber @ chunk-PJEEZAML.js?v=efcc2ae6:18156
+commitPassiveMountEffects_complete @ chunk-PJEEZAML.js?v=efcc2ae6:18129
+commitPassiveMountEffects_begin @ chunk-PJEEZAML.js?v=efcc2ae6:18119
+commitPassiveMountEffects @ chunk-PJEEZAML.js?v=efcc2ae6:18109
+flushPassiveEffectsImpl @ chunk-PJEEZAML.js?v=efcc2ae6:19490
+flushPassiveEffects @ chunk-PJEEZAML.js?v=efcc2ae6:19447
+(anonymous) @ chunk-PJEEZAML.js?v=efcc2ae6:19328
+workLoop @ chunk-PJEEZAML.js?v=efcc2ae6:197
+flushWork @ chunk-PJEEZAML.js?v=efcc2ae6:176
+performWorkUntilDeadline @ chunk-PJEEZAML.js?v=efcc2ae6:384Understand this warning
+react-router-dom.js?v=efcc2ae6:4436 ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+warnOnce @ react-router-dom.js?v=efcc2ae6:4436
+logDeprecation @ react-router-dom.js?v=efcc2ae6:4439
+logV6DeprecationWarnings @ react-router-dom.js?v=efcc2ae6:4445
+(anonymous) @ react-router-dom.js?v=efcc2ae6:5314
+commitHookEffectListMount @ chunk-PJEEZAML.js?v=efcc2ae6:16915
+commitPassiveMountOnFiber @ chunk-PJEEZAML.js?v=efcc2ae6:18156
+commitPassiveMountEffects_complete @ chunk-PJEEZAML.js?v=efcc2ae6:18129
+commitPassiveMountEffects_begin @ chunk-PJEEZAML.js?v=efcc2ae6:18119
+commitPassiveMountEffects @ chunk-PJEEZAML.js?v=efcc2ae6:18109
+flushPassiveEffectsImpl @ chunk-PJEEZAML.js?v=efcc2ae6:19490
+flushPassiveEffects @ chunk-PJEEZAML.js?v=efcc2ae6:19447
+(anonymous) @ chunk-PJEEZAML.js?v=efcc2ae6:19328
+workLoop @ chunk-PJEEZAML.js?v=efcc2ae6:197
+flushWork @ chunk-PJEEZAML.js?v=efcc2ae6:176
+performWorkUntilDeadline @ chunk-PJEEZAML.js?v=efcc2ae6:384Understand this warning
+authStore.js:107 📝 Login response usuario completo: {id: 23, nombreUsuario: 'admin', nombre: 'Admin', apellidos: 'Sistema', email: 'admin@gestor.com', …}
+authStore.js:108 📝 Rol del usuario: {rol: {…}, rolNombre: 'Administrador', rolId: 1, permisos: '*'}permisos: "*"rol: id: 1nombre: "Administrador"permisos: "*"[[Prototype]]: ObjectrolId: 1rolNombre: "Administrador"[[Prototype]]: Object
+authStore.js:279 🔍 hasRole check: {requiredRole: 'Administrador', userRole: 'Administrador', userObject: {…}, normalized: {…}, matches: true}matches: truenormalized: actual: "administrador"required: "administrador"[[Prototype]]: ObjectrequiredRole: "Administrador"userObject: activo: trueapellidos: "Sistema"area: clave: "ADMIN"id: 20nombre: "Administrador"[[Prototype]]: Objectemail: "admin@gestor.com"id: 23nombre: "Admin"nombreUsuario: "admin"rol: id: 1nombre: "Administrador"permisos: "*"[[Prototype]]: Object[[Prototype]]: ObjectuserRole: "Administrador"[[Prototype]]: Object
+Login.jsx:31 🔐 Login - Usuario autenticado: {hasAdminRole: true, from: '/emision', fromIsNotLogin: true, hasPermissions: ƒ}
+Login.jsx:40 🔄 Redirigiendo a ruta previa: /emision
+FormularioEmision.jsx:67 areaClave calculada: ADMIN
+FormularioEmision.jsx:67 areaClave calculada: ADMIN
+FormularioEmision.jsx:55 Usuario completo: {id: 23, nombreUsuario: 'admin', nombre: 'Admin', apellidos: 'Sistema', email: 'admin@gestor.com', …}
+FormularioEmision.jsx:56 Área del usuario: {id: 20, nombre: 'Administrador', clave: 'ADMIN'}
+FormularioEmision.jsx:57 Clave del área: ADMIN
+FormularioEmision.jsx:55 Usuario completo: {id: 23, nombreUsuario: 'admin', nombre: 'Admin', apellidos: 'Sistema', email: 'admin@gestor.com', …}
+FormularioEmision.jsx:56 Área del usuario: {id: 20, nombre: 'Administrador', clave: 'ADMIN'}
+FormularioEmision.jsx:57 Clave del área: ADMIN
+FormularioEmision.jsx:67 areaClave calculada: ADMIN
+FormularioEmision.jsx:67 areaClave calculada: ADMIN
+FormularioEmision.jsx:67 areaClave calculada: ADMIN
+FormularioEmision.jsx:67 areaClave calculada: ADMIN
+FormularioEmision.jsx:67 areaClave calculada: ADMIN
+FormularioEmision.jsx:67 areaClave calculada: ADMIN

@@ -15,8 +15,18 @@ const { validateIdParam } = require('../middlewares/validate.middleware');
 router.use(authenticate);
 
 /**
+ * GET /tipo-documento/activos
+ * Obtener solo tipos de documento activos (sin restricción de permisos)
+ * Útil para formularios de emisión de documentos
+ */
+router.get('/activos', (req, res, next) => {
+  req.query.activo = 'true';
+  next();
+}, tipoDocumentoController.getAllTiposDocumento);
+
+/**
  * GET /tipo-documento
- * Obtener todos los tipos de documento
+ * Obtener todos los tipos de documento (requiere permiso VER_TODO)
  */
 router.get('/', requirePermission('VER_TODO'), tipoDocumentoController.getAllTiposDocumento);
 

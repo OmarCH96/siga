@@ -1,10 +1,21 @@
 // BandejaRecepcionLayout
+import { useNavigate } from 'react-router-dom';
 import PestanasNavegacion from './PestanasNavegacion';
 import TablaDocumentos from './TablaDocumentos';
 import { useAuth } from '@hooks/useAuth';
+import { useBandejaRecepcion } from '@hooks/useBandejaRecepcion';
 
 const BandejaRecepcionLayout = () => {
-    const { logout, user } = useAuth();
+    const navigate = useNavigate();
+    const { logout, user, hasPermission } = useAuth();
+    const { 
+        documentos, 
+        loading, 
+        error, 
+        filters, 
+        actualizarFiltros,
+        total 
+    } = useBandejaRecepcion();
 
     return (
         <div className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
@@ -20,27 +31,32 @@ const BandejaRecepcionLayout = () => {
                     </div>
                 </div>
                 <nav className="flex-1 px-4 space-y-1">
-                    <a
-                        className="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        href="#"
-                    >
-                        <span className="material-symbols-outlined">send</span>
-                        <span className="text-sm font-medium">Emitir</span>
-                    </a>
-                    <a
-                        className="flex items-center gap-3 px-3 py-2 bg-primary/10 text-primary rounded-lg transition-colors"
-                        href="#"
+                    {hasPermission('CREAR_DOCUMENTO') && (
+                        <button
+                            type="button"
+                            onClick={() => navigate('/emision')}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        >
+                            <span className="material-symbols-outlined">send</span>
+                            <span className="text-sm font-medium">Emitir</span>
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => navigate('/recepciones')}
+                        className="w-full flex items-center gap-3 px-3 py-2 bg-primary/10 text-primary rounded-lg transition-colors"
                     >
                         <span className="material-symbols-outlined">inbox</span>
                         <span className="text-sm font-semibold">Recepciones</span>
-                    </a>
-                    <a
-                        className="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        href="#"
+                    </button>
+                    <button
+                        type="button"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-not-allowed opacity-50"
+                        disabled
                     >
                         <span className="material-symbols-outlined">bar_chart</span>
                         <span className="text-sm font-medium">Reportes</span>
-                    </a>
+                    </button>
                 </nav>
                 <div className="p-4 border-t border-slate-200 dark:border-slate-800">
                     <div className="flex items-center justify-between gap-2 p-2">
@@ -89,7 +105,7 @@ const BandejaRecepcionLayout = () => {
                         <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
                         <div className="flex gap-4">
                             <button className="text-xs font-medium text-primary border-b-2 border-primary pb-1">
-                                Nombre de la unidad administrativa
+                                {user?.area?.nombre || 'Sin área asignada'}
                             </button>
                         </div>
                     </div>
@@ -117,7 +133,14 @@ const BandejaRecepcionLayout = () => {
                         {/* Título */}
                         <div className="space-y-6">
                             <div>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Recepciones</h3>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                                    Recepciones
+                                    {total > 0 && (
+                                        <span className="ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-primary/10 text-primary">
+                                            {total} {total === 1 ? 'documento' : 'documentos'}
+                                        </span>
+                                    )}
+                                </h3>
                                 <p className="text-slate-500 text-sm">
                                     Gestión y seguimiento de documentos oficiales recibidos.
                                 </p>
@@ -125,7 +148,13 @@ const BandejaRecepcionLayout = () => {
                             <PestanasNavegacion />
                         </div>
 
-                        <TablaDocumentos />
+                        <TablaDocumentos 
+                            documentos={documentos}
+                            loading={loading}
+                            error={error}
+                            filters={filters}
+                            onFiltersChange={actualizarFiltros}
+                        />
                     </div>
                 </main>
             </div>

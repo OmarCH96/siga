@@ -1,5 +1,48 @@
 // TablaDocumentos
-const TablaDocumentos = () => {
+import PropTypes from 'prop-types';
+
+const TablaDocumentos = ({ 
+  documentos = [], 
+  loading = false, 
+  error = null,
+  filters = {},
+  onFiltersChange = () => {},
+}) => {
+  /**
+   * Formatear fecha a formato legible
+   */
+  const formatearFecha = (fecha) => {
+    if (!fecha) return '-';
+    const date = new Date(fecha);
+    return date.toLocaleDateString('es-MX', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  /**
+   * Obtener color según prioridad
+   */
+  const getPrioridadClasses = (prioridad) => {
+    const classes = {
+      'ALTA': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+      'URGENTE': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+      'MEDIA': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+      'BAJA': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    };
+    return classes[prioridad] || classes['MEDIA'];
+  };
+
+  /**
+   * Obtener iniciales del nombre
+   */
+  const getIniciales = (nombre, apellidos) => {
+    const inicial1 = nombre?.charAt(0)?.toUpperCase() || '';
+    const inicial2 = apellidos?.charAt(0)?.toUpperCase() || '';
+    return `${inicial1}${inicial2}`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Filtros */}
@@ -14,8 +57,10 @@ const TablaDocumentos = () => {
             </span>
             <input
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary"
-              placeholder="Ej. SMA-2023-001"
+              placeholder="Ej. EM-SMADSOT.DPG-0013/2026"
               type="text"
+              value={filters.busqueda || ''}
+              onChange={(e) => onFiltersChange({ busqueda: e.target.value })}
             />
           </div>
         </div>
@@ -23,16 +68,18 @@ const TablaDocumentos = () => {
           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Tipo de Documento
           </label>
-          <select className="w-full py-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary">
-            <option>Todos los tipos</option>
-            <option>Oficio</option>
-            <option>Circular</option>
-            <option>Memorándum</option>
+          <select 
+            className="w-full py-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary"
+            value={filters.tipoDocumento || ''}
+            onChange={(e) => onFiltersChange({ tipoDocumento: e.target.value })}
+          >
+            <option value="">Todos los tipos</option>
+            {/* Opciones dinámicas se agregarán del hook */}
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Rango de Fechas
+            Fecha Desde
           </label>
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -40,15 +87,19 @@ const TablaDocumentos = () => {
             </span>
             <input
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary"
-              placeholder="Seleccionar rango..."
-              type="text"
+              type="date"
+              value={filters.fechaDesde || ''}
+              onChange={(e) => onFiltersChange({ fechaDesde: e.target.value })}
             />
           </div>
         </div>
         <div className="flex items-end">
-          <button className="w-full bg-slate-900 dark:bg-primary text-white py-2 px-4 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-sm">filter_list</span>
-            Aplicar Filtros
+          <button 
+            className="w-full bg-slate-900 dark:bg-primary text-white py-2 px-4 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            onClick={() => onFiltersChange({ busqueda: '', tipoDocumento: '', fechaDesde: '' })}
+          >
+            <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+            Limpiar
           </button>
         </div>
       </div>
@@ -64,178 +115,110 @@ const TablaDocumentos = () => {
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Remitente</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha Recibido</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Prioridad</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estatus</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {/* Fila 1 */}
-              <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                <td className="px-6 py-4">
-                  <span className="text-sm font-bold text-primary">SMA-2023-0452</span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Oficio</span>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-[200px]">
-                      Solicitud de impacto ambiental Predio Los Olivos
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-accent-green/10 text-accent-green flex items-center justify-center text-[10px] font-bold">
-                      JD
+              {/* Estado de carga */}
+              {loading && (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-slate-500">Cargando documentos...</span>
                     </div>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Juan Delgado</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">24 Oct 2023</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                    ALTA
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    Pendiente
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right space-x-2">
-                  <button
-                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors"
-                    title="Ver detalles"
-                  >
-                    <span className="material-symbols-outlined">visibility</span>
-                  </button>
-                  <button
-                    className="p-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors"
-                    title="Responder"
-                  >
-                    <span className="material-symbols-outlined">reply</span>
-                  </button>
-                </td>
-              </tr>
-              {/* Fila 2 */}
-              <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                <td className="px-6 py-4">
-                  <span className="text-sm font-bold text-primary">SMA-2023-0450</span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Circular</span>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-[200px]">
-                      Actualización de lineamientos operativos Q4
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
-                      DA
+                  </td>
+                </tr>
+              )}
+
+              {/* Estado de error */}
+              {error && !loading && (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <span className="material-symbols-outlined text-4xl text-red-500">error</span>
+                      <span className="text-sm text-slate-500">{error}</span>
                     </div>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Dir. Administrativa</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">23 Oct 2023</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                    MEDIA
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-blue-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    En Revisión
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right space-x-2">
-                  <button
-                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors"
-                    title="Ver detalles"
-                  >
-                    <span className="material-symbols-outlined">visibility</span>
-                  </button>
-                  <button
-                    className="p-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors"
-                    title="Responder"
-                  >
-                    <span className="material-symbols-outlined">reply</span>
-                  </button>
-                </td>
-              </tr>
-              {/* Fila 3 */}
-              <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                <td className="px-6 py-4">
-                  <span className="text-sm font-bold text-primary">SMA-2023-0448</span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Memorándum</span>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-[200px]">
-                      Asignación de recursos brigada contra incendios
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
-                      MG
+                  </td>
+                </tr>
+              )}
+
+              {/* Sin datos */}
+              {!loading && !error && documentos.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <span className="material-symbols-outlined text-4xl text-slate-300">inbox</span>
+                      <span className="text-sm text-slate-500">No hay documentos pendientes</span>
                     </div>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Mario Guerrero</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">21 Oct 2023</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                    ALTA
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Atendido
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right space-x-2">
-                  <button
-                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors"
-                    title="Ver detalles"
-                  >
-                    <span className="material-symbols-outlined">visibility</span>
-                  </button>
-                  <button
-                    className="p-1.5 bg-slate-100 text-slate-300 rounded-lg cursor-not-allowed"
-                    disabled
-                  >
-                    <span className="material-symbols-outlined">reply</span>
-                  </button>
-                </td>
-              </tr>
+                  </td>
+                </tr>
+              )}
+
+              {/* Filas de datos */}
+              {!loading && !error && documentos.map((doc) => (
+                <tr key={doc.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                  <td className="px-6 py-4">
+                    <span className="text-sm font-bold text-primary">{doc.folio}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">
+                        {doc.tipo_documento_nombre}
+                      </span>
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-[300px]" title={doc.asunto}>
+                        {doc.asunto}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-accent-green/10 text-accent-green flex items-center justify-center text-[10px] font-bold">
+                        {getIniciales(doc.usuario_turna_nombre, doc.usuario_turna_apellidos)}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          {doc.usuario_turna_nombre} {doc.usuario_turna_apellidos}
+                        </span>
+                        <span className="text-[10px] text-slate-400">{doc.area_origen_nombre}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                    {formatearFecha(doc.nodo_fecha_generacion)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${getPrioridadClasses(doc.prioridad)}`}>
+                      {doc.prioridad}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right space-x-2">
+                    <button
+                      className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 transition-colors"
+                      title="Ver detalles"
+                    >
+                      <span className="material-symbols-outlined">visibility</span>
+                    </button>
+                    <button
+                      className="p-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors"
+                      title="Atender documento"
+                    >
+                      <span className="material-symbols-outlined">task_alt</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
         {/* Paginación */}
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <p className="text-xs text-slate-500 font-medium">Mostrando 1-3 de 12 documentos</p>
-          <div className="flex items-center gap-2">
-            <button
-              className="p-1 rounded border border-slate-300 text-slate-400 hover:bg-white disabled:opacity-50"
-              disabled
-            >
-              <span className="material-symbols-outlined">chevron_left</span>
-            </button>
-            <button className="w-8 h-8 rounded bg-primary text-white text-xs font-bold">1</button>
-            <button className="w-8 h-8 rounded hover:bg-white text-xs font-medium">2</button>
-            <button className="w-8 h-8 rounded hover:bg-white text-xs font-medium">3</button>
-            <button className="p-1 rounded border border-slate-300 text-slate-600 hover:bg-white">
-              <span className="material-symbols-outlined">chevron_right</span>
-            </button>
-          </div>
+          <p className="text-xs text-slate-500 font-medium">
+            Mostrando {documentos.length} de {documentos.length} documentos
+          </p>
         </div>
       </div>
 
@@ -243,19 +226,39 @@ const TablaDocumentos = () => {
       <div className="flex items-center gap-6 p-4 bg-primary/5 rounded-lg border border-primary/10">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-red-500"></span>
-          <span className="text-xs font-medium text-slate-600">Prioridad Alta (Respuesta &lt; 24h)</span>
+          <span className="text-xs font-medium text-slate-600">Prioridad Alta/Urgente</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-          <span className="text-xs font-medium text-slate-600">Pendiente de Procesar</span>
+          <span className="w-3 h-3 rounded-full bg-slate-400"></span>
+          <span className="text-xs font-medium text-slate-600">Prioridad Media</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-          <span className="text-xs font-medium text-slate-600">En Trámite</span>
+          <span className="text-xs font-medium text-slate-600">Prioridad Baja</span>
         </div>
       </div>
     </div>
   );
+};
+
+TablaDocumentos.propTypes = {
+  documentos: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      folio: PropTypes.string.isRequired,
+      asunto: PropTypes.string.isRequired,
+      prioridad: PropTypes.string.isRequired,
+      tipo_documento_nombre: PropTypes.string.isRequired,
+      area_origen_nombre: PropTypes.string.isRequired,
+      nodo_fecha_generacion: PropTypes.string.isRequired,
+      usuario_turna_nombre: PropTypes.string.isRequired,
+      usuario_turna_apellidos: PropTypes.string.isRequired,
+    })
+  ),
+  loading: PropTypes.bool,
+  error: PropTypes.string,
+  filters: PropTypes.object,
+  onFiltersChange: PropTypes.func,
 };
 
 export default TablaDocumentos;

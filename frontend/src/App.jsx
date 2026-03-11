@@ -11,6 +11,7 @@ import Login from '@pages/Login/Login';
 import Dashboard from '@pages/Dashboard/Dashboard';
 import Usuarios from '@pages/Usuarios/Usuarios';
 import TiposDocumento from '@pages/TiposDocumento/TiposDocumento';
+import FormularioEmision from '@pages/Emision/FormularioEmision';
 import Unauthorized from '@pages/Unauthorized/Unauthorized';
 import { BandejaRecepcionLayout } from './pages/BandejaRecepcion';
 
@@ -45,13 +46,19 @@ function App() {
         {/* Ruta de acceso no autorizado */}
         <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Rutas protegidas */}
+        {/* Rutas protegidas solo para administradores */}
         <Route element={<ProtectedRoute requiredRole="Administrador" />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/documentos" element={<TiposDocumento />} />
         </Route>
 
+        {/* Rutas protegidas por permisos específicos */}
+        <Route element={<ProtectedRoute requiredPermission="CREAR_DOCUMENTO" />}>
+          <Route path="/emision" element={<FormularioEmision />} />
+        </Route>
+
+        {/* Rutas protegidas para cualquier usuario autenticado */}
         <Route element={<ProtectedRoute />}>
           <Route path="/recepciones" element={<BandejaRecepcionLayout />} />
         </Route>
@@ -68,7 +75,7 @@ function App() {
           }}>
             <h1>404 - Página no encontrada</h1>
             <a href="/dashboard" style={{
-              color: '#1976d2',
+              color: '#246257',
               textDecoration: 'none'
             }}>
               Volver al Dashboard

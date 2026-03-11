@@ -104,9 +104,13 @@ const useAuthStore = create((set, get) => ({
       const result = await authService.login(nombreUsuario, contraseña);
       const { usuario, accessToken, refreshToken } = result;
       
-      console.log('📝 Login response:', { usuario, accessToken: accessToken?.substring(0, 20) + '...', refreshToken: refreshToken?.substring(0, 20) + '...' });
-      
-      console.log('📝 Login response:', { usuario, accessToken: accessToken?.substring(0, 20) + '...', refreshToken: refreshToken?.substring(0, 20) + '...' });
+      console.log('📝 Login response usuario completo:', usuario);
+      console.log('📝 Rol del usuario:', {
+        rol: usuario.rol,
+        rolNombre: usuario.rol?.nombre,
+        rolId: usuario.rol?.id,
+        permisos: usuario.rol?.permisos
+      });
 
       set({
         user: usuario,

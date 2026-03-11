@@ -62,22 +62,24 @@ function requirePermission(permiso) {
         throw new AuthorizationError('Usuario no autenticado');
       }
 
-      const permisos = req.user.rol?.permisos || req.user.rol_permisos;
+      const permisos = req.user.rol?.permisos || req.user.rol_permisos || req.user.permisos;
 
       // Si no hay permisos definidos, denegar acceso
-      if (!permisos) {
+      if (!permisos || (Array.isArray(permisos) && permisos.length === 0)) {
         throw new AuthorizationError(
           'No se han definido permisos para este usuario'
         );
       }
 
       // Verificar si tiene permiso total (*)
-      if (permisos === '*') {
+      if (permisos === '*' || (Array.isArray(permisos) && permisos.includes('*'))) {
         return next();
       }
 
-      // Verificar si tiene el permiso específico
-      const listaPermisos = permisos.split(',').map(p => p.trim());
+      // Normalizar permisos a array (soportar string o array)
+      const listaPermisos = Array.isArray(permisos) 
+        ? permisos 
+        : permisos.split(',').map(p => p.trim());
 
       if (!listaPermisos.includes(permiso)) {
         throw new AuthorizationError(

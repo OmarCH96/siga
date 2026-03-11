@@ -1,13 +1,25 @@
 /**
  * Componente de rutas protegidas
  * Requiere autenticación para acceder
+ * Soporta validación por rol o permiso
  */
 
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@hooks/useAuth';
+import useAuthStore from '@store/authStore';
 
-const ProtectedRoute = ({ children, requiredRole = null, unauthorizedPath = '/unauthorized' }) => {
-  const { isAuthenticated, isLoading, hasRole } = useAuth();
+const ProtectedRoute = ({ 
+  children, 
+  requiredRole = null, 
+  requiredPermission = null,
+  unauthorizedPath = '/unauthorized' 
+}) => {
+  const { 
+    isAuthenticated, 
+    isLoading, 
+    hasRole, 
+    hasPermission, 
+    user 
+  } = useAuthStore();
 
   // Mostrar loader mientras verifica autenticación
   if (isLoading) {
@@ -27,12 +39,18 @@ const ProtectedRoute = ({ children, requiredRole = null, unauthorizedPath = '/un
   }
 
   // Si no está autenticado, redirigir a login
+  // Guardar la ubicación actual para redirigir después del login
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: window.location.pathname }} replace />;
   }
 
   // Si la ruta requiere rol específico y el usuario no lo tiene, redirigir
   if (requiredRole && !hasRole(requiredRole)) {
+    return <Navigate to={unauthorizedPath} replace />;
+  }
+
+  // Si la ruta requiere permiso específico y el usuario no lo tiene, redirigir
+  if (requiredPermission && !hasPermission(requiredPermission)) {
     return <Navigate to={unauthorizedPath} replace />;
   }
 

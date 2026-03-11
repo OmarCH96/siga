@@ -11,6 +11,8 @@ export default {
         "primary": "#246257",
         "background-light": "#f6f6f8",
         "background-dark": "#111621",
+        "danger": "#dc2626",
+        "success": "#16a34a",
       },
       fontFamily: {
         "display": ["Inter", "sans-serif"]

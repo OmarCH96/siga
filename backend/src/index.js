@@ -18,6 +18,7 @@ const dashboardRoutes = require('./routes/dashboard.routes');
 const areaRoutes = require('./routes/area.routes');
 const rolRoutes = require('./routes/rol.routes');
 const tipoDocumentoRoutes = require('./routes/tipoDocumento.routes');
+const documentoRoutes = require('./routes/documento.routes');
 
 // Crear aplicación Express
 const app = express();
@@ -80,7 +81,8 @@ app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/areas', areaRoutes);
 app.use('/api/roles', rolRoutes);
-app.use('/api/tipo-documento', tipoDocumentoRoutes);
+app.use('/api/tipos-documento', tipoDocumentoRoutes);
+app.use('/api/documentos', documentoRoutes);
 
 // ============================================================================
 // MANEJO DE ERRORES

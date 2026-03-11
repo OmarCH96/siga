@@ -1,331 +1,375 @@
 /**
- * Sistema de Rate Limiting Avanzado y Protección contra Brute Force
+ * Sistema de Rate Limiting Optimizado para 200 Usuarios Concurrentes
  * 
- * Características:
- * - Rate limiting por IP
- * - Rate limiting por usuario
- * - Bloqueo temporal por intentos fallidos
- * - Lista negra de IPs
+ * MEJORAS vs. versión anterior:
+ * - Rate limiting por USUARIO autenticado (no solo IP)
+ * - Configuración optimizada para 200 usuarios simultáneos
+ * - Separación de limiters por tipo de operación
+ * - Mensajes mejorados con tiempo de espera
+ * - Preparado para Redis (producción)
  * 
- * En producción usar Redis para persistencia
- * En desarrollo usa memoria (se pierde al reiniciar)
+ * NOTA: En desarrollo usa memoria (Map), en producción usar Redis
  */
 
 const rateLimit = require('express-rate-limit');
 const log = require('../utils/logger');
 const config = require('../config');
 
-// Almacenamiento en memoria (cambiar a Redis en producción)
-const failedAttempts = new Map(); // IP/usuario -> { count, lockUntil }
-const blockedIPs = new Set();
-
-// Configuración
-const MAX_FAILED_ATTEMPTS = 5; // Máximo de intentos fallidos
-const LOCK_TIME = 15 * 60 * 1000; // 15 minutos de bloqueo
-const ATTEMPTS_WINDOW = 15 * 60 * 1000; // Ventana de 15 minutos para contar intentos
+// ============================================================================
+// CONFIGURACIÓN PARA 200 USUARIOS CONCURRENTES
+// ============================================================================
 
 /**
- * Limpia intentos fallidos antiguos cada 5 minutos
+ * Cálculo de límites para 200 usuarios:
+ * - Promedio: 20 requests/minuto por usuario
+ * - Ventana de 15 minutos
+ * - Total: 300 requests/15min por usuario
+ * - Capacidad sistema: 200 usuarios × 300 req = 60,000 req/15min = 66.6 req/segundo
  */
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, data] of failedAttempts.entries()) {
-    if (data.lockUntil && now > data.lockUntil) {
-      failedAttempts.delete(key);
-    } else if (now - data.firstAttempt > ATTEMPTS_WINDOW) {
-      failedAttempts.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
+
+const RATE_LIMITS = {
+  // Operaciones generales (GET, POST de datos)
+  general: {
+    windowMs: 15 * 60 * 1000,  // 15 minutos
+    max: 300,                   // 300 requests por usuario
+  },
+  
+  // Login (más restrictivo por seguridad)
+  login: {
+    windowMs: 15 * 60 * 1000,
+    max: 5,                     // Solo 5 intentos de login
+  },
+  
+  // Operaciones de escritura pesadas (crear documentos, subir archivos)
+  heavyWrite: {
+    windowMs: 5 * 60 * 1000,   // 5 minutos
+    max: 50,                    // 50 operaciones
+  },
+  
+  // Consultas de reportes (queries pesadas)
+  reports: {
+    windowMs: 10 * 60 * 1000,  // 10 minutos
+    max: 20,                    // 20 reportes
+  },
+};
+
+
+// ============================================================================
+// GENERADOR DE KEY (USER-BASED, NO IP-BASED)
+// ============================================================================
 
 /**
- * Rate limiter general para la API
+ * Genera una clave única para rate limiting
+ * Prioriza usuario autenticado sobre IP (evita bloqueos masivos por NAT)
+ * 
+ * @param {Object} req - Request de Express
+ * @returns {string} Clave única para el contador
+ */
+function generateKey(req, prefix = 'api') {
+  // Si el usuario está autenticado (req.user existe), usar su ID
+  if (req.user && req.user.id) {
+    return `${prefix}:user:${req.user.id}`;
+  }
+  
+  // Si no está autenticado (rutas públicas como login), usar IP + username
+  if (req.body && req.body.nombreUsuario) {
+    return `${prefix}:login:${req.body.nombreUsuario}`;
+  }
+  
+  // Fallback: usar IP (solo para rutas completamente públicas)
+  return `${prefix}:ip:${req.ip}`;
+}
+
+
+// ============================================================================
+// HANDLER DE LÍMITE EXCEDIDO
+// ============================================================================
+
+/**
+ * Respuesta personalizada cuando se excede el límite
+ * Incluye información sobre cuándo puede reintentar
+ */
+function createLimitHandler(message) {
+  return (req, res) => {
+    const resetTime = req.rateLimit.resetTime;
+    const now = Date.now();
+    const secondsRemaining = Math.ceil((resetTime - now) / 1000);
+    const minutesRemaining = Math.ceil(secondsRemaining / 60);
+    
+    // Log de seguridad
+    log.security('Rate limit exceeded', {
+      ip: req.ip,
+      user: req.user?.id || 'anonymous',
+      path: req.path,
+      limit: req.rateLimit.limit,
+      current: req.rateLimit.current,
+      resetIn: `${minutesRemaining}min`,
+    });
+    
+    res.status(429).json({
+      success: false,
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: message || 'Demasiadas peticiones. Intenta más tarde.',
+      details: {
+        limit: req.rateLimit.limit,
+        remaining: 0,
+        resetIn: secondsRemaining,
+        resetAt: new Date(resetTime).toISOString(),
+      },
+      // Mensaje amigable para el usuario
+      userMessage: `Has alcanzado el límite de peticiones. Podrás intentar nuevamente en ${minutesRemaining} ${minutesRemaining === 1 ? 'minuto' : 'minutos'}.`,
+    });
+  };
+}
+
+
+// ============================================================================
+// SKIP FUNCTIONS (Condiciones para NO aplicar rate limiting)
+// ============================================================================
+
+/**
+ * Lista de IPs que nunca se limitan (localhost, IPs internas)
+ * ⚠️ NUNCA agregar IPs públicas aquí
+ */
+const WHITELISTED_IPS = [
+  '127.0.0.1',
+  '::1',
+  '::ffff:127.0.0.1',
+];
+
+/**
+ * Función para saltar rate limiting en ciertas condiciones
+ */
+function skipRateLimitForTrustedSources(req) {
+  // Saltar si es IP de desarrollo
+  if (config.env === 'development' && WHITELISTED_IPS.includes(req.ip)) {
+    return false; // No saltar en desarrollo (testing)
+  }
+  
+  // Saltar si es health check
+  if (req.path === '/health' || req.path === '/api/health') {
+    return true;
+  }
+  
+  return false;
+}
+
+
+// ============================================================================
+// RATE LIMITERS ESPECÍFICOS
+// ============================================================================
+
+/**
+ * 1. GENERAL LIMITER
+ * Para todas las rutas autenticadas (GET, POST, PUT, DELETE)
+ * Configurado para 200 usuarios concurrentes
  */
 const generalLimiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
-  message: {
-    success: false,
-    message: 'Demasiadas peticiones desde esta IP, intente más tarde',
-    code: 'RATE_LIMIT_EXCEEDED',
-  },
+  windowMs: RATE_LIMITS.general.windowMs,
+  max: RATE_LIMITS.general.max,
+  
+  // Generar key por usuario, no por IP
+  keyGenerator: (req) => generateKey(req, 'general'),
+  
+  // Mensaje personalizado
+  handler: createLimitHandler(
+    'Has excedido el límite de peticiones. Las operaciones generales están limitadas a 300 por cada 15 minutos.'
+  ),
+  
+  // Skip para health checks
+  skip: skipRateLimitForTrustedSources,
+  
+  // Headers estándar (RFC 6585)
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req, res) => {
-    log.security('Rate limit exceeded - General', {
-      ip: req.ip,
-      path: req.path,
-    });
-
-    res.status(429).json({
-      success: false,
-      message: 'Demasiadas peticiones, intente más tarde',
-      code: 'RATE_LIMIT_EXCEEDED',
-    });
-  },
+  
+  // ⚠️ PRODUCCIÓN: Descomentar para usar Redis
+  // store: new RedisStore({
+  //   client: require('../config/redis').client,
+  //   prefix: 'rl:general:',
+  // }),
 });
 
+
 /**
- * Rate limiter estricto para login
+ * 2. LOGIN LIMITER
+ * Para prevenir brute force en autenticación
+ * Solo 5 intentos cada 15 minutos por usuario
  */
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 10, // 10 intentos por ventana
-  message: {
-    success: false,
-    message: 'Demasiados intentos de login, intente más tarde',
-    code: 'LOGIN_RATE_LIMIT',
-  },
-  skipSuccessfulRequests: true, // No contar intentos exitosos
+  windowMs: RATE_LIMITS.login.windowMs,
+  max: RATE_LIMITS.login.max,
+  
+  // Key por nombreUsuario (no por user ID, porque aún no está autenticado)
+  keyGenerator: (req) => generateKey(req, 'login'),
+  
+  // No contar logins exitosos (solo fallidos)
+  skipSuccessfulRequests: true,
+  
+  // Mensaje específico para login
+  handler: createLimitHandler(
+    'Demasiados intentos de inicio de sesión. Por seguridad, tu cuenta ha sido bloqueada temporalmente.'
+  ),
+  
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req, res) => {
-    log.security('Rate limit exceeded - Login', {
-      ip: req.ip,
-      username: req.body?.nombreUsuario,
-    });
-
-    res.status(429).json({
-      success: false,
-      message: 'Demasiados intentos de login, intente más tarde',
-      code: 'LOGIN_RATE_LIMIT',
-    });
-  },
+  
+  // ⚠️ PRODUCCIÓN: Redis es CRÍTICO aquí para sincronizar entre instancias
+  // store: new RedisStore({
+  //   client: require('../config/redis').client,
+  //   prefix: 'rl:login:',
+  // }),
 });
 
+
 /**
- * Rate limiter para endpoints de registro
+ * 3. HEAVY WRITE LIMITER
+ * Para operaciones de escritura costosas:
+ * - Crear documentos
+ * - Subir archivos
+ * - Generar folios
  */
-const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hora
-  max: 3, // 3 registros por hora por IP
-  message: {
-    success: false,
-    message: 'Límite de registros alcanzado, intente más tarde',
-    code: 'REGISTER_RATE_LIMIT',
-  },
+const heavyWriteLimiter = rateLimit({
+  windowMs: RATE_LIMITS.heavyWrite.windowMs,
+  max: RATE_LIMITS.heavyWrite.max,
+  
+  keyGenerator: (req) => generateKey(req, 'write'),
+  
+  handler: createLimitHandler(
+    'Has excedido el límite de operaciones de escritura. Las creaciones están limitadas a 50 cada 5 minutos.'
+  ),
+  
+  skip: skipRateLimitForTrustedSources,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
+
 /**
- * Obtiene un identificador único para el usuario/IP
- * @param {Object} req - Request de Express
- * @returns {string} Identificador
+ * 4. REPORTS LIMITER
+ * Para consultas pesadas (dashboards, reportes, exports)
  */
-function getIdentifier(req) {
-  const ip = req.ip || req.connection.remoteAddress;
-  const username = req.body?.nombreUsuario || req.user?.nombreUsuario;
+const reportsLimiter = rateLimit({
+  windowMs: RATE_LIMITS.reports.windowMs,
+  max: RATE_LIMITS.reports.max,
   
-  return username ? `user:${username}` : `ip:${ip}`;
-}
-
-/**
- * Verifica si una IP está bloqueada
- * @param {string} ip - IP a verificar
- * @returns {boolean} true si está bloqueada
- */
-function isIPBlocked(ip) {
-  return blockedIPs.has(ip);
-}
-
-/**
- * Bloquea una IP temporalmente
- * @param {string} ip - IP a bloquear
- * @param {number} duration - Duración del bloqueo en ms
- */
-function blockIP(ip, duration = LOCK_TIME) {
-  blockedIPs.add(ip);
+  keyGenerator: (req) => generateKey(req, 'report'),
   
-  log.security('IP blocked temporarily', { ip, duration });
+  handler: createLimitHandler(
+    'Has excedido el límite de generación de reportes. Los reportes están limitados a 20 cada 10 minutos.'
+  ),
+  
+  skip: skipRateLimitForTrustedSources,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-  // Desbloquear después del tiempo especificado
-  setTimeout(() => {
-    blockedIPs.delete(ip);
-    log.info('IP unblocked', { ip });
-  }, duration);
-}
-
-/**
- * Middleware para verificar si la IP está bloqueada
- */
-function checkIPBlock(req, res, next) {
-  const ip = req.ip || req.connection.remoteAddress;
-
-  if (isIPBlocked(ip)) {
-    log.security('Blocked IP attempt', { ip, path: req.path });
-
-    return res.status(403).json({
-      success: false,
-      message: 'Tu IP ha sido bloqueada temporalmente por actividad sospechosa',
-      code: 'IP_BLOCKED',
-    });
-  }
-
-  next();
-}
 
 /**
- * Registra un intento fallido de login
- * @param {string} identifier - Identificador del usuario/IP
- * @param {string} ip - IP del cliente
+ * 5. FILE UPLOAD LIMITER
+ * Para subida de archivos (más restrictivo por uso de bandwidth)
  */
-function recordFailedAttempt(identifier, ip) {
-  const now = Date.now();
-  const attemptData = failedAttempts.get(identifier) || {
-    count: 0,
-    firstAttempt: now,
-    lockUntil: null,
-  };
+const fileUploadLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,  // 10 minutos
+  max: 30,                    // 30 archivos
+  
+  keyGenerator: (req) => generateKey(req, 'upload'),
+  
+  handler: createLimitHandler(
+    'Has excedido el límite de subida de archivos. Puedes subir hasta 30 archivos cada 10 minutos.'
+  ),
+  
+  skip: skipRateLimitForTrustedSources,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-  // Resetear si la ventana de tiempo ha pasado
-  if (now - attemptData.firstAttempt > ATTEMPTS_WINDOW) {
-    attemptData.count = 0;
-    attemptData.firstAttempt = now;
-    attemptData.lockUntil = null;
+
+// ============================================================================
+// MIDDLEWARE INTELIGENTE: SELECCIONA LIMITER SEGÚN RUTA
+// ============================================================================
+
+/**
+ * Middleware que aplica el rate limiter apropiado según la ruta
+ * Permite configuración granular sin modificar cada route
+ */
+const smartRateLimiter = (req, res, next) => {
+  // Determinar qué limiter aplicar
+  if (req.path.includes('/auth/login') || req.path.includes('/auth/register')) {
+    return loginLimiter(req, res, next);
   }
+  
+  if (req.path.includes('/upload') || req.method === 'POST' && req.headers['content-type']?.includes('multipart')) {
+    return fileUploadLimiter(req, res, next);
+  }
+  
+  if (req.path.includes('/dashboard') || req.path.includes('/reporte')) {
+    return reportsLimiter(req, res, next);
+  }
+  
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
+    return heavyWriteLimiter(req, res, next);
+  }
+  
+  // Default: general limiter
+  return generalLimiter(req, res, next);
+};
 
-  attemptData.count++;
 
-  // Si excede el límite, bloquear
-  if (attemptData.count >= MAX_FAILED_ATTEMPTS) {
-    attemptData.lockUntil = now + LOCK_TIME;
+// ============================================================================
+// MONITOREO Y ESTADÍSTICAS
+// ============================================================================
+
+/**
+ * Middleware opcional para registrar estadísticas de rate limiting
+ * Útil para ajustar límites en producción
+ */
+const rateLimitStatsMiddleware = (req, res, next) => {
+  // Solo en desarrollo o si está habilitado el debug
+  if (config.env !== 'production' || config.rateLimit.debug) {
+    const originalJson = res.json.bind(res);
     
-    log.security('Account locked due to failed attempts', {
-      identifier,
-      ip,
-      attempts: attemptData.count,
-    });
-
-    // También bloquear la IP
-    blockIP(ip);
-  } else {
-    log.warn('Failed login attempt', {
-      identifier,
-      ip,
-      attempts: attemptData.count,
-      remaining: MAX_FAILED_ATTEMPTS - attemptData.count,
-    });
-  }
-
-  failedAttempts.set(identifier, attemptData);
-}
-
-/**
- * Limpia los intentos fallidos de un identificador (en login exitoso)
- * @param {string} identifier - Identificador del usuario/IP
- */
-function clearFailedAttempts(identifier) {
-  failedAttempts.delete(identifier);
-  log.debug('Failed attempts cleared', { identifier });
-}
-
-/**
- * Verifica si un usuario/IP está bloqueado por intentos fallidos
- * @param {string} identifier - Identificador del usuario/IP
- * @returns {Object} { blocked: boolean, remainingTime: number }
- */
-function checkFailedAttempts(identifier) {
-  const attemptData = failedAttempts.get(identifier);
-
-  if (!attemptData) {
-    return { blocked: false, remainingTime: 0 };
-  }
-
-  const now = Date.now();
-
-  // Si está bloqueado y el bloqueo sigue vigente
-  if (attemptData.lockUntil && now < attemptData.lockUntil) {
-    return {
-      blocked: true,
-      remainingTime: Math.ceil((attemptData.lockUntil - now) / 1000),
-      attempts: attemptData.count,
+    res.json = function(data) {
+      // Agregar info de rate limit a la respuesta (solo en headers, no en body)
+      if (req.rateLimit) {
+        res.set('X-RateLimit-Limit', req.rateLimit.limit);
+        res.set('X-RateLimit-Remaining', req.rateLimit.remaining);
+        res.set('X-RateLimit-Reset', new Date(req.rateLimit.resetTime).toISOString());
+      }
+      
+      return originalJson(data);
     };
   }
-
-  // Si el bloqueo expiró, limpiar
-  if (attemptData.lockUntil && now >= attemptData.lockUntil) {
-    failedAttempts.delete(identifier);
-    return { blocked: false, remainingTime: 0 };
-  }
-
-  return {
-    blocked: false,
-    remainingTime: 0,
-    attempts: attemptData.count,
-  };
-}
-
-/**
- * Middleware para verificar intentos fallidos antes de login
- */
-function checkBruteForce(req, res, next) {
-  const identifier = getIdentifier(req);
-  const status = checkFailedAttempts(identifier);
-
-  if (status.blocked) {
-    log.security('Blocked login attempt - brute force protection', {
-      identifier,
-      ip: req.ip,
-      remainingTime: status.remainingTime,
-    });
-
-    return res.status(429).json({
-      success: false,
-      message: `Cuenta bloqueada temporalmente. Intente de nuevo en ${status.remainingTime} segundos`,
-      code: 'ACCOUNT_LOCKED',
-      remainingTime: status.remainingTime,
-    });
-  }
-
-  // Agregar información de intentos al request
-  req.bruteForceAttempts = status.attempts || 0;
-
+  
   next();
-}
+};
 
-/**
- * Obtiene estadísticas del rate limiting (para monitoring)
- */
-function getStats() {
-  return {
-    totalBlockedAccounts: failedAttempts.size,
-    totalBlockedIPs: blockedIPs.size,
-    activeAttempts: Array.from(failedAttempts.entries()).map(([key, data]) => ({
-      identifier: key,
-      attempts: data.count,
-      locked: data.lockUntil ? data.lockUntil > Date.now() : false,
-    })),
-  };
-}
 
-/**
- * Limpia todas las restricciones (útil para testing)
- */
-function clearAll() {
-  failedAttempts.clear();
-  blockedIPs.clear();
-  log.debug('All rate limiting data cleared');
-}
+// ============================================================================
+// EXPORTACIONES
+// ============================================================================
 
 module.exports = {
-  // Limiters de express-rate-limit
+  // Limiters individuales (para uso específico en routes)
   generalLimiter,
   loginLimiter,
-  registerLimiter,
-
-  // Middleware de brute force
-  checkBruteForce,
-  checkIPBlock,
-
-  // Funciones para usar en controladores
-  recordFailedAttempt,
-  clearFailedAttempts,
-  checkFailedAttempts,
-  blockIP,
-  isIPBlocked,
-
+  heavyWriteLimiter,
+  reportsLimiter,
+  fileUploadLimiter,
+  
+  // Limiter inteligente (recomendado para uso global)
+  smartRateLimiter,
+  
+  // Middleware de stats
+  rateLimitStatsMiddleware,
+  
   // Utilidades
-  getStats,
-  clearAll,
+  generateKey,
+  createLimitHandler,
+  
+  // Configuración (para ajustes dinámicos)
+  RATE_LIMITS,
+  
+  // ✅ COMPATIBILIDAD: Alias para código existente
+  checkBruteForce: loginLimiter,  // Mismo limiter de login
 };

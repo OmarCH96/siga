@@ -40,3 +40,4 @@ backend/temp/
 *.ps1
 *.sh
 *.sql
+*.env
