@@ -1,11 +1,135 @@
 /**
  * Controlador de Documentos
- * Maneja las operaciones de consulta de documentos
+ * Maneja las operaciones de consulta y emisión de documentos
  */
 
 const documentoService = require('../services/documento.service');
 const { asyncHandler } = require('../middlewares/error.middleware');
 const log = require('../utils/logger');
+
+/**
+ * Emitir un nuevo documento
+ * POST /api/documentos/emitir
+ * 
+ * Crea un nuevo documento en el sistema desde el área del usuario autenticado
+ * Ejecuta el stored procedure sp_emitir_documento_v5
+ */
+const emitirDocumento = asyncHandler(async (req, res) => {
+  // Extraer datos del usuario autenticado completo (req.user inyectado por auth.middleware)
+  const usuario = {
+    id: req.user.id,
+    area_id: req.user.areaId,
+    rol_permisos: req.user.permisos,
+    ip_address: req.ip
+  };
+
+  // Extraer datos del documento del body (ya sanitizado por validateEmision)
+  const datosDocumento = req.body;
+
+  log.info('Solicitud de emisión de documento', {
+    usuarioId: usuario.id,
+    areaId: usuario.area_id,
+    contexto: datosDocumento.contexto,
+    asunto: datosDocumento.asunto?.substring(0, 50),
+    ip: req.ip,
+  });
+
+  // Llamar al servicio pasando el usuario completo
+  const resultado = await documentoService.emitirDocumento(datosDocumento, usuario);
+
+  // Respuesta estándar
+  res.status(201).json({
+    success: true,
+    data: resultado,
+    message: `Documento emitido con folio ${resultado.folio}`,
+  });
+});
+
+/**
+ * Obtener un documento por ID
+ * GET /api/documentos/:id
+ * 
+ * Obtiene el detalle completo de un documento verificando permisos de lectura
+ */
+const obtenerDocumento = asyncHandler(async (req, res) => {
+  const documentoId = parseInt(req.params.id, 10);
+  
+  const usuario = {
+    id: req.user.id,
+    area_id: req.user.areaId,
+    rol_permisos: req.user.permisos
+  };
+
+  log.info('Solicitud de detalle de documento', {
+    documentoId,
+    usuarioId: usuario.id,
+  });
+
+  const documento = await documentoService.obtenerDocumento(documentoId, usuario);
+
+  res.status(200).json({
+    success: true,
+    data: documento,
+  });
+});
+
+/**
+ * Listar documentos emitidos por el usuario/área
+ * GET /api/documentos
+ * 
+ * Retorna documentos emitidos desde el área del usuario con paginación
+ */
+const listarMisDocumentos = asyncHandler(async (req, res) => {
+  const usuario = {
+    id: req.user.id,
+    area_id: req.user.areaId,
+    rol_permisos: req.user.permisos
+  };
+
+  // Extraer filtros de query params
+  const filtros = {
+    page: req.query.page ? parseInt(req.query.page, 10) : 1,
+    limit: req.query.limit ? parseInt(req.query.limit, 10) : 10,
+    estado: req.query.estado || null
+  };
+
+  log.info('Solicitud de listado de documentos', {
+    usuarioId: usuario.id,
+    areaId: usuario.area_id,
+    filtros,
+  });
+
+  const resultado = await documentoService.listarMisDocumentos(usuario, filtros);
+
+  res.status(200).json({
+    success: true,
+    data: resultado.documentos,
+    total: resultado.total,
+    page: resultado.page,
+    limit: resultado.limit,
+    totalPages: resultado.totalPages,
+  });
+});
+
+/**
+ * Obtener catálogo de tipos de documento disponibles
+ * GET /api/documentos/tipos
+ * 
+ * Retorna todos los tipos de documento activos en el sistema
+ */
+const obtenerTiposDocumento = asyncHandler(async (req, res) => {
+  log.info('Solicitud de catálogo de tipos de documento', {
+    usuarioId: req.user.id,
+  });
+
+  const tiposDocumento = await documentoService.obtenerTiposDocumento();
+
+  res.status(200).json({
+    success: true,
+    count: tiposDocumento.length,
+    data: tiposDocumento,
+  });
+});
 
 /**
  * Obtener bandeja de recepción del usuario actual
@@ -36,61 +160,199 @@ const getBandejaRecepcion = asyncHandler(async (req, res) => {
 });
 
 /**
- * Obtener detalle de un documento con su cadena de custodia
- * GET /api/documentos/:id
+ * Turnar un documento a un área destino
+ * POST /api/documentos/:id/turnar
+ * 
+ * Turna un documento del área actual a otra área
+ * Body: { area_destino_id, observaciones?, instrucciones? }
  */
-const getDocumentoDetalle = asyncHandler(async (req, res) => {
+const turnarDocumento = asyncHandler(async (req, res) => {
   const documentoId = parseInt(req.params.id, 10);
-  const { id: usuarioId } = req.user;
+  const { area_destino_id, observaciones, instrucciones } = req.body;
 
-  log.info('Solicitud de detalle de documento', {
+  const usuario = {
+    id: req.user.id,
+    area_id: req.user.areaId,
+    rol_permisos: req.user.permisos,
+    ip_address: req.ip
+  };
+
+  log.info('Solicitud de turno de documento', {
     documentoId,
-    usuarioId,
+    areaDestinoId: area_destino_id,
+    usuarioId: usuario.id,
+    ip: req.ip,
   });
 
-  const documento = await documentoService.getDocumentoDetalle(documentoId, usuarioId);
+  // Validar area_destino_id
+  if (!area_destino_id || isNaN(parseInt(area_destino_id, 10))) {
+    return res.status(400).json({
+      success: false,
+      error: 'El área destino es requerida',
+    });
+  }
+
+  const resultado = await documentoService.turnarDocumento(
+    documentoId,
+    parseInt(area_destino_id, 10),
+    usuario,
+    observaciones,
+    instrucciones
+  );
 
   res.status(200).json({
     success: true,
-    data: documento,
+    data: resultado,
+    message: `Documento turnado exitosamente`,
   });
 });
 
 /**
- * Emitir un nuevo documento
- * POST /api/documentos
+ * Validar si un turno es permitido
+ * GET /api/documentos/validar-turno?area_destino_id=X
  * 
- * Crea un nuevo documento en el sistema desde el área del usuario autenticado
- * Ejecuta el stored procedure sp_emitir_documento_v5
+ * Valida si se puede turnar un documento desde el área del usuario a un área destino
+ * usando las reglas de turno y excepciones configuradas en la base de datos
  */
-const crearDocumento = asyncHandler(async (req, res) => {
-  // Extraer datos del usuario autenticado
-  const { id: usuarioId, areaId } = req.user;
+const validarTurno = asyncHandler(async (req, res) => {
+  const areaOrigenId = req.user.areaId;
+  const areaDestinoId = parseInt(req.query.area_destino_id, 10);
 
-  // Extraer datos del documento del body
-  const datosDocumento = req.body;
+  // Validar area_destino_id
+  if (!areaDestinoId || isNaN(areaDestinoId)) {
+    return res.status(400).json({
+      success: false,
+      error: 'El parámetro area_destino_id es requerido y debe ser un número válido',
+    });
+  }
 
-  log.info('Solicitud de emisión de documento', {
-    usuarioId,
-    areaId,
-    contexto: datosDocumento.contexto,
-    asunto: datosDocumento.asunto?.substring(0, 50),
+  log.info('Solicitud de validación de turno', {
+    areaOrigenId,
+    areaDestinoId,
+    usuarioId: req.user.id,
     ip: req.ip,
   });
 
   // Llamar al servicio
-  const resultado = await documentoService.emitirDocumento(datosDocumento, usuarioId, areaId);
+  const resultado = await documentoService.validarTurno(areaOrigenId, areaDestinoId, req.user.id);
 
   // Respuesta estándar
-  res.status(201).json({
+  res.status(200).json({
     success: true,
     data: resultado,
-    message: `Documento emitido con folio ${resultado.folio}`,
+  });
+});
+
+/**
+ * Recibir un documento
+ * POST /api/documentos/:id/recibir
+ * 
+ * Confirma la recepción de un documento con nodo PENDIENTE en el área del usuario
+ * Ejecuta el stored procedure sp_recibir_documento
+ */
+const recibirDocumento = asyncHandler(async (req, res) => {
+  const documentoId = parseInt(req.params.id, 10);
+  const { observaciones } = req.body;
+
+  const usuario = {
+    id: req.user.id,
+    area_id: req.user.areaId,
+    ip_address: req.ip
+  };
+
+  log.info('Solicitud de recepción de documento', {
+    documentoId,
+    usuarioId: usuario.id,
+    areaId: usuario.area_id,
+    ip: req.ip,
+  });
+
+  const resultado = await documentoService.recibirDocumento(
+    documentoId,
+    usuario,
+    observaciones
+  );
+
+  res.status(200).json({
+    success: true,
+    data: resultado,
+    message: `Documento recibido con folio ${resultado.folio_recepcion}`,
+  });
+});
+
+/**
+ * Crear copias de conocimiento de un documento
+ * POST /api/documentos/:id/copias
+ * 
+ * Crea copias de conocimiento hacia múltiples áreas
+ * Body: { areas_ids: [1, 2, 3] }
+ */
+const crearCopiasConocimiento = asyncHandler(async (req, res) => {
+  const documentoId = parseInt(req.params.id, 10);
+  const { areas_ids } = req.body;
+
+  const usuario = {
+    id: req.user.id,
+    area_id: req.user.areaId,
+    rol_permisos: req.user.permisos,
+    ip_address: req.ip
+  };
+
+  log.info('Solicitud de crear copias de conocimiento', {
+    documentoId,
+    areasIds: areas_ids,
+    usuarioId: usuario.id,
+    ip: req.ip,
+  });
+
+  // Validar areas_ids
+  if (!areas_ids || !Array.isArray(areas_ids) || areas_ids.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Debe proporcionar al menos un área para copia de conocimiento',
+    });
+  }
+
+  // Validar que todos los IDs sean números válidos
+  const areasIdsValidos = areas_ids.filter(id => !isNaN(parseInt(id, 10))).map(id => parseInt(id, 10));
+  
+  if (areasIdsValidos.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'No hay IDs de áreas válidos',
+    });
+  }
+
+  const resultado = await documentoService.crearCopiasConocimiento(
+    documentoId,
+    areasIdsValidos,
+    usuario
+  );
+
+  // Contar exitosas y fallidas
+  const exitosas = resultado.filter(c => c.success).length;
+  const fallidas = resultado.filter(c => !c.success).length;
+
+  res.status(200).json({
+    success: true,
+    data: resultado,
+    message: `Copias procesadas: ${exitosas} exitosas, ${fallidas} fallidas`,
+    stats: {
+      total: resultado.length,
+      exitosas,
+      fallidas
+    }
   });
 });
 
 module.exports = {
+  emitirDocumento,
+  obtenerDocumento,
+  listarMisDocumentos,
+  obtenerTiposDocumento,
   getBandejaRecepcion,
-  getDocumentoDetalle,
-  crearDocumento,
+  validarTurno,
+  turnarDocumento,
+  crearCopiasConocimiento,
+  recibirDocumento,
 };

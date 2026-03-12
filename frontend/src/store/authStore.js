@@ -246,8 +246,11 @@ const useAuthStore = create((set, get) => ({
   hasPermission: (permiso) => {
     const { user } = get();
     
-    // Soportar tanto estructura nueva (rol.permisos) como antigua (rol_permisos)
-    const permisos = user?.rol?.permisos || user?.rol_permisos;
+    // Soportar múltiples estructuras:
+    // - user.permisos (actual desde login)
+    // - user.rol.permisos (estructura anidada)
+    // - user.rol_permisos (backward compatibility)
+    const permisos = user?.permisos || user?.rol?.permisos || user?.rol_permisos;
     
     if (!user || !permisos) {
       return false;

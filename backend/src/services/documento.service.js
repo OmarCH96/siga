@@ -5,8 +5,10 @@
 
 const db = require('../config/database');
 const documentoRepository = require('../repositories/documento.repository');
+const tipoDocumentoRepository = require('../repositories/tipoDocumento.repository');
+const auditoriaRepository = require('../repositories/auditoria.repository');
 const log = require('../utils/logger');
-const { NotFoundError, ValidationError } = require('../utils/errors');
+const { NotFoundError, ValidationError, AuthorizationError } = require('../utils/errors');
 
 class DocumentoService {
   /**
@@ -76,27 +78,58 @@ class DocumentoService {
 
   /**
    * Emite un nuevo documento desde el área del usuario
+   * Orquesta validaciones de negocio antes de la emisión
    * @param {Object} datosDocumento - Datos del documento a emitir
-   * @param {number} usuarioId - ID del usuario emisor
-   * @param {number} areaId - ID del área emisora
+   * @param {Object} usuario - Usuario completo con permisos y área
    * @returns {Promise<Object>} Resultado con documentoId, nodoId y folio
    */
-  async emitirDocumento(datosDocumento, usuarioId, areaId) {
-    // Configurar contexto RLS antes de emitir
-    await this.configurarContextoRLS(usuarioId);
-
-    // Validar que si es OFICIO, tenga prestamo_numero_id
-    if (datosDocumento.contexto === 'OFICIO' && !datosDocumento.prestamo_numero_id) {
-      throw new ValidationError('Los documentos de contexto OFICIO requieren un préstamo de número autorizado');
+  async emitirDocumento(datosDocumento, usuario) {
+    // VALIDACIÓN 1: Verificar que el usuario tenga permiso CREAR_DOCUMENTO
+    const permisos = usuario.rol_permisos || usuario.permisos || '';
+    const tienePermiso = permisos === '*' || permisos.includes('CREAR_DOCUMENTO');
+    
+    if (!tienePermiso) {
+      throw new AuthorizationError('No tiene permiso para crear documentos');
     }
+
+    // VALIDACIÓN 2: Verificar que el usuario pertenezca al área de origen
+    if (datosDocumento.area_origen_id && datosDocumento.area_origen_id !== usuario.area_id) {
+      throw new AuthorizationError('Solo puede emitir documentos desde su área asignada');
+    }
+
+    // VALIDACIÓN 3: Si es OFICIO, validar que prestamo_numero_id sea válido y APROBADO
+    if (datosDocumento.contexto === 'OFICIO') {
+      if (!datosDocumento.prestamo_numero_id) {
+        throw new ValidationError('Los documentos de contexto OFICIO requieren un préstamo de número autorizado');
+      }
+
+      // Validar que el préstamo existe y está APROBADO
+      const prestamo = await this._validarPrestamoNumero(datosDocumento.prestamo_numero_id, usuario.id);
+      
+      if (!prestamo) {
+        throw new ValidationError('El préstamo de número especificado no existe');
+      }
+
+      if (prestamo.estado !== 'APROBADO') {
+        throw new ValidationError(`El préstamo de número debe estar APROBADO. Estado actual: ${prestamo.estado}`);
+      }
+
+      // Verificar que no haya vencido
+      if (prestamo.fecha_vencimiento && new Date(prestamo.fecha_vencimiento) < new Date()) {
+        throw new ValidationError('El préstamo de número ha vencido');
+      }
+    }
+
+    // Configurar contexto RLS antes de emitir
+    await this.configurarContextoRLS(usuario.id);
 
     // Preparar datos asegurando que usuario y área sean los del token
     const datosEmision = {
       tipo_documento_id: datosDocumento.tipo_documento_id,
       asunto: datosDocumento.asunto,
       contenido: datosDocumento.contenido || null,
-      usuario_creador_id: usuarioId,
-      area_origen_id: areaId,
+      usuario_creador_id: usuario.id,
+      area_origen_id: usuario.area_id, // Siempre usar el área del usuario autenticado
       fecha_limite: datosDocumento.fecha_limite || null,
       prioridad: datosDocumento.prioridad || 'MEDIA',
       instrucciones: datosDocumento.instrucciones || null,
@@ -108,9 +141,25 @@ class DocumentoService {
     // Llamar al repositorio para ejecutar el stored procedure
     const resultado = await documentoRepository.emitirDocumento(datosEmision);
 
+    // Registrar evento en auditoría
+    await auditoriaRepository.registrarEvento({
+      documentoId: resultado.p_documento_id,
+      accion: 'DOCUMENTO_EMITIDO',
+      descripcion: `Documento emitido con folio ${resultado.p_folio_emision}`,
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
+      detalles: JSON.stringify({
+        tipo_documento_id: datosEmision.tipo_documento_id,
+        contexto: datosEmision.contexto,
+        prioridad: datosEmision.prioridad,
+        prestamo_numero_id: datosEmision.prestamo_numero_id
+      }),
+      ipAddress: usuario.ip_address || null
+    });
+
     log.info('Documento emitido exitosamente', {
-      usuarioId,
-      areaId,
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
       documentoId: resultado.p_documento_id,
       folio: resultado.p_folio_emision,
     });
@@ -119,6 +168,386 @@ class DocumentoService {
       documentoId: resultado.p_documento_id,
       nodoId: resultado.p_nodo_id,
       folio: resultado.p_folio_emision,
+    };
+  }
+
+  /**
+   * Valida si un turno es permitido desde un área origen a un área destino
+   * Utiliza la función fn_validar_turno de PostgreSQL
+   * @param {number} areaOrigenId - ID del área origen
+   * @param {number} areaDestinoId - ID del área destino
+   * @param {number} usuarioId - ID del usuario (para RLS)
+   * @returns {Promise<Object>} { valido: boolean, mensaje: string|null }
+   */
+  async validarTurno(areaOrigenId, areaDestinoId, usuarioId) {
+    try {
+      // Configurar contexto RLS
+      await this.configurarContextoRLS(usuarioId);
+
+      // Llamar a la función fn_validar_turno
+      // Retorna NULL si es válido, o un mensaje de error si está denegado
+      const query = `
+        SELECT fn_validar_turno($1, $2) as mensaje_error
+      `;
+
+      const result = await db.query(query, [areaOrigenId, areaDestinoId]);
+      const mensajeError = result.rows[0]?.mensaje_error;
+
+      // NULL = válido, cualquier texto = denegado
+      const valido = mensajeError === null || mensajeError === undefined;
+
+      log.info('Validación de turno realizada', {
+        areaOrigenId,
+        areaDestinoId,
+        valido,
+        mensaje: mensajeError,
+      });
+
+      return {
+        valido,
+        mensaje: mensajeError,
+      };
+    } catch (error) {
+      log.error('Error al validar turno', {
+        areaOrigenId,
+        areaDestinoId,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Valida un préstamo de número de oficio (método privado)
+   * @param {number} prestamoId - ID del préstamo
+   * @param {number} usuarioId - ID del usuario (para RLS)
+   * @returns {Promise<Object|null>} Préstamo encontrado o null
+   * @private
+   */
+  async _validarPrestamoNumero(prestamoId, usuarioId) {
+    try {
+      await this.configurarContextoRLS(usuarioId);
+
+      const query = `
+        SELECT 
+          id,
+          estado,
+          fecha_vencimiento,
+          folio_asignado,
+          area_solicitante_id,
+          area_prestamista_id
+        FROM prestamo_numero_oficio
+        WHERE id = $1
+      `;
+
+      const result = await db.query(query, [prestamoId]);
+      return result.rows[0] || null;
+    } catch (error) {
+      log.error('Error al validar préstamo de número', {
+        error: error.message,
+        prestamoId,
+        usuarioId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene un documento por ID verificando permisos de lectura
+   * @param {number} documentoId - ID del documento
+   * @param {Object} usuario - Usuario completo con permisos
+   * @returns {Promise<Object>} Documento completo
+   */
+  async obtenerDocumento(documentoId, usuario) {
+    // Configurar contexto RLS (esto ya filtrará según permisos)
+    await this.configurarContextoRLS(usuario.id);
+
+    // Obtener documento
+    const documento = await documentoRepository.obtenerDocumentoPorId(documentoId, usuario.id);
+    
+    if (!documento) {
+      throw new NotFoundError('Documento no encontrado o sin permisos para verlo');
+    }
+
+    log.info('Documento consultado', {
+      usuarioId: usuario.id,
+      documentoId,
+      folio: documento.folio
+    });
+
+    return documento;
+  }
+
+  /**
+   * Lista documentos emitidos por el usuario/área con paginación
+   * @param {Object} usuario - Usuario completo
+   * @param {Object} filtros - Filtros de búsqueda (page, limit, estado)
+   * @returns {Promise<Object>} { documentos, total, page, limit, totalPages }
+   */
+  async listarMisDocumentos(usuario, filtros = {}) {
+    // Configurar contexto RLS
+    await this.configurarContextoRLS(usuario.id);
+
+    // Llamar al repository con filtros
+    const resultado = await documentoRepository.listarDocumentosEmitidosPorUsuario(
+      usuario.id,
+      usuario.area_id,
+      {
+        page: filtros.page || 1,
+        limit: filtros.limit || 10,
+        estado: filtros.estado || null
+      }
+    );
+
+    log.info('Documentos listados', {
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
+      cantidad: resultado.documentos.length,
+      total: resultado.total,
+      page: resultado.page
+    });
+
+    return resultado;
+  }
+
+  /**
+   * Obtiene el catálogo de tipos de documento activos
+   * @returns {Promise<Array>} Lista de tipos de documento
+   */
+  async obtenerTiposDocumento() {
+    try {
+      const result = await tipoDocumentoRepository.findAll({
+        activo: true,
+        limit: 100 // Límite razonable para catálogo
+      });
+
+      log.info('Catálogo de tipos de documento obtenido', {
+        cantidad: result.rows.length
+      });
+
+      return result.rows;
+    } catch (error) {
+      log.error('Error al obtener tipos de documento', {
+        error: error.message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Turna un documento a un área destino
+   * Orquesta validaciones antes de ejecutar el turno
+   * @param {number} documentoId - ID del documento
+   * @param {number} areaDestinoId - ID del área destino
+   * @param {Object} usuario - Usuario completo con permisos
+   * @param {string} observaciones - Observaciones (opcional)
+   * @param {string} instrucciones - Instrucciones (opcional)
+   * @returns {Promise<Object>} { nodo_nuevo_id }
+   */
+  async turnarDocumento(documentoId, areaDestinoId, usuario, observaciones = null, instrucciones = null) {
+    // VALIDACIÓN 1: Verificar que el documento exista y el usuario tenga acceso
+    await this.configurarContextoRLS(usuario.id);
+    
+    const documento = await documentoRepository.findById(documentoId);
+    if (!documento) {
+      throw new NotFoundError('Documento no encontrado o sin permisos');
+    }
+
+    // VALIDACIÓN 2: Verificar que el documento no esté cancelado o cerrado
+    if (documento.estado === 'CANCELADO' || documento.estado === 'CERRADO') {
+      throw new ValidationError(`No se puede turnar un documento en estado ${documento.estado}`);
+    }
+
+    // Ejecutar turno
+    const resultado = await documentoRepository.turnarDocumento({
+      documento_id: documentoId,
+      area_destino_id: areaDestinoId,
+      usuario_turna_id: usuario.id,
+      observaciones,
+      instrucciones
+    });
+
+    // Registrar evento en auditoría
+    await auditoriaRepository.registrarEvento({
+      documentoId,
+      accion: 'DOCUMENTO_TURNADO',
+      descripcion: `Documento turnado a área ${areaDestinoId}`,
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
+      detalles: JSON.stringify({
+        area_destino_id: areaDestinoId,
+        nodo_nuevo_id: resultado.nodo_nuevo_id,
+        observaciones,
+        instrucciones
+      }),
+      ipAddress: usuario.ip_address || null
+    });
+
+    log.info('Documento turnado exitosamente', {
+      usuarioId: usuario.id,
+      documentoId,
+      areaDestinoId,
+      nodoNuevoId: resultado.nodo_nuevo_id
+    });
+
+    return resultado;
+  }
+
+  /**
+   * Crea copias de conocimiento de un documento para múltiples áreas
+   * @param {number} documentoId - ID del documento
+   * @param {Array<number>} areasIds - IDs de las áreas que recibirán copias
+   * @param {Object} usuario - Usuario completo con permisos
+   * @returns {Promise<Array>} Lista de copias creadas
+   */
+  async crearCopiasConocimiento(documentoId, areasIds, usuario) {
+    // VALIDACIÓN 1: Verificar que el documento exista y el usuario tenga acceso
+    await this.configurarContextoRLS(usuario.id);
+    
+    const documento = await documentoRepository.findById(documentoId);
+    if (!documento) {
+      throw new NotFoundError('Documento no encontrado o sin permisos');
+    }
+
+    // VALIDACIÓN 2: Verificar que haya áreas a las que copiar
+    if (!areasIds || areasIds.length === 0) {
+      throw new ValidationError('Debe especificar al menos un área para copia de conocimiento');
+    }
+
+    // VALIDACIÓN 3: Verificar que no se dupliquen copias (opcional, la BD podría manejarlo)
+    // Por ahora dejamos que la BD maneje duplicados con un índice único si se desea
+
+    // Crear copias para cada área
+    const copiasCreadas = [];
+    
+    for (const areaId of areasIds) {
+      try {
+        const resultado = await documentoRepository.crearCopiaConocimiento({
+          documento_id: documentoId,
+          area_id: areaId,
+          usuario_envia_id: usuario.id
+        });
+        
+        copiasCreadas.push({
+          copia_id: resultado.copia_id,
+          area_id: areaId,
+          success: true
+        });
+
+        // Registrar evento en auditoría
+        await auditoriaRepository.registrarEvento({
+          documentoId,
+          accion: 'COPIA_CONOCIMIENTO_ENVIADA',
+          descripcion: `Copia de conocimiento enviada a área ${areaId}`,
+          usuarioId: usuario.id,
+          areaId: usuario.area_id,
+          detalles: JSON.stringify({
+            area_destino_id: areaId,
+            copia_id: resultado.copia_id
+          }),
+          ipAddress: usuario.ip_address || null
+        });
+      } catch (error) {
+        log.error('Error al crear copia de conocimiento', {
+          documentoId,
+          areaId,
+          error: error.message
+        });
+        
+        copiasCreadas.push({
+          area_id: areaId,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+
+    log.info('Copias de conocimiento procesadas', {
+      usuarioId: usuario.id,
+      documentoId,
+      total: areasIds.length,
+      exitosas: copiasCreadas.filter(c => c.success).length,
+      fallidas: copiasCreadas.filter(c => !c.success).length
+    });
+
+    return copiasCreadas;
+  }
+
+  /**
+   * Recibe un documento confirmando su recepción en el área del usuario
+   * Ejecuta el stored procedure sp_recibir_documento
+   * @param {number} documentoId - ID del documento
+   * @param {Object} usuario - Usuario completo con área e IP
+   * @param {string} observaciones - Observaciones opcionales
+   * @returns {Promise<Object>} { documento_id, nodo_id, folio_recepcion }
+   */
+  async recibirDocumento(documentoId, usuario, observaciones = null) {
+    // Configurar contexto RLS
+    await this.configurarContextoRLS(usuario.id);
+
+    // VALIDACIÓN 1: Verificar que el documento existe y tiene nodo PENDIENTE en el área del usuario
+    const nodosPendientes = await documentoRepository.obtenerNodosPendientesPorDocumento(
+      documentoId,
+      usuario.area_id
+    );
+
+    if (!nodosPendientes || nodosPendientes.length === 0) {
+      throw new NotFoundError(
+        'No se encontró un nodo pendiente para este documento en su área'
+      );
+    }
+
+    if (nodosPendientes.length > 1) {
+      log.warn('Múltiples nodos pendientes encontrados (inconsistencia)', {
+        documentoId,
+        areaId: usuario.area_id,
+        cantidad: nodosPendientes.length
+      });
+    }
+
+    const nodoPendiente = nodosPendientes[0];
+
+    // VALIDACIÓN 2: Verificar que el nodo está en estado PENDIENTE
+    if (nodoPendiente.estado !== 'PENDIENTE') {
+      throw new ValidationError(
+        `El nodo no puede ser recibido. Estado actual: ${nodoPendiente.estado}`
+      );
+    }
+
+    // Ejecutar stored procedure de recepción
+    const resultado = await documentoRepository.recibirDocumento({
+      nodo_id: nodoPendiente.id,
+      usuario_recibe_id: usuario.id,
+      observaciones: observaciones || null
+    });
+
+    // Registrar evento en auditoría
+    await auditoriaRepository.registrarEvento({
+      documentoId,
+      accion: 'DOCUMENTO_RECIBIDO',
+      descripcion: `Documento recibido con folio ${resultado.p_folio_asignado}`,
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
+      detalles: JSON.stringify({
+        nodo_id: nodoPendiente.id,
+        folio_recepcion: resultado.p_folio_asignado,
+        observaciones: observaciones
+      }),
+      ipAddress: usuario.ip_address || null
+    });
+
+    log.info('Documento recibido exitosamente', {
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
+      documentoId,
+      nodoId: nodoPendiente.id,
+      folio: resultado.p_folio_asignado,
+    });
+
+    return {
+      documentoId,
+      nodoId: nodoPendiente.id,
+      folio_recepcion: resultado.p_folio_asignado,
     };
   }
 }

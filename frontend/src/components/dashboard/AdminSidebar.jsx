@@ -12,8 +12,8 @@ const navMain = [
 ];
 
 const navGestion = [
-  { id: 'emision', label: 'Emitir Documento', icon: 'edit_document', path: '/emision' },
-  { id: 'documentos', label: 'Documentos', icon: 'description', path: '/documentos' },
+  // { id: 'emision', label: 'Emitir Documento', icon: 'edit_document', path: '/documentos/emitir' },
+  { id: 'documentos', label: 'Tipo de documentos', icon: 'description', path: '/documentos' },
   { id: 'configuracion', label: 'Configuracion', icon: 'settings', path: '/configuracion' },
 ];
 

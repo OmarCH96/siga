@@ -55,7 +55,7 @@ function App() {
 
         {/* Rutas protegidas por permisos específicos */}
         <Route element={<ProtectedRoute requiredPermission="CREAR_DOCUMENTO" />}>
-          <Route path="/emision" element={<FormularioEmision />} />
+          <Route path="/documentos/emitir" element={<FormularioEmision />} />
         </Route>
 
         {/* Rutas protegidas para cualquier usuario autenticado */}

@@ -107,6 +107,25 @@ export const useBandejaRecepcion = () => {
     return tipos.sort();
   }, [documentos]);
 
+  /**
+   * Recibir un documento pendiente
+   * @param {number} documentoId - ID del documento a recibir
+   * @param {string} observaciones - Observaciones opcionales
+   */
+  const recibirDocumento = useCallback(async (documentoId, observaciones = null) => {
+    try {
+      const response = await documentoService.recibirDocumento(documentoId, observaciones);
+      
+      // Recargar la bandeja después de recibir exitosamente
+      await loadDocumentos();
+      
+      return response;
+    } catch (err) {
+      console.error('Error al recibir documento:', err);
+      throw err;
+    }
+  }, [loadDocumentos]);
+
   // Cargar documentos al montar el componente
   useEffect(() => {
     loadDocumentos();
@@ -127,6 +146,7 @@ export const useBandejaRecepcion = () => {
     actualizarFiltros,
     limpiarFiltros,
     tiposDocumento,
+    recibirDocumento,
     total: documentosFiltrados.length,
     totalSinFiltrar: documentos.length,
   };
