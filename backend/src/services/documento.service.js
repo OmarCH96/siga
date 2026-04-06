@@ -550,6 +550,79 @@ class DocumentoService {
       folio_recepcion: resultado.p_folio_asignado,
     };
   }
+
+  /**
+   * Obtiene el próximo consecutivo que se asignará (vista previa)
+   * Valida que el área y tipo de documento existan y estén activos
+   * @param {number} areaId - ID del área
+   * @param {number} tipoDocumentoId - ID del tipo de documento
+   * @param {number} usuarioId - ID del usuario (para logging)
+   * @returns {Promise<Object>} { consecutivo, folio_completo, clave_area, clave_tipo_doc, anio }
+   */
+  async getProximoConsecutivo(areaId, tipoDocumentoId, usuarioId) {
+    try {
+      // VALIDACIÓN 1: Verificar que el área existe y está activa
+      const queryArea = `
+        SELECT id, clave, nombre, activa 
+        FROM area 
+        WHERE id = $1
+      `;
+      const resultArea = await db.query(queryArea, [areaId]);
+      
+      if (resultArea.rows.length === 0) {
+        throw new NotFoundError(`Área con ID ${areaId} no encontrada`);
+      }
+
+      const area = resultArea.rows[0];
+      if (!area.activa) {
+        throw new ValidationError(`El área ${area.nombre} no está activa`);
+      }
+
+      // VALIDACIÓN 2: Verificar que el tipo de documento existe y está activo
+      const tipoDocumento = await tipoDocumentoRepository.findById(tipoDocumentoId);
+      
+      if (!tipoDocumento) {
+        throw new NotFoundError(`Tipo de documento con ID ${tipoDocumentoId} no encontrado`);
+      }
+
+      if (!tipoDocumento.activo) {
+        throw new ValidationError(`El tipo de documento ${tipoDocumento.nombre} no está activo`);
+      }
+
+      // PASO 3: Obtener el preview del folio completo
+      const preview = await documentoRepository.getPreviewFolioCompleto(
+        areaId,
+        tipoDocumentoId
+      );
+
+      log.info('Preview de consecutivo obtenido', {
+        usuario_id: usuarioId,
+        area_id: areaId,
+        tipo_documento_id: tipoDocumentoId,
+        consecutivo: preview.consecutivo,
+        folio_completo: preview.folio_completo
+      });
+
+      return {
+        consecutivo: preview.consecutivo,
+        folio_completo: preview.folio_completo,
+        clave_area: preview.clave_area,
+        nombre_area: preview.nombre_area,
+        clave_tipo_doc: preview.clave_tipo_doc,
+        nombre_tipo_doc: preview.nombre_tipo_doc,
+        anio: preview.anio
+      };
+
+    } catch (error) {
+      log.error('Error al obtener preview de consecutivo', {
+        error: error.message,
+        usuario_id: usuarioId,
+        area_id: areaId,
+        tipo_documento_id: tipoDocumentoId
+      });
+      throw error;
+    }
+  }
 }
 
 module.exports = new DocumentoService();

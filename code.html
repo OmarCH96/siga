@@ -5,9 +5,10 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>SIGA - Emisión de Documentos</title>
+    <title>Gestión de Unidades Administrativas</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap"
+        rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
     <link
@@ -22,702 +23,790 @@
                         "primary": "#246257",
                         "background-light": "#f6f6f8",
                         "background-dark": "#111621",
-                        "success": "#10b981",
-                        "danger": "#ef4444"
                     },
                     fontFamily: {
-                        "display": ["Inter"]
+                        "display": ["Inter", "sans-serif"]
                     },
-                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
                 },
             },
         }
     </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .material-symbols-outlined {
-            font-size: 20px;
-        }
-
-        /* Modal Animations */
-        .modal-overlay {
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        .modal-content {
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        /* Mejoras visuales */
-        .card-hover {
-            transition: all 0.2s ease;
-        }
-
-        .card-hover:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Tag animation */
-        .tag-item {
-            animation: tagIn 0.2s ease-out;
-        }
-
-        @keyframes tagIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-    </style>
 </head>
 
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
     <div class="flex min-h-screen">
-        <!-- Institutional Sidebar -->
+        <!-- Sidebar Navigation -->
         <aside
-            class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sticky top-0 h-screen">
-            <div class="p-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800">
-                <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
-                    <span class="material-symbols-outlined">account_balance</span>
+            class="w-72 bg-white dark:bg-background-dark border-r border-slate-200 dark:border-slate-800 flex flex-col sticky top-0 h-screen">
+            <div class="p-6 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined">description</span>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold leading-tight">SIGA</h1>
-                    <p class="text-xs text-slate-500">Gestión Administrativa</p>
-                </div>Card
+                    <h1 class="text-base font-bold leading-none">Sistema Documental</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Admin v2.0</p>
+                </div>
             </div>
-            <nav class="flex-1 p-4 space-y-1">
-                <a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            <nav class="flex-1 px-4 space-y-1">
+                <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                     href="#">
                     <span class="material-symbols-outlined">home</span>
                     <span class="text-sm font-medium">Inicio</span>
                 </a>
-                <a class="flex items-center gap-3 px-3 py-2.5 bg-primary/10 text-primary rounded-lg transition-colors"
-                    href="#">
-                    <span class="material-symbols-outlined">edit_document</span>
-                    <span class="text-sm font-semibold">Emitir</span>
+                <a class="flex items-center gap-3 px-3 py-2 bg-primary/10 text-primary rounded-lg" href="#">
+                    <span class="material-symbols-outlined">account_tree</span>
+                    <span class="text-sm font-medium">Unidades Administrativas</span>
                 </a>
-                <a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                     href="#">
-                    <span class="material-symbols-outlined">inbox</span>
-                    <span class="text-sm font-medium">Recepciones</span>
+                    <span class="material-symbols-outlined">article</span>
+                    <span class="text-sm font-medium">Documentos</span>
                 </a>
-                <a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    href="#">
-                    <span class="material-symbols-outlined">send</span>
-                    <span class="text-sm font-medium">Emisiones</span>
-                </a>
-                <a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                     href="#">
                     <span class="material-symbols-outlined">bar_chart</span>
                     <span class="text-sm font-medium">Reportes</span>
                 </a>
+                <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="text-sm font-medium">Configuración</span>
+                </a>
             </nav>
-            <div class="p-4 border-t border-slate-100 dark:border-slate-800">
-                <div class="flex items-center gap-3 p-2">
-                    <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                        <img alt="User Avatar" data-alt="User avatar profile picture"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPkJW_i5gLJ6jSM-Z4oCL2boNqeEXLetiJ7YKXT8P303VHvb5Pc-7zZAZ26_mVfV_GbSIJVvRPcx8GasTCI-MNQP0CbWFmtMrxDfqmiWbeO21nIScSmt_Y9AIEU07MYcfdjapmuVZjU3KXC-ii_OScUJGfn-D3RloIZyTcKv8S-0Sqh-tSC7ViXaOciruoBXdQ8s0eyDaMmbQ9pZ4fqGr2jHSXp172uOhs25yzhwSFQISwKa4vFIRzcAxUUmNAyLz8MISzSzKuCsc" />
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-900">
+                    <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined text-sm">person</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs font-bold truncate">Juan Pérez</p>
-                        <p class="text-[10px] text-slate-500 truncate">Administrador</p>
+                        <p class="text-xs font-bold truncate">Admin User</p>
+                        <p class="text-[10px] text-slate-500 truncate">admin@gob.example</p>
                     </div>
-                    <span class="material-symbols-outlined text-slate-400 cursor-pointer">settings</span>
                 </div>
             </div>
         </aside>
-        <!-- Main Content Area -->
+        <!-- Main Content -->
         <main class="flex-1 flex flex-col">
-            <!-- Top Navbar -->
-            <header
-                class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-8 flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-2 text-slate-500 text-sm">
-                        <span class="material-symbols-outlined">domain</span>
-                        <span class="font-medium">Unidad Administrativa:</span>
+            <!-- Header -->
+            <header class="bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800 px-8 py-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight">Gestión de Unidades Administrativas</h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Administre las dependencias y su
+                            personal autorizado.</p>
                     </div>
-                    <select
-                        class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm font-semibold px-3 py-1.5 focus:ring-2 focus:ring-primary cursor-pointer">
-                        <option>Secretaría de Medio Ambiente</option>
-                        <option>Dirección de Recursos Humanos</option>
-                        <option>Departamento de Contabilidad</option>
-                    </select>
-                </div>
-                <div class="flex items-center gap-4">
-                    <div class="relative group">
-                        <span
-                            class="material-symbols-outlined text-slate-400 cursor-pointer hover:text-primary transition-colors">notifications</span>
-                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-danger rounded-full"></span>
-                    </div>
-                    <div class="h-8 w-px bg-slate-200 dark:bg-slate-800"></div>
-                    <button
-                        class="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
-                        <span class="material-symbols-outlined">logout</span>
+                    <button id="btn-nueva-unidad"
+                        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-lg shadow-sm hover:bg-primary/90 transition-all">
+                        <span class="material-symbols-outlined text-lg">add</span>
+                        <span>Nueva Unidad</span>
                     </button>
+                </div>
+                <!-- Filters & Search -->
+                <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                    <div class="relative flex-1">
+                        <span
+                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                        <input
+                            id="search-input"
+                            class="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary text-sm placeholder:text-slate-500"
+                            placeholder="Buscar unidad por nombre o código ID..." type="text" />
+                    </div>
+                    <div class="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                        <button
+                            data-filter="all"
+                            class="filter-btn px-4 py-1.5 text-xs font-bold bg-white dark:bg-slate-700 shadow-sm rounded-md">Todas</button>
+                        <button
+                            data-filter="active"
+                            class="filter-btn px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700">Activas</button>
+                        <button
+                            data-filter="inactive"
+                            class="filter-btn px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700">Inactivas</button>
+                    </div>
                 </div>
             </header>
-            <!-- Form Content -->
-            <div class="p-4 max-w-7xl mx-auto w-full space-y-4 pb-24">
-                <!-- Breadcrumbs & Header -->
-                <div>
-                    <nav class="flex text-xs text-slate-400 mb-1 gap-2 items-center">
-                        <span>Gestión Administrativa</span>
-                        <span class="material-symbols-outlined !text-[12px]">chevron_right</span>
-                        <span class="text-primary font-medium">Nueva Emisión</span>
-                    </nav>
-                    <h2 class="text-xl font-black tracking-tight text-slate-900 dark:text-white">Emisión de Documento
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Complete los campos requeridos para la generación y firma
-                        del oficio
-                        institucional.</p>
-                </div>
-                <!-- Card 1: Folio y Datos -->
-                <section
-                    class="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div
-                        class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                        <div class="flex items-center justify-between gap-4">
-                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary !text-base">tag</span>
-                                Folio y Datos del Documento
-                            </h3>
-                            <button onclick="openModal('modalFolio')"
-                                class="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0">
-                                <span class="material-symbols-outlined !text-sm">autorenew</span> Solicitar folio
-                            </button>
-                        </div>
-                    </div>
-                    <div class="p-4 grid grid-cols-1 md:grid-cols-8 gap-3 items-end">
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Tipo de
-                                documento</label>
-                            <select
-                                class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm py-1.5">
-                                <option>Oficio Circular</option>
-                                <option>Memorándum</option>
-                                <option>Circular Informativa</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Folio</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 font-mono py-1.5"
-                                disabled="" type="text" value="OC" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Número</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 font-mono py-1.5"
-                                disabled="" type="text" value="0042" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Año</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 font-mono py-1.5"
-                                disabled="" type="text" value="2023" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Referencia</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 font-mono font-bold py-1.5"
-                                disabled="" type="text" value="SMADSOT/OC/0042/2023" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Fecha</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 py-1.5"
-                                disabled="" type="text" value="12/10/2023" />
-                        </div>
-                    </div>
-                </section>
-                <!-- Card 2: Datos del Remitente -->
-                <section
-                    class="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div
-                        class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary !text-base">person</span>
-                            Datos del Remitente
-                        </h3>
-                    </div>
-                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dependencia</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-500"
-                                disabled="" type="text"
-                                value="Secretaría de Medio Ambiente, Desarrollo Sustentable y Ordenamiento Territorial" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Unidad
-                                Administrativa</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-500"
-                                disabled="" type="text" value="Dirección General de Normatividad" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Cargo del
-                                remitente</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-500"
-                                disabled="" type="text" value="Director de Área B" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Remitente</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-500 font-bold"
-                                disabled="" type="text" value="Lic. Juan Pérez Maldonado" />
-                        </div>
-                    </div>
-                </section>
-                <!-- Card 3: Detalles del Contenido -->
-                <section
-                    class="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div
-                        class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary !text-base">description</span>
-                            Detalles del Contenido
-                        </h3>
-                    </div>
-                    <div class="p-4 space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Tema / Asunto</label>
-                            <input
-                                class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary"
-                                placeholder="Escriba el tema principal del documento..." type="text" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Síntesis</label>
-                            <textarea
-                                class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary"
-                                placeholder="Resumen detallado del contenido..." rows="2"></textarea>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Fecha límite de
-                                    atención</label>
-                                <input
-                                    class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
-                                    type="date" />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Estatus</label>
-                                <input
-                                    class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 font-bold"
-                                    disabled="" type="text" value="BORRADOR" />
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <!-- Card 4: Destinatarios y Copias -->
-                <section
-                    class="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div
-                        class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary !text-base">group</span>
-                            Destinatarios y Copias
-                        </h3>
-                    </div>
-                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-3">
-                            <label class="block text-xs font-bold text-slate-500 uppercase">Destinatarios</label>
-                            <select
-                                class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
-                                <option value="">Seleccionar destinatario...</option>
-                                <option>Dra. María García - Dir. General Administrativa</option>
-                                <option>Ing. Roberto Sosa - Jefe de Oficina Técnica</option>
-                            </select>
-                            <div
-                                class="flex flex-wrap gap-2 min-h-[32px] p-2 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+            <!-- Grid View -->
+            <section class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Unit Card 1 -->
+                    <div data-unit-id="1"
+                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                        <div class="p-5 flex-1">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined text-2xl">account_balance</span>
+                                </div>
                                 <span
-                                    class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20">
-                                    Dra. María García <button class="material-symbols-outlined !text-xs">close</button>
-                                </span>
+                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
                             </div>
-                        </div>
-                        <div class="space-y-3">
-                            <label class="block text-xs font-bold text-slate-500 uppercase">Copias de conocimiento
-                                (CC)</label>
-                            <select
-                                class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
-                                <option value="">Seleccionar CC...</option>
-                                <option>Archivo de Trámite</option>
-                                <option>Coordinación Jurídica</option>
-                            </select>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Dirección General</h3>
+                            <p
+                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                                Código: DG-001</p>
                             <div
-                                class="flex flex-wrap gap-2 min-h-[32px] p-2 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                                <span
-                                    class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-full">
-                                    Archivo de Trámite <button class="material-symbols-outlined !text-xs">close</button>
-                                </span>
+                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <span class="material-symbols-outlined text-sm">group</span>
+                                <span class="text-xs">12 Usuarios asignados</span>
                             </div>
                         </div>
-                    </div>
-                </section>
-                <!-- Card 5: Control y Seguimiento -->
-                <section
-                    class="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div
-                        class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary !text-base">visibility</span>
-                            Control y Seguimiento
-                        </h3>
-                    </div>
-                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Capturó</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400"
-                                disabled="" type="text" value="Lic. Andrea Méndez" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Fecha de
-                                captura</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400"
-                                disabled="" type="text" value="12/10/2023 10:45 AM" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Respuesta
-                                (Lectura)</label>
-                            <textarea
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 resize-none"
-                                disabled="" rows="1">Sin respuesta previa...</textarea>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Aprobó</label>
-                            <input
-                                class="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400"
-                                disabled="" placeholder="Pendiente de aprobación..." type="text" />
-                        </div>
-                    </div>
-                </section>
-                <!-- Card 6: Archivos Adjuntos -->
-                <section
-                    class="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div
-                        class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary !text-base">attach_file</span>
-                                Archivos Adjuntos
-                            </h3>
-                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                <span class="material-symbols-outlined !text-sm">add</span> Agregar más archivos
-                            </button>
-                        </div>
-                    </div>
-                    <div class="p-4">
                         <div
-                            class="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center flex flex-col items-center justify-center bg-slate-50/30 dark:bg-slate-800/20">
-                            <span class="material-symbols-outlined text-3xl text-slate-300 mb-1">upload_file</span>
-                            <p class="text-xs text-slate-500">Arrastra y suelta archivos o haz clic para subir</p>
-                        </div>
-                        <div class="mt-4 space-y-2">
-                            <div
-                                class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
-                                <div class="flex items-center gap-3">
-                                    <span class="material-symbols-outlined text-danger">picture_as_pdf</span>
-                                    <div class="min-w-0">
-                                        <p class="text-sm font-semibold truncate">anexo_tecnico_01.pdf</p>
-                                        <p class="text-[10px] text-slate-500">2.4 MB</p>
+                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
+                                    <span class="material-symbols-outlined text-xl">edit</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer ml-1"
+                                    title="Activar/Desactivar">
+                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
+                                    <div
+                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
                                     </div>
-                                </div>
-                                <button
-                                    class="material-symbols-outlined text-slate-400 hover:text-danger transition-colors">delete</button>
+                                </label>
                             </div>
-                            <div
-                                class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
-                                <div class="flex items-center gap-3">
-                                    <span class="material-symbols-outlined text-primary">description</span>
-                                    <div class="min-w-0">
-                                        <p class="text-sm font-semibold truncate">documento_base.docx</p>
-                                        <p class="text-[10px] text-slate-500">842 KB</p>
-                                    </div>
-                                </div>
-                                <button
-                                    class="material-symbols-outlined text-slate-400 hover:text-danger transition-colors">delete</button>
-                            </div>
+                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                                <span>Ver Usuarios</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </button>
                         </div>
                     </div>
-                </section>
-            </div>
-            <!-- Sticky Footer Actions -->
-            <footer
-                class="fixed bottom-0 left-64 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between z-20">
-                <div class="flex items-center gap-3">
-                    <button onclick="openModal('modalFirma')"
-                        class="px-5 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center gap-2">
-                        <span class="material-symbols-outlined !text-base">key</span> Firma Electrónica
+                    <!-- Unit Card 2 -->
+                    <div data-unit-id="2"
+                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                        <div class="p-5 flex-1">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined text-2xl">groups</span>
+                                </div>
+                                <span
+                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Recursos Humanos</h3>
+                            <p
+                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                                Código: RRHH-020</p>
+                            <div
+                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <span class="material-symbols-outlined text-sm">group</span>
+                                <span class="text-xs">24 Usuarios asignados</span>
+                            </div>
+                        </div>
+                        <div
+                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
+                                    <span class="material-symbols-outlined text-xl">edit</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer ml-1">
+                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
+                                    <div
+                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+                                    </div>
+                                </label>
+                            </div>
+                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                                <span>Ver Usuarios</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Unit Card 3 -->
+                    <div data-unit-id="3"
+                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                        <div class="p-5 flex-1">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined text-2xl">gavel</span>
+                                </div>
+                                <span
+                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">Inactiva</span>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Departamento Legal</h3>
+                            <p
+                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                                Código: LEG-045</p>
+                            <div
+                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <span class="material-symbols-outlined text-sm">group</span>
+                                <span class="text-xs">8 Usuarios asignados</span>
+                            </div>
+                        </div>
+                        <div
+                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
+                                    <span class="material-symbols-outlined text-xl">edit</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer ml-1">
+                                    <input class="toggle-unit-status sr-only peer" type="checkbox" />
+                                    <div
+                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+                                    </div>
+                                </label>
+                            </div>
+                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                                <span>Ver Usuarios</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Unit Card 4 -->
+                    <div data-unit-id="4"
+                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                        <div class="p-5 flex-1">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined text-2xl">payments</span>
+                                </div>
+                                <span
+                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Finanzas</h3>
+                            <p
+                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                                Código: FIN-012</p>
+                            <div
+                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <span class="material-symbols-outlined text-sm">group</span>
+                                <span class="text-xs">15 Usuarios asignados</span>
+                            </div>
+                        </div>
+                        <div
+                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
+                                    <span class="material-symbols-outlined text-xl">edit</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer ml-1">
+                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
+                                    <div
+                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+                                    </div>
+                                </label>
+                            </div>
+                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                                <span>Ver Usuarios</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Unit Card 5 -->
+                    <div data-unit-id="5"
+                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                        <div class="p-5 flex-1">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined text-2xl">precision_manufacturing</span>
+                                </div>
+                                <span
+                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Operaciones</h3>
+                            <p
+                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                                Código: OPS-110</p>
+                            <div
+                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <span class="material-symbols-outlined text-sm">group</span>
+                                <span class="text-xs">42 Usuarios asignados</span>
+                            </div>
+                        </div>
+                        <div
+                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
+                                    <span class="material-symbols-outlined text-xl">edit</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer ml-1">
+                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
+                                    <div
+                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+                                    </div>
+                                </label>
+                            </div>
+                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                                <span>Ver Usuarios</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Unit Card 6 -->
+                    <div data-unit-id="6"
+                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                        <div class="p-5 flex-1">
+                            <div class="flex justify-between items-start mb-4">
+                                <div
+                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined text-2xl">campaign</span>
+                                </div>
+                                <span
+                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Comunicaciones</h3>
+                            <p
+                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                                Código: COM-005</p>
+                            <div
+                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                                <span class="material-symbols-outlined text-sm">group</span>
+                                <span class="text-xs">6 Usuarios asignados</span>
+                            </div>
+                        </div>
+                        <div
+                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
+                                    <span class="material-symbols-outlined text-xl">edit</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer ml-1">
+                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
+                                    <div
+                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+                                    </div>
+                                </label>
+                            </div>
+                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                                <span>Ver Usuarios</span>
+                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Add New Unit Placeholder Card -->
+                    <button id="btn-nueva-unidad-card"
+                        class="bg-slate-100/50 dark:bg-slate-800/30 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-8 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group">
+                        <div
+                            class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 group-hover:bg-primary group-hover:text-white transition-all">
+                            <span class="material-symbols-outlined">add</span>
+                        </div>
+                        <p class="mt-4 font-bold text-slate-600 dark:text-slate-400 group-hover:text-primary">Nueva
+                            Unidad</p>
+                        <p class="text-xs text-slate-400 mt-1">Haga clic para expandir el sistema</p>
                     </button>
                 </div>
+            </section>
+            <!-- Pagination -->
+            <footer
+                class="mt-auto px-8 py-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <p class="text-xs font-medium text-slate-500">Mostrando 6 de 24 unidades administrativas</p>
                 <div class="flex items-center gap-2">
                     <button
-                        class="px-5 py-2 bg-success text-white text-sm font-bold rounded-lg hover:bg-success/90 transition-all">
-                        Guardar
+                        class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-800 text-slate-400 hover:bg-slate-100">
+                        <span class="material-symbols-outlined text-sm">chevron_left</span>
                     </button>
                     <button
-                        class="px-5 py-2 bg-success text-white text-sm font-bold rounded-lg hover:bg-success/90 transition-all">
-                        Enviar
-                    </button>
-                    <div class="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1"></div>
+                        class="w-8 h-8 flex items-center justify-center rounded bg-primary text-white text-xs font-bold">1</button>
                     <button
-                        class="px-5 py-2 text-danger hover:bg-danger/10 text-sm font-bold rounded-lg transition-all">
-                        Cancelar
+                        class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-800 text-slate-600 text-xs font-bold hover:bg-slate-100">2</button>
+                    <button
+                        class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-800 text-slate-600 text-xs font-bold hover:bg-slate-100">3</button>
+                    <button
+                        class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-800 text-slate-400 hover:bg-slate-100">
+                        <span class="material-symbols-outlined text-sm">chevron_right</span>
                     </button>
                 </div>
             </footer>
         </main>
     </div>
-    <!-- Modal: Firma Electrónica -->
-    <div id="modalFirma"
-        class="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-        <div
-            class="modal-content bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md p-8 shadow-2xl border border-slate-200 dark:border-slate-800 mx-4">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-bold flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">verified_user</span> Firma Electrónica
-                </h2>
-                <button onclick="closeModal('modalFirma')"
-                    class="material-symbols-outlined text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                    close
-                </button>
-            </div>
-            <p class="text-sm text-slate-500 mb-6">Cargue sus archivos de certificados para firmar digitalmente el
-                documento.</p>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Archivo .key</label>
-                    <input type="file" accept=".key"
-                        class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Archivo .cer</label>
-                    <input type="file" accept=".cer"
-                        class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Contraseña</label>
-                    <input type="password" placeholder="••••••••"
-                        class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary focus:border-primary">
-                </div>
-                <div class="flex gap-3 mt-6">
-                    <button onclick="closeModal('modalFirma')"
-                        class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                        Cancelar
-                    </button>
-                    <button
-                        class="flex-1 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/30">
-                        Firmar Documento
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Modal: Solicitar Folio -->
-    <div id="modalFolio"
-        class="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-        <div
-            class="modal-content bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl p-8 shadow-2xl border border-slate-200 dark:border-slate-800 mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-bold flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">folder_open</span> Solicitar Folio
-                </h2>
-                <button onclick="closeModal('modalFolio')"
-                    class="material-symbols-outlined text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                    close
-                </button>
-            </div>
-            <p class="text-sm text-slate-500 mb-6">Seleccione la jerarquía de áreas para generar el folio
-                correspondiente.</p>
-
-            <div class="space-y-5">
-                <!-- Secretaría -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Secretaría</label>
-                    <select
-                        class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary focus:border-primary">
-                        <option>Secretaría de Medio Ambiente, Desarrollo Sustentable y Ordenamiento Territorial</option>
-                        <option>Secretaría de Educación</option>
-                        <option>Secretaría de Salud</option>
-                        <option>Secretaría de Finanzas</option>
-                    </select>
-                </div>
-
-                <!-- Subsecretaría -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Subsecretaría</label>
-                    <select
-                        class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary focus:border-primary">
-                        <option value="">Seleccionar subsecretaría...</option>
-                        <option>Subsecretaría de Desarrollo Sustentable</option>
-                        <option>Subsecretaría de Ordenamiento Territorial</option>
-                    </select>
-                </div>
-
-                <!-- Dirección General -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dirección General</label>
-                    <select
-                        class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary focus:border-primary">
-                        <option value="">Seleccionar dirección general...</option>
-                        <option>Dirección General de Normatividad</option>
-                        <option>Dirección General de Impacto Ambiental</option>
-                        <option>Dirección General de Recursos Naturales</option>
-                    </select>
-                </div>
-
-                <!-- Dirección de Área -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dirección de Área</label>
-                    <select
-                        class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary focus:border-primary">
-                        <option value="">Seleccionar dirección de área...</option>
-                        <option>Dirección de Área A</option>
-                        <option>Dirección de Área B</option>
-                        <option>Dirección de Área C</option>
-                    </select>
-                </div>
-
-                <!-- Vista previa del folio -->
-                <div
-                    class="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="material-symbols-outlined text-primary !text-sm">info</span>
-                        <p class="text-xs font-bold text-slate-500 uppercase">Vista previa del folio</p>
+    <!-- Modal: Nueva/Editar Unidad -->
+    <div id="modal-unit" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary">account_tree</span>
+                        </div>
+                        <h3 id="modal-unit-title" class="text-xl font-bold">Nueva Unidad Administrativa</h3>
                     </div>
-                    <p class="text-lg font-bold font-mono text-primary">SMADSOT/OC/0042/2023</p>
-                    <p class="text-xs text-slate-500 mt-1">Esta será la nomenclatura del documento</p>
+                    <button id="btn-close-modal-unit" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
                 </div>
-
-                <!-- Botones de acción -->
-                <div class="flex gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
-                    <button onclick="closeModal('modalFolio')"
-                        class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+            </div>
+            <form id="form-unit" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-bold mb-2">Nombre de la Unidad <span class="text-red-500">*</span></label>
+                    <input 
+                        type="text" 
+                        id="unit-name" 
+                        name="nombre"
+                        class="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                        placeholder="Ej: Dirección de Recursos Humanos"
+                        required
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Dependencia Superior</label>
+                    <select 
+                        id="unit-parent" 
+                        name="dependencia"
+                        class="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                    >
+                        <option value="">Ninguna (Unidad principal)</option>
+                        <option value="1">Dirección General</option>
+                        <option value="2">Recursos Humanos</option>
+                        <option value="3">Departamento Legal</option>
+                        <option value="4">Finanzas</option>
+                        <option value="5">Operaciones</option>
+                        <option value="6">Comunicaciones</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Tipo de Area</label>
+                    <select 
+                        id="unit-type" 
+                        name="tipo_area"
+                        class="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                    >
+                        <option value="">Ninguna (Tipo de area)</option>
+                        <option value="1">Oficialía</option>
+                        <option value="2">Secretaría</option>
+                        <option value="3">Secretaría Particular</option>
+                        <option value="4">Subsecretaría</option>
+                        <option value="5">Instituto</option>
+                        <option value="6">Dirección</option>
+                        <option value="7">Dirección General</option>
+                        <option value="8">Subdirección</option>
+                        <option value="9">Coordinación</option>
+                        <option value="10">Departamento</option>
+                        <option value="11">Unidad</option>
+                        <option value="12">Comité</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Código/Determinante <span class="text-red-500">*</span></label>
+                    <input 
+                        type="text" 
+                        id="unit-code" 
+                        name="codigo"
+                        class="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                        placeholder="Ej: DRH-001"
+                        required
+                    />
+                    <p class="mt-1.5 text-xs text-slate-500">Código único que identifica a la unidad administrativa</p>
+                </div>
+                <div class="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <button 
+                        type="submit"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all"
+                    >
+                        <span class="material-symbols-outlined text-lg">save</span>
+                        <span id="btn-submit-text">Crear Unidad</span>
+                    </button>
+                    <button 
+                        type="button"
+                        id="btn-cancel-modal-unit"
+                        class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                    >
                         Cancelar
                     </button>
-                    <button
-                        class="flex-1 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all hover:shadow-lg hover:shadow-primary/30 flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined !text-sm">check_circle</span>
-                        Generar Folio
-                    </button>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmar Desactivación -->
+    <div id="modal-confirm-disable" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-amber-600 dark:text-amber-400">warning</span>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold mb-2">¿Desactivar Unidad Administrativa?</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                            Está a punto de <span class="font-bold" id="confirm-action-text">desactivar</span> la unidad:
+                        </p>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white" id="confirm-unit-name">-</p>
+                        <p class="text-xs text-slate-500 mt-3">
+                            Esta acción puede revertirse más adelante desde esta misma pantalla.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3 rounded-b-2xl">
+                <button 
+                    id="btn-cancel-disable"
+                    class="px-5 py-2 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all"
+                >
+                    Cancelar
+                </button>
+                <button 
+                    id="btn-confirm-disable"
+                    class="px-5 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all flex items-center gap-2"
+                >
+                    <span class="material-symbols-outlined text-lg">check</span>
+                    <span>Confirmar</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript para funcionalidad de modales -->
+    <!-- JavaScript -->
     <script>
-        // Funciones para abrir y cerrar modales
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            }
+        // Estado de la aplicación
+        const appState = {
+            units: [
+                { id: 1, name: 'Dirección General', code: 'DG-001', parent: null, active: true, users: 12 },
+                { id: 2, name: 'Recursos Humanos', code: 'RRHH-020', parent: null, active: true, users: 24 },
+                { id: 3, name: 'Departamento Legal', code: 'LEG-045', parent: null, active: false, users: 8 },
+                { id: 4, name: 'Finanzas', code: 'FIN-012', parent: null, active: true, users: 15 },
+                { id: 5, name: 'Operaciones', code: 'OPS-110', parent: null, active: true, users: 42 },
+                { id: 6, name: 'Comunicaciones', code: 'COM-005', parent: null, active: true, users: 6 }
+            ],
+            currentEditId: null,
+            currentToggleElement: null
+        };
+
+        // Elementos del DOM
+        const elements = {
+            modalUnit: document.getElementById('modal-unit'),
+            modalConfirmDisable: document.getElementById('modal-confirm-disable'),
+            formUnit: document.getElementById('form-unit'),
+            btnNuevaUnidad: document.getElementById('btn-nueva-unidad'),
+            btnNuevaUnidadCard: document.getElementById('btn-nueva-unidad-card'),
+            btnCloseModalUnit: document.getElementById('btn-close-modal-unit'),
+            btnCancelModalUnit: document.getElementById('btn-cancel-modal-unit'),
+            btnCancelDisable: document.getElementById('btn-cancel-disable'),
+            btnConfirmDisable: document.getElementById('btn-confirm-disable'),
+            modalUnitTitle: document.getElementById('modal-unit-title'),
+            btnSubmitText: document.getElementById('btn-submit-text'),
+            unitName: document.getElementById('unit-name'),
+            unitCode: document.getElementById('unit-code'),
+            unitParent: document.getElementById('unit-parent'),
+            confirmUnitName: document.getElementById('confirm-unit-name'),
+            confirmActionText: document.getElementById('confirm-action-text'),
+            searchInput: document.getElementById('search-input'),
+            filterButtons: document.querySelectorAll('.filter-btn')
+        };
+
+        // Funciones de utilidad
+        function showModal(modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
 
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.add('hidden');
-                document.body.style.overflow = 'auto';
-            }
+        function hideModal(modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
         }
 
-        // Cerrar modal al hacer clic en el overlay
-        document.addEventListener('click', function (event) {
-            if (event.target.classList.contains('modal-overlay')) {
-                closeModal(event.target.id);
+        function resetForm() {
+            elements.formUnit.reset();
+            appState.currentEditId = null;
+            elements.modalUnitTitle.textContent = 'Nueva Unidad Administrativa';
+            elements.btnSubmitText.textContent = 'Crear Unidad';
+        }
+
+        // Event Listeners - Modal Nueva/Editar Unidad
+        elements.btnNuevaUnidad.addEventListener('click', () => {
+            resetForm();
+            showModal(elements.modalUnit);
+        });
+
+        elements.btnNuevaUnidadCard.addEventListener('click', () => {
+            resetForm();
+            showModal(elements.modalUnit);
+        });
+
+        elements.btnCloseModalUnit.addEventListener('click', () => {
+            hideModal(elements.modalUnit);
+            resetForm();
+        });
+
+        elements.btnCancelModalUnit.addEventListener('click', () => {
+            hideModal(elements.modalUnit);
+            resetForm();
+        });
+
+        // Click fuera del modal para cerrar
+        elements.modalUnit.addEventListener('click', (e) => {
+            if (e.target === elements.modalUnit) {
+                hideModal(elements.modalUnit);
+                resetForm();
             }
         });
 
-        // Cerrar modal con la tecla ESC
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                const modals = document.querySelectorAll('.modal-overlay:not(.hidden)');
-                modals.forEach(modal => {
-                    closeModal(modal.id);
+        elements.modalConfirmDisable.addEventListener('click', (e) => {
+            if (e.target === elements.modalConfirmDisable) {
+                hideModal(elements.modalConfirmDisable);
+            }
+        });
+
+        // Submit del formulario
+        elements.formUnit.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: elements.unitName.value,
+                code: elements.unitCode.value,
+                parent: elements.unitParent.value || null
+            };
+
+            if (appState.currentEditId) {
+                // Modo edición
+                console.log('Editando unidad:', appState.currentEditId, formData);
+                alert(`Unidad "${formData.name}" actualizada exitosamente`);
+            } else {
+                // Modo creación
+                console.log('Creando nueva unidad:', formData);
+                alert(`Unidad "${formData.name}" creada exitosamente`);
+            }
+
+            hideModal(elements.modalUnit);
+            resetForm();
+            
+            // Aquí iría la llamada al API para guardar los datos
+        });
+
+        // Event Listeners - Botones de Editar
+        document.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.btn-edit-unit');
+            if (editBtn) {
+                const card = editBtn.closest('[data-unit-id]');
+                const unitId = parseInt(card.dataset.unitId);
+                const unit = appState.units.find(u => u.id === unitId);
+                
+                if (unit) {
+                    appState.currentEditId = unitId;
+                    elements.modalUnitTitle.textContent = 'Editar Unidad Administrativa';
+                    elements.btnSubmitText.textContent = 'Guardar Cambios';
+                    elements.unitName.value = unit.name;
+                    elements.unitCode.value = unit.code;
+                    elements.unitParent.value = unit.parent || '';
+                    showModal(elements.modalUnit);
+                }
+            }
+        });
+
+        // Event Listeners - Toggle Status
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('toggle-unit-status')) {
+                const card = e.target.closest('[data-unit-id]');
+                const unitId = parseInt(card.dataset.unitId);
+                const unit = appState.units.find(u => u.id === unitId);
+                
+                if (unit) {
+                    const newStatus = e.target.checked;
+                    const actionText = newStatus ? 'activar' : 'desactivar';
+                    
+                    // Guardar el elemento toggle y el nuevo estado
+                    appState.currentToggleElement = e.target;
+                    appState.currentToggleNewStatus = newStatus;
+                    
+                    // Revertir temporalmente el cambio hasta la confirmación
+                    e.target.checked = !newStatus;
+                    
+                    // Configurar y mostrar modal de confirmación
+                    elements.confirmUnitName.textContent = unit.name;
+                    elements.confirmActionText.textContent = actionText;
+                    showModal(elements.modalConfirmDisable);
+                }
+            }
+        });
+
+        // Event Listeners - Confirmar/Cancelar Desactivación
+        elements.btnCancelDisable.addEventListener('click', () => {
+            hideModal(elements.modalConfirmDisable);
+            appState.currentToggleElement = null;
+        });
+
+        elements.btnConfirmDisable.addEventListener('click', () => {
+            if (appState.currentToggleElement) {
+                // Aplicar el cambio
+                appState.currentToggleElement.checked = appState.currentToggleNewStatus;
+                
+                const card = appState.currentToggleElement.closest('[data-unit-id]');
+                const unitId = parseInt(card.dataset.unitId);
+                const unit = appState.units.find(u => u.id === unitId);
+                
+                if (unit) {
+                    unit.active = appState.currentToggleNewStatus;
+                    console.log(`Unidad ${unit.name} ${unit.active ? 'activada' : 'desactivada'}`);
+                    
+                    // Aquí iría la llamada al API para actualizar el estado
+                }
+                
+                appState.currentToggleElement = null;
+            }
+            hideModal(elements.modalConfirmDisable);
+        });
+
+        // Tecla ESC para cerrar modales
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (!elements.modalUnit.classList.contains('hidden')) {
+                    hideModal(elements.modalUnit);
+                    resetForm();
+                }
+                if (!elements.modalConfirmDisable.classList.contains('hidden')) {
+                    hideModal(elements.modalConfirmDisable);
+                }
+            }
+        });
+
+        // Funcionalidad de búsqueda
+        elements.searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('[data-unit-id]');
+            
+            cards.forEach(card => {
+                const name = card.querySelector('h3').textContent.toLowerCase();
+                const code = card.querySelector('p').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || code.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Funcionalidad de filtros
+        elements.filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = btn.dataset.filter;
+                const cards = document.querySelectorAll('[data-unit-id]');
+                
+                // Actualizar estado visual de los botones
+                elements.filterButtons.forEach(b => {
+                    b.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm');
+                    b.classList.add('text-slate-500', 'hover:text-slate-700');
                 });
-            }
+                btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm');
+                btn.classList.remove('text-slate-500', 'hover:text-slate-700');
+                
+                // Filtrar tarjetas
+                cards.forEach(card => {
+                    const unitId = parseInt(card.dataset.unitId);
+                    const unit = appState.units.find(u => u.id === unitId);
+                    
+                    if (!unit) return;
+                    
+                    if (filter === 'all') {
+                        card.style.display = '';
+                    } else if (filter === 'active') {
+                        card.style.display = unit.active ? '' : 'none';
+                    } else if (filter === 'inactive') {
+                        card.style.display = !unit.active ? '' : 'none';
+                    }
+                });
+            });
         });
 
-        // Funcionalidad de arrastrar y soltar archivos
-        const dropZone = document.querySelector('.border-dashed');
-        if (dropZone) {
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, preventDefaults, false);
-            });
-
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, highlight, false);
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, unhighlight, false);
-            });
-
-            function highlight(e) {
-                dropZone.classList.add('border-primary', 'bg-primary/5');
-            }
-
-            function unhighlight(e) {
-                dropZone.classList.remove('border-primary', 'bg-primary/5');
-            }
-
-            dropZone.addEventListener('drop', handleDrop, false);
-
-            function handleDrop(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                console.log('Archivos cargados:', files);
-                // Aquí puedes agregar la lógica para manejar los archivos
-            }
-        }
+        console.log('Sistema de Gestión de Unidades Administrativas cargado ✓');
     </script>
 </body>
-<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?</p>
+
 </html>

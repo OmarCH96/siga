@@ -41,3 +41,4 @@ backend/temp/
 *.sh
 *.sql
 *.env
+!sigavFoliosIndependientesv4.sql

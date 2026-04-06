@@ -6,7 +6,7 @@ import { useAuth } from '@hooks/useAuth';
 
 const navMain = [
   { id: 'inicio', label: 'Inicio', icon: 'home', path: '/dashboard' },
-  { id: 'unidades', label: 'Unidades', icon: 'business', path: '/unidades' },
+  { id: 'unidades', label: 'Unidades Administrativas', icon: 'business', path: '/unidades' },
   { id: 'reportes', label: 'Reportes', icon: 'bar_chart', path: '/reportes' },
   { id: 'usuarios', label: 'Usuarios', icon: 'people', path: '/usuarios' },
 ];

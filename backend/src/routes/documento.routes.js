@@ -66,6 +66,23 @@ router.get('/bandeja-recepcion', documentoController.getBandejaRecepcion);
 router.get('/validar-turno', documentoController.validarTurno);
 
 /**
+ * GET /api/documentos/preview-consecutivo
+ * Obtener preview del próximo número consecutivo que se asignará
+ * Query params: areaId, tipoDocumentoId
+ * Requiere: Autenticación
+ * IMPORTANTE: Debe ir antes de /api/documentos/:id para evitar conflictos
+ */
+router.get('/preview-consecutivo', documentoController.getPreviewConsecutivo);
+
+/**
+ * GET /api/documentos/diagnostico-consecutivo
+ * Endpoint de diagnóstico para verificar el estado de los consecutivos
+ * Query params: areaId, tipoDocumentoId
+ * Requiere: Autenticación
+ */
+router.get('/diagnostico-consecutivo', documentoController.getDiagnosticoConsecutivo);
+
+/**
  * GET /api/documentos/:id
  * Obtener detalle de un documento por ID con validación de permisos
  * Requiere: Autenticación (RLS valida permisos de lectura)

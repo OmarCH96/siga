@@ -76,6 +76,11 @@ const FormularioEmision = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [isEmitting, setIsEmitting] = useState(false);
 
+    // **NUEVO: Estados para preview del consecutivo**
+    const [proximoConsecutivo, setProximoConsecutivo] = useState(null);
+    const [loadingConsecutivo, setLoadingConsecutivo] = useState(false);
+    const [errorConsecutivo, setErrorConsecutivo] = useState(null);
+
     // Verificar permisos al montar
     useEffect(() => {
         if (!puedeCrearDocumento) {
@@ -184,6 +189,62 @@ const FormularioEmision = () => {
 
         cargarPreviewFolio();
     }, [areaPrestamistaSeleccionada, formData.tipo_documento_id]);
+
+    // **NUEVO: Cargar preview del número consecutivo**
+    useEffect(() => {
+        const cargarProximoConsecutivo = async () => {
+            // Determinar el área emisora - prioridad:
+            // 1. Préstamo seleccionado (área prestamista)
+            // 2. Área seleccionada en el modal (areaPrestamistaSeleccionada)
+            // 3. Área del usuario (por defecto)
+            let areaEmisora = null;
+            
+            // Si hay un préstamo seleccionado, usar el área prestamista
+            if (prestamoSeleccionado?.area_prestamista_id) {
+                areaEmisora = prestamoSeleccionado.area_prestamista_id;
+            } 
+            // Si hay área seleccionada en el modal (aunque no sea préstamo)
+            else if (areaPrestamistaSeleccionada) {
+                areaEmisora = parseInt(areaPrestamistaSeleccionada, 10);
+            }
+            // Si no hay nada seleccionado, usar el área del usuario
+            else if (user?.area?.id) {
+                areaEmisora = user.area.id;
+            }
+
+            // Solo cargar si tenemos área y tipo de documento
+            if (!areaEmisora || !formData.tipo_documento_id) {
+                setProximoConsecutivo(null);
+                return;
+            }
+
+            setLoadingConsecutivo(true);
+            setErrorConsecutivo(null);
+
+            try {
+                const resultado = await documentoService.getPreviewConsecutivo(
+                    areaEmisora,
+                    formData.tipo_documento_id
+                );
+
+                console.log('Preview de consecutivo recibido:', resultado);
+                setProximoConsecutivo(resultado.data);
+            } catch (err) {
+                console.error('Error al cargar preview de consecutivo:', err);
+                setErrorConsecutivo(err.response?.data?.error || err.message);
+                setProximoConsecutivo(null);
+            } finally {
+                setLoadingConsecutivo(false);
+            }
+        };
+
+        cargarProximoConsecutivo();
+    }, [
+        prestamoSeleccionado?.area_prestamista_id, 
+        areaPrestamistaSeleccionada,
+        user?.area?.id, 
+        formData.tipo_documento_id
+    ]);
 
     // **NUEVO: Handlers para destinatarios**
     const handleAgregarDestinatario = async (e) => {
@@ -802,14 +863,47 @@ const FormularioEmision = () => {
                                         <span className="material-symbols-outlined text-primary !text-base">tag</span>
                                         Folio y Datos del Documento
                                     </h3>
-                                    {/* Botón siempre visible para seleccionar área de emisión */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsModalFolioOpen(true)}
-                                        className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
-                                    >
-                                        <span className="material-symbols-outlined !text-sm">autorenew</span> Seleccionar área
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        {/* Botón de diagnóstico (temporal) */}
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                const areaId = prestamoSeleccionado?.area_prestamista_id || user?.area?.id;
+                                                const tipoDocId = formData.tipo_documento_id;
+                                                if (!areaId || !tipoDocId) {
+                                                    alert('Seleccione un área y tipo de documento primero');
+                                                    return;
+                                                }
+                                                try {
+                                                    const diag = await documentoService.getDiagnosticoConsecutivo(areaId, tipoDocId);
+                                                    console.log('=== DIAGNÓSTICO DE CONSECUTIVOS ===');
+                                                    console.log('Datos completos:', diag);
+                                                    console.log('Tipo documento:', diag.data?.tipo_documento);
+                                                    console.log('Área:', diag.data?.area);
+                                                    console.log('Consecutivos existentes:', diag.data?.consecutivos_existentes);
+                                                    console.log('Clave buscada:', diag.data?.clave_buscada);
+                                                    console.log('Próximo consecutivo:', diag.data?.proximo_consecutivo);
+                                                    console.log('Folio completo:', diag.data?.folio_completo);
+                                                    alert(`Diagnóstico completado. Ver consola del navegador.\n\nPróximo consecutivo: ${diag.data?.proximo_consecutivo}\nFolio: ${diag.data?.folio_completo}`);
+                                                } catch (err) {
+                                                    console.error('Error en diagnóstico:', err);
+                                                    alert('Error al obtener diagnóstico: ' + err.message);
+                                                }
+                                            }}
+                                            className="px-3 py-1.5 bg-yellow-500 text-white text-xs font-bold rounded-lg hover:bg-yellow-600 transition-all flex items-center gap-1.5"
+                                            title="Ver diagnóstico de consecutivos en consola"
+                                        >
+                                            <span className="material-symbols-outlined !text-sm">bug_report</span> Debug
+                                        </button>
+                                        {/* Botón siempre visible para seleccionar área de emisión */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsModalFolioOpen(true)}
+                                            className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                                        >
+                                            <span className="material-symbols-outlined !text-sm">autorenew</span> Seleccionar área
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div className="p-4 grid grid-cols-1 md:grid-cols-8 gap-3 items-end">
@@ -858,11 +952,48 @@ const FormularioEmision = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Número</label>
                                     <input
-                                        className="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-400 font-mono py-1.5"
+                                        className={`w-full border-slate-200 dark:border-slate-700 rounded-lg text-sm font-mono py-1.5 ${
+                                            loadingConsecutivo 
+                                                ? 'bg-slate-50 dark:bg-slate-800/50 text-slate-300 animate-pulse' 
+                                                : proximoConsecutivo 
+                                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-bold border-emerald-300 dark:border-emerald-700' 
+                                                    : 'bg-slate-50 dark:bg-slate-800/50 text-slate-400'
+                                        }`}
                                         disabled
                                         type="text"
-                                        value={numeroPlaceholder}
+                                        value={
+                                            errorConsecutivo 
+                                                ? '⚠️ Error' 
+                                                : loadingConsecutivo 
+                                                    ? 'Cargando...' 
+                                                    : proximoConsecutivo?.consecutivo 
+                                                        ? String(proximoConsecutivo.consecutivo).padStart(4, '0') 
+                                                        : '----'
+                                        }
+                                        title={
+                                            proximoConsecutivo?.folio_completo 
+                                                ? `Folio completo: ${proximoConsecutivo.folio_completo}` 
+                                                : 'Número de folio consecutivo'
+                                        }
                                     />
+                                    {proximoConsecutivo && !loadingConsecutivo && (
+                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                                            <span className="material-symbols-outlined !text-xs">info</span>
+                                            Este será el número asignado
+                                        </p>
+                                    )}
+                                    {errorConsecutivo && (
+                                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                                            <span className="material-symbols-outlined !text-xs">error</span>
+                                            No se pudo cargar
+                                        </p>
+                                    )}
+                                    {!proximoConsecutivo && !loadingConsecutivo && !errorConsecutivo && formData.tipo_documento_id && (
+                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                                            <span className="material-symbols-outlined !text-xs">warning</span>
+                                            Seleccione tipo de documento
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Año</label>

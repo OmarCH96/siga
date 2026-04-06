@@ -345,6 +345,145 @@ const crearCopiasConocimiento = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Obtener preview del próximo consecutivo
+ * GET /api/documentos/preview-consecutivo
+ * 
+ * Obtiene el próximo número consecutivo que se asignará sin modificar la BD
+ * Query params: areaId, tipoDocumentoId
+ */
+const getPreviewConsecutivo = asyncHandler(async (req, res) => {
+  const usuario = {
+    id: req.user.id,
+    area_id: req.user.areaId,
+    rol_permisos: req.user.permisos
+  };
+
+  // Extraer parámetros de query
+  const areaId = parseInt(req.query.areaId, 10);
+  const tipoDocumentoId = parseInt(req.query.tipoDocumentoId, 10);
+
+  // Validar parámetros
+  if (!areaId || isNaN(areaId)) {
+    return res.status(400).json({
+      success: false,
+      error: 'El parámetro areaId es requerido y debe ser un número válido',
+    });
+  }
+
+  if (!tipoDocumentoId || isNaN(tipoDocumentoId)) {
+    return res.status(400).json({
+      success: false,
+      error: 'El parámetro tipoDocumentoId es requerido y debe ser un número válido',
+    });
+  }
+
+  log.info('Solicitud de preview de consecutivo', {
+    usuarioId: usuario.id,
+    areaId,
+    tipoDocumentoId,
+  });
+
+  // Llamar al servicio
+  const resultado = await documentoService.getProximoConsecutivo(
+    areaId,
+    tipoDocumentoId,
+    usuario.id
+  );
+
+  res.status(200).json({
+    success: true,
+    data: resultado,
+    message: 'Preview de consecutivo obtenido correctamente',
+  });
+});
+
+/**
+ * Endpoint de diagnóstico para verificar consecutivos
+ * GET /api/documentos/diagnostico-consecutivo
+ */
+const getDiagnosticoConsecutivo = asyncHandler(async (req, res) => {
+  const areaId = parseInt(req.query.areaId, 10);
+  const tipoDocumentoId = parseInt(req.query.tipoDocumentoId, 10);
+
+  if (!areaId || !tipoDocumentoId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Se requieren areaId y tipoDocumentoId',
+    });
+  }
+
+  const db = require('../config/database');
+  
+  // 1. Obtener info del tipo de documento
+  const tipoDocQuery = 'SELECT id, nombre, clave, activo FROM tipo_documento WHERE id = $1';
+  const tipoDocResult = await db.query(tipoDocQuery, [tipoDocumentoId]);
+  
+  // 2. Obtener info del área
+  const areaQuery = 'SELECT id, nombre, clave, activa FROM area WHERE id = $1';
+  const areaResult = await db.query(areaQuery, [areaId]);
+  
+  // 3. Verificar si existe registro en consecutivo_area
+  const claveTipoDoc = tipoDocResult.rows[0]?.clave || '';
+  const consecutivosQuery = `
+    SELECT 
+      area_id, 
+      tipo_operacion, 
+      anio, 
+      ultimo_consecutivo
+    FROM consecutivo_area
+    WHERE area_id = $1
+    ORDER BY anio DESC, tipo_operacion
+  `;
+  const consecutivosResult = await db.query(consecutivosQuery, [areaId]);
+  
+  // 4. Llamar a fn_preview_siguiente_consecutivo
+  const previewQuery = `
+    SELECT public.fn_preview_siguiente_consecutivo($1, $2, $3) AS proximo_consecutivo
+  `;
+  const currentYear = new Date().getFullYear();
+  const previewResult = await db.query(previewQuery, [areaId, claveTipoDoc, currentYear]);
+  
+  // 5. Llamar a fn_preview_folio
+  const folioQuery = `
+    SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo
+  `;
+  const folioResult = await db.query(folioQuery, [areaId, currentYear, tipoDocumentoId]);
+  
+  // 6. Verificar documentos emitidos en esta área
+  const documentosQuery = `
+    SELECT 
+      d.id, 
+      d.folio, 
+      d.fecha_creacion,
+      td.clave AS tipo_doc_clave
+    FROM documento d
+    INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id
+    WHERE d.area_origen_id = $1
+    ORDER BY d.fecha_creacion DESC
+    LIMIT 10
+  `;
+  const documentosResult = await db.query(documentosQuery, [areaId]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      tipo_documento: tipoDocResult.rows[0] || null,
+      area: areaResult.rows[0] || null,
+      consecutivos_existentes: consecutivosResult.rows,
+      documentos_emitidos: documentosResult.rows,
+      clave_buscada: claveTipoDoc,
+      anio_actual: currentYear,
+      proximo_consecutivo: previewResult.rows[0]?.proximo_consecutivo,
+      folio_completo: folioResult.rows[0]?.folio_completo,
+      explicacion: {
+        mensaje: 'Si consecutivos_existentes está vacío, nunca se han emitido documentos',
+        solucion: 'El primer documento siempre será 0001. Después se incrementará automáticamente.'
+      }
+    },
+  });
+});
+
 module.exports = {
   emitirDocumento,
   obtenerDocumento,
@@ -355,4 +494,6 @@ module.exports = {
   turnarDocumento,
   crearCopiasConocimiento,
   recibirDocumento,
+  getPreviewConsecutivo,
+  getDiagnosticoConsecutivo,
 };

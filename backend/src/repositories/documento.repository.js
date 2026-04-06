@@ -711,6 +711,116 @@ class DocumentoRepository {
       client.release();
     }
   }
+
+  /**
+   * Obtiene el próximo número consecutivo que se asignará (vista previa)
+   * NO modifica la tabla consecutivo_area
+   * @param {number} areaId - ID del área
+   * @param {string} tipoOperacion - Tipo de operación (EMISION, RECEPCION, etc.)
+   * @param {number} anio - Año (opcional, default: año actual)
+   * @returns {Promise<number>} Próximo consecutivo
+   */
+  async getProximoConsecutivo(areaId, tipoOperacion, anio = null) {
+    try {
+      const query = `
+        SELECT public.fn_preview_siguiente_consecutivo($1, $2, $3) AS proximo_consecutivo
+      `;
+
+      const currentYear = anio || new Date().getFullYear();
+      const result = await db.query(query, [areaId, tipoOperacion, currentYear]);
+
+      const proximoConsecutivo = result.rows[0]?.proximo_consecutivo;
+
+      logger.debug('Preview de consecutivo obtenido', {
+        area_id: areaId,
+        tipo_operacion: tipoOperacion,
+        anio: currentYear,
+        proximo_consecutivo: proximoConsecutivo
+      });
+
+      return proximoConsecutivo;
+    } catch (error) {
+      logger.error('Error al obtener preview de consecutivo', {
+        error: error.message,
+        area_id: areaId,
+        tipo_operacion: tipoOperacion,
+        anio: anio
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el folio completo formateado (vista previa)
+   * NO asigna el número ni modifica la base de datos
+   * @param {number} areaId - ID del área
+   * @param {number} tipoDocumentoId - ID del tipo de documento
+   * @param {number} anio - Año (opcional, default: año actual)
+   * @returns {Promise<Object>} { folio_completo, consecutivo, clave_area, clave_tipo_doc }
+   */
+  async getPreviewFolioCompleto(areaId, tipoDocumentoId, anio = null) {
+    try {
+      const currentYear = anio || new Date().getFullYear();
+
+      // Obtener el folio formateado completo
+      const queryFolio = `
+        SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo
+      `;
+
+      const resultFolio = await db.query(queryFolio, [areaId, currentYear, tipoDocumentoId]);
+      const folioCompleto = resultFolio.rows[0]?.folio_completo;
+
+      // Obtener información adicional del área y tipo de documento
+      const queryInfo = `
+        SELECT 
+          a.clave AS clave_area,
+          a.nombre AS nombre_area,
+          td.clave AS clave_tipo_doc,
+          td.nombre AS nombre_tipo_doc
+        FROM area a
+        CROSS JOIN tipo_documento td
+        WHERE a.id = $1 AND td.id = $2
+      `;
+
+      const resultInfo = await db.query(queryInfo, [areaId, tipoDocumentoId]);
+      const info = resultInfo.rows[0];
+
+      // Obtener el consecutivo que se asignará
+      const claveTipoDoc = info?.clave_tipo_doc || 'EM';
+      const queryConsecutivo = `
+        SELECT public.fn_preview_siguiente_consecutivo($1, $2, $3) AS proximo_consecutivo
+      `;
+
+      const resultConsecutivo = await db.query(queryConsecutivo, [areaId, claveTipoDoc, currentYear]);
+      const proximoConsecutivo = resultConsecutivo.rows[0]?.proximo_consecutivo;
+
+      logger.debug('Preview de folio completo obtenido', {
+        area_id: areaId,
+        tipo_documento_id: tipoDocumentoId,
+        anio: currentYear,
+        folio_completo: folioCompleto,
+        consecutivo: proximoConsecutivo
+      });
+
+      return {
+        folio_completo: folioCompleto,
+        consecutivo: proximoConsecutivo,
+        clave_area: info?.clave_area,
+        nombre_area: info?.nombre_area,
+        clave_tipo_doc: info?.clave_tipo_doc,
+        nombre_tipo_doc: info?.nombre_tipo_doc,
+        anio: currentYear
+      };
+    } catch (error) {
+      logger.error('Error al obtener preview de folio completo', {
+        error: error.message,
+        area_id: areaId,
+        tipo_documento_id: tipoDocumentoId,
+        anio: anio
+      });
+      throw error;
+    }
+  }
 }
 
 module.exports = new DocumentoRepository();

@@ -10,6 +10,7 @@ import ProtectedRoute from '@components/ProtectedRoute';
 import Login from '@pages/Login/Login';
 import Dashboard from '@pages/Dashboard/Dashboard';
 import Usuarios from '@pages/Usuarios/Usuarios';
+import UnidadesAdministrativas from '@pages/UnidadesAdministrativas/UnidadesAdministrativas';
 import TiposDocumento from '@pages/TiposDocumento/TiposDocumento';
 import FormularioEmision from '@pages/Emision/FormularioEmision';
 import Unauthorized from '@pages/Unauthorized/Unauthorized';
@@ -50,6 +51,7 @@ function App() {
         <Route element={<ProtectedRoute requiredRole="Administrador" />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/usuarios" element={<Usuarios />} />
+          <Route path="/unidades" element={<UnidadesAdministrativas />} />
           <Route path="/documentos" element={<TiposDocumento />} />
         </Route>
 

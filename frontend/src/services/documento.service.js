@@ -186,6 +186,39 @@ export const crearCopiasConocimiento = async (documentoId, areasIds) => {
   return response.data;
 };
 
+/**
+ * Obtener preview del próximo consecutivo que se asignará
+ * NO asigna el número ni modifica la base de datos
+ * @param {number} areaId - ID del área emisora
+ * @param {number} tipoDocumentoId - ID del tipo de documento
+ * @returns {Promise<Object>} { consecutivo, folio_completo, clave_area, clave_tipo_doc, anio }
+ */
+export const getPreviewConsecutivo = async (areaId, tipoDocumentoId) => {
+  const response = await apiClient.get('/documentos/preview-consecutivo', {
+    params: {
+      areaId,
+      tipoDocumentoId
+    }
+  });
+  return response.data;
+};
+
+/**
+ * Obtener diagnóstico de consecutivos (solo para depuración)
+ * @param {number} areaId - ID del área
+ * @param {number} tipoDocumentoId - ID del tipo de documento
+ * @returns {Promise<Object>} Información de diagnóstico
+ */
+export const getDiagnosticoConsecutivo = async (areaId, tipoDocumentoId) => {
+  const response = await apiClient.get('/documentos/diagnostico-consecutivo', {
+    params: {
+      areaId,
+      tipoDocumentoId
+    }
+  });
+  return response.data;
+};
+
 // Exportación por defecto con todos los métodos
 export default {
   getBandejaRecepcion,
@@ -199,4 +232,7 @@ export default {
   validarTurno,
   turnarDocumento,
   crearCopiasConocimiento,
+  recibirDocumento,
+  getPreviewConsecutivo,
+  getDiagnosticoConsecutivo,
 };

@@ -14,7 +14,7 @@ const config = {
   database: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT, 10) || 5432,
-    database: process.env.DB_NAME || 'gestordocumental',
+    database: process.env.DB_NAME || 'gestordocumental1',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD,
     max: parseInt(process.env.DB_POOL_MAX, 10) || 20,
