@@ -95,6 +95,49 @@ class PrestamoRepository {
   }
 
   /**
+   * Crea solicitud de préstamo con reserva inmediata de folio y documento bloqueado.
+   * Flujo de migración 006: crea documento en estado PENDIENTE_PRESTAMO.
+   *
+   * @param {Object} params - Datos para solicitud con reserva
+   * @returns {Promise<Object|null>} Resultado de la SP con IDs y folio reservado
+   */
+  async solicitarConReserva(params) {
+    const query = `
+      SELECT *
+      FROM sp_solicitar_prestamo_con_reserva(
+        $1::INTEGER,         -- p_area_solicitante_id
+        $2::INTEGER,         -- p_area_prestamista_id
+        $3::INTEGER,         -- p_usuario_solicita_id
+        $4::TEXT,            -- p_motivacion
+        $5::INTEGER,         -- p_tipo_documento_id
+        $6::VARCHAR,         -- p_asunto
+        $7::TEXT,            -- p_contenido
+        $8::TIMESTAMP,       -- p_fecha_limite
+        $9::prioridad_enum,  -- p_prioridad
+        $10::TEXT,           -- p_instrucciones
+        $11::TEXT            -- p_observaciones
+      )
+    `;
+
+    const values = [
+      params.area_solicitante_id,
+      params.area_prestamista_id,
+      params.usuario_solicita_id,
+      params.motivacion,
+      params.tipo_documento_id,
+      params.asunto,
+      params.contenido || null,
+      params.fecha_limite || null,
+      params.prioridad || 'MEDIA',
+      params.instrucciones || null,
+      params.observaciones || null
+    ];
+
+    const result = await db.query(query, values);
+    return result.rows[0] || null;
+  }
+
+  /**
    * Busca un préstamo por su ID
    * @param {number} prestamoId - ID del préstamo
    * @returns {Promise<Object|null>} Préstamo encontrado o null

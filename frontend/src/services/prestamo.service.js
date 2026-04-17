@@ -39,6 +39,16 @@ export const solicitarPrestamo = async (datos) => {
 };
 
 /**
+ * Solicitar préstamo con reserva inmediata de folio y creación de documento bloqueado.
+ * @param {Object} datos - Datos de solicitud y del documento OFICIO
+ * @returns {Promise<Object>} Resultado con prestamo_id, documento_id, nodo_id, folio_reservado
+ */
+export const solicitarPrestamoConReserva = async (datos) => {
+  const response = await apiClient.post('/prestamos/solicitar-con-reserva', datos);
+  return response.data;
+};
+
+/**
  * Obtener préstamos aprobados disponibles para el usuario
  * @returns {Promise<Object>} Lista de préstamos aprobados
  */

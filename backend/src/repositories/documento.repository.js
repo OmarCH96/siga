@@ -821,6 +821,165 @@ class DocumentoRepository {
       throw error;
     }
   }
+
+  /**
+   * Lista los documentos EMITIDOS por un área (area_origen_id = areaId)
+   * con paginación y filtros opcionales.
+   *
+   * @param {number} areaId      - ID del área
+   * @param {Object} filters
+   * @param {number}  filters.page       - Página (1-based)
+   * @param {number}  filters.limit      - Registros por página
+   * @param {string}  [filters.busqueda] - Búsqueda libre por folio o asunto
+   * @param {string}  [filters.estado]   - Estado del documento (valor del enum)
+   * @param {string}  [filters.claveTipo]- Clave de tipo de emisión (EC, EO, EM…)
+   * @returns {Promise<{ rows: Array, total: number }>}
+   */
+  async listarEmisionesPorArea(areaId, filters = {}) {
+    const { page = 1, limit = 10, busqueda = '', estado = '', claveTipo = '' } = filters;
+    const offset = (page - 1) * limit;
+    const params = [areaId];
+    const conditions = ['d.area_origen_id = $1', 'd.documento_invalidado = false'];
+
+    if (busqueda) {
+      params.push(`%${busqueda}%`);
+      conditions.push(`(d.folio ILIKE $${params.length} OR d.asunto ILIKE $${params.length})`);
+    }
+    if (estado) {
+      params.push(estado);
+      conditions.push(`d.estado = $${params.length}`);
+    }
+    if (claveTipo) {
+      params.push(claveTipo);
+      conditions.push(`td.clave = $${params.length}`);
+    }
+
+    const where = conditions.join(' AND ');
+
+    const dataQuery = `
+      SELECT
+        d.id,
+        d.folio,
+        d.asunto,
+        d.estado,
+        d.prioridad,
+        d.fecha_creacion,
+        d.contexto,
+        td.id    AS tipo_documento_id,
+        td.nombre AS tipo_documento_nombre,
+        td.clave  AS tipo_documento_clave,
+        uc.id       AS usuario_id,
+        uc.nombre   AS usuario_nombre,
+        uc.apellidos AS usuario_apellidos,
+        -- Nodo activo: obtener el área de destino actual
+        nd.area_id        AS area_destino_id,
+        a_dest.nombre     AS area_destino_nombre
+      FROM documento d
+      INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id
+      INNER JOIN usuario uc ON d.usuario_creador_id = uc.id
+      LEFT JOIN nodo_documental nd
+        ON nd.documento_id = d.id AND nd.es_nodo_activo = true
+      LEFT JOIN area a_dest ON nd.area_id = a_dest.id
+      WHERE ${where}
+      ORDER BY d.fecha_creacion DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM documento d
+      INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id
+      WHERE ${where}
+    `;
+
+    const [dataResult, countResult] = await Promise.all([
+      db.query(dataQuery, [...params, limit, offset]),
+      db.query(countQuery, params),
+    ]);
+
+    return {
+      rows: dataResult.rows,
+      total: parseInt(countResult.rows[0].total, 10) || 0,
+    };
+  }
+
+  /**
+   * Lista los documentos RECIBIDOS por un área, identificando los nodos
+   * de la cadena documental donde nodo_documental.area_id = areaId
+   * y tipo_nodo IN ('RECEPCION', 'COPIA').
+   *
+   * @param {number} areaId      - ID del área
+   * @param {Object} filters
+   * @param {number}  filters.page       - Página (1-based)
+   * @param {number}  filters.limit      - Registros por página
+   * @param {string}  [filters.busqueda] - Búsqueda libre por folio o asunto
+   * @param {string}  [filters.estado]   - Estado del documento (valor del enum)
+   * @returns {Promise<{ rows: Array, total: number }>}
+   */
+  async listarRecepcionesPorArea(areaId, filters = {}) {
+    const { page = 1, limit = 10, busqueda = '', estado = '' } = filters;
+    const offset = (page - 1) * limit;
+    const params = [areaId];
+    const conditions = [
+      'n.area_id = $1',
+      "n.tipo_nodo IN ('RECEPCION', 'COPIA')",
+      'd.documento_invalidado = false',
+    ];
+
+    if (busqueda) {
+      params.push(`%${busqueda}%`);
+      conditions.push(`(d.folio ILIKE $${params.length} OR d.asunto ILIKE $${params.length})`);
+    }
+    if (estado) {
+      params.push(estado);
+      conditions.push(`d.estado = $${params.length}`);
+    }
+
+    const where = conditions.join(' AND ');
+
+    const dataQuery = `
+      SELECT
+        d.id,
+        d.folio,
+        d.asunto,
+        d.estado,
+        d.prioridad,
+        n.fecha_generacion AS fecha_creacion,
+        d.contexto,
+        td.id    AS tipo_documento_id,
+        td.nombre AS tipo_documento_nombre,
+        td.clave  AS tipo_documento_clave,
+        ao.nombre AS area_origen_nombre,
+        ur.id       AS usuario_id,
+        ur.nombre   AS usuario_nombre,
+        ur.apellidos AS usuario_apellidos
+      FROM nodo_documental n
+      INNER JOIN documento d ON n.documento_id = d.id
+      INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id
+      INNER JOIN area ao ON d.area_origen_id = ao.id
+      INNER JOIN usuario ur ON n.usuario_responsable_id = ur.id
+      WHERE ${where}
+      ORDER BY n.fecha_generacion DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM nodo_documental n
+      INNER JOIN documento d ON n.documento_id = d.id
+      WHERE ${where}
+    `;
+
+    const [dataResult, countResult] = await Promise.all([
+      db.query(dataQuery, [...params, limit, offset]),
+      db.query(countQuery, params),
+    ]);
+
+    return {
+      rows: dataResult.rows,
+      total: parseInt(countResult.rows[0].total, 10) || 0,
+    };
+  }
 }
 
 module.exports = new DocumentoRepository();

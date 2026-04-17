@@ -56,7 +56,7 @@ const Sidebar = ({ user, hasPermission, logout, navigate, activeRoute }) => {
                     disabled
                 >
                     <span className="material-symbols-outlined">bar_chart</span>
-                    <span className="text-sm font-medium">Reportes</span>
+                    <span className="text-sm font-medium">Consultas y Reportes</span>
                 </button>
             </nav>
 

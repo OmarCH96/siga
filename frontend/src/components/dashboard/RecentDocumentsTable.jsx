@@ -1,6 +1,9 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { formatDate, formatPriority, getSafeValue, truncateText } from '@utils/dataFormatters';
+import Paginacion from '@components/Paginacion';
+
+const PAGE_SIZE = 10;
 
 const badgeByEstado = {
   'En Proceso': 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
@@ -12,6 +15,19 @@ const badgeByEstado = {
 const RecentDocumentsTable = ({ registros }) => {
   // Validar que registros sea un array
   const safeRegistros = Array.isArray(registros) ? registros : [];
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reiniciar a página 1 cuando cambia la fuente de datos
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [registros]);
+
+  const totalPages = Math.max(1, Math.ceil(safeRegistros.length / PAGE_SIZE));
+  const paginatedRegistros = safeRegistros.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
@@ -50,7 +66,7 @@ const RecentDocumentsTable = ({ registros }) => {
           </thead>
 
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {safeRegistros.length === 0 ? (
+            {paginatedRegistros.length === 0 ? (
               <tr>
                 <td colSpan="6" className="px-6 py-12 text-center">
                   <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-700 mb-2 block">
@@ -62,7 +78,7 @@ const RecentDocumentsTable = ({ registros }) => {
                 </td>
               </tr>
             ) : (
-              safeRegistros.map((registro) => {
+              paginatedRegistros.map((registro) => {
                 const folio = getSafeValue(registro.folio, 'N/A');
                 const asunto = getSafeValue(registro.asunto, 'Sin asunto');
                 const origenDestino = getSafeValue(registro.origenDestino, 'N/A');
@@ -124,28 +140,14 @@ const RecentDocumentsTable = ({ registros }) => {
         </table>
       </div>
 
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-        <span className="text-xs text-slate-500">
-          Mostrando {safeRegistros.length} documento{safeRegistros.length !== 1 ? 's' : ''}
-        </span>
-        <div className="flex gap-2">
-          <button 
-            className="px-3 py-1 border border-slate-200 dark:border-slate-700 rounded text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" 
-            type="button" 
-            disabled
-            aria-label="Página anterior"
-          >
-            Anterior
-          </button>
-          <button 
-            className="px-3 py-1 bg-primary text-white rounded text-xs font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
-            type="button"
-            disabled={safeRegistros.length === 0}
-            aria-label="Página siguiente"
-          >
-            Siguiente
-          </button>
-        </div>
+      <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+        <Paginacion
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          total={safeRegistros.length}
+          pageSize={PAGE_SIZE}
+        />
       </div>
     </div>
   );

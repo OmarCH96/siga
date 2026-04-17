@@ -44,6 +44,13 @@ router.get('/pendientes', prestamoController.getPrestamosPendientes);
 router.post('/solicitar', prestamoController.solicitarPrestamo);
 
 /**
+ * POST /prestamos/solicitar-con-reserva
+ * Solicitar préstamo con reserva inmediata de folio y creación de documento bloqueado
+ * Body: { area_prestamista_id, motivacion, tipo_documento_id, asunto, ... }
+ */
+router.post('/solicitar-con-reserva', prestamoController.solicitarPrestamoConReserva);
+
+/**
  * POST /prestamos/:id/resolver
  * Aprobar o rechazar un préstamo
  * Body: { aprobar: boolean, motivo?: string, dias_vencimiento?: number }

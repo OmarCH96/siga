@@ -194,6 +194,31 @@ export const getUsuariosPorArea = async (id) => {
 
 export const getAreasHijas = getSubareas;
 
+/**
+ * Obtiene los documentos (emisiones o recepciones) de un área.
+ * @param {number|string} id    - ID del área
+ * @param {Object} filters
+ * @param {string}  filters.tipo       - 'emisiones' | 'recepciones'
+ * @param {number}  [filters.page]     - Página (default 1)
+ * @param {number}  [filters.limit]    - Registros por página (default 10)
+ * @param {string}  [filters.busqueda] - Búsqueda libre
+ * @param {string}  [filters.estado]   - Estado del documento
+ * @param {string}  [filters.claveTipo]- Clave tipo de doc (solo emisiones)
+ * @returns {Promise<{ documentos: Array, total: number, page: number, limit: number, totalPages: number }>}
+ */
+export const getDocumentosPorArea = async (id, filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.tipo) params.append('tipo', filters.tipo);
+  if (filters.page) params.append('page', filters.page);
+  if (filters.limit) params.append('limit', filters.limit);
+  if (filters.busqueda) params.append('busqueda', filters.busqueda);
+  if (filters.estado) params.append('estado', filters.estado);
+  if (filters.claveTipo) params.append('claveTipo', filters.claveTipo);
+
+  const response = await apiClient.get(`/areas/${id}/documentos?${params.toString()}`);
+  return response.data.data;
+};
+
 export default {
   getAllAreas,
   getAreasActivas,
@@ -208,4 +233,5 @@ export default {
   toggleAreaStatus,
   getUsuariosPorArea,
   getAreasHijas,
+  getDocumentosPorArea,
 };

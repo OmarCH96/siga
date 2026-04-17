@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 const UnitCard = ({ unit, onEdit, onToggleStatus }) => {
+  const navigate = useNavigate();
   const getIconByName = (name) => {
     const iconMap = {
       'Dirección General': 'account_balance',
@@ -63,8 +65,12 @@ const UnitCard = ({ unit, onEdit, onToggleStatus }) => {
             <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
           </label>
         </div>
-        <button className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-          <span>Ver Usuarios</span>
+        <button
+          type="button"
+          onClick={() => navigate(`/unidades/${unit.id}`)}
+          className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+        >
+          <span>Ver Detalle</span>
           <span className="material-symbols-outlined text-xs">arrow_forward</span>
         </button>
       </div>

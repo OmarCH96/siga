@@ -70,6 +70,8 @@ const FormularioEmision = () => {
     const [errorPrestamo, setErrorPrestamo] = useState(null);
     const [loadingPrestamo, setLoadingPrestamo] = useState(false);
     const [prestamoSeleccionado, setPrestamoSeleccionado] = useState(null);
+    const [solicitudReserva, setSolicitudReserva] = useState(null);
+    const [documentoRegistrado, setDocumentoRegistrado] = useState(null);
 
     // **NUEVO: Estados para validación inline y modal de confirmación**
     const [fieldErrors, setFieldErrors] = useState({});
@@ -519,54 +521,39 @@ const FormularioEmision = () => {
             a => a.id === parseInt(areaPrestamistaSeleccionada)
         );
 
-        // CASO 1: Si es área propia, solo cerrar el modal (no se requiere préstamo)
-        if (areaSeleccionada?.es_area_propia) {
-            setIsModalFolioOpen(false);
-            toast.success('Se utilizará el folio de tu área.');
-            return;
-        }
-
-        // CASO 2: Si NO es OFICIO, no se requiere préstamo (Memorándum, etc. pueden cruzar sin préstamo)
+        // Si NO es OFICIO, no se requiere préstamo (Memorándum, etc. pueden cruzar sin préstamo)
         if (formData.contexto !== 'OFICIO') {
             setIsModalFolioOpen(false);
             toast.info(`Se emitirá el ${formData.contexto} desde el área seleccionada.`);
             return;
         }
 
-        // CASO 3: Es OFICIO y área ancestro → Solicitar préstamo
+        // Para OFICIO se requiere una solicitud con reserva; el documento se creará
+        // en PENDIENTE_PRESTAMO hasta aprobación del área prestamista.
 
-        // Validar motivación si no es área propia
         if (!motivacionPrestamo || motivacionPrestamo.trim().length < 10) {
             setErrorPrestamo('La motivación debe tener al menos 10 caracteres');
             return;
         }
 
-        setLoadingPrestamo(true);
+        setSolicitudReserva({
+            area_prestamista_id: parseInt(areaPrestamistaSeleccionada, 10),
+            area_prestamista_nombre: areaSeleccionada?.nombre || 'Área seleccionada',
+            area_prestamista_clave: areaSeleccionada?.clave || '',
+            motivacion: motivacionPrestamo.trim()
+        });
+
+        // Si se configura reserva, se limpia préstamo aprobado previo.
+        updateField('prestamo_numero_id', null);
+        setPrestamoSeleccionado(null);
+
+        setIsModalFolioOpen(false);
+        setAreaPrestamistaSeleccionada('');
+        setMotivacionPrestamo('');
+        setFolioPreview('');
         setErrorPrestamo(null);
 
-        try {
-            const response = await prestamoService.solicitarPrestamo({
-                area_prestamista_id: parseInt(areaPrestamistaSeleccionada),
-                motivacion: motivacionPrestamo.trim()
-            });
-
-            toast.success(response.message || 'Solicitud enviada correctamente');
-            
-            // Resetear el modal
-            setIsModalFolioOpen(false);
-            setAreaPrestamistaSeleccionada('');
-            setMotivacionPrestamo('');
-            setFolioPreview('');
-        } catch (err) {
-            console.error('Error al solicitar préstamo:', err);
-            setErrorPrestamo(
-                err.response?.data?.error || 
-                err.response?.data?.message || 
-                'Error al solicitar el préstamo'
-            );
-        } finally {
-            setLoadingPrestamo(false);
-        }
+        toast.success('Reserva configurada. Al emitir se registrará en PENDIENTE_PRESTAMO.');
     };
 
     const handleCerrarModalFolio = () => {
@@ -584,6 +571,7 @@ const FormularioEmision = () => {
         
         // Guardar el objeto completo para mostrar información
         setPrestamoSeleccionado(prestamo);
+        setSolicitudReserva(null);
         
         // Cerrar el modal
         setIsModalFolioOpen(false);
@@ -595,6 +583,7 @@ const FormularioEmision = () => {
     const handleCambiarPrestamo = () => {
         updateField('prestamo_numero_id', null);
         setPrestamoSeleccionado(null);
+        setSolicitudReserva(null);
         setIsModalFolioOpen(true);
     };
 
@@ -623,9 +612,9 @@ const FormularioEmision = () => {
         if (!valid) {
             console.error('Errores de validación:', errors);
             
-            // Convertir array de errores a objeto para mostrar inline
+            // Convertir errores a objeto para mostrar inline
             const errorsObj = {};
-            errors.forEach(error => {
+            Object.values(errors).forEach(error => {
                 // Extraer el nombre del campo del mensaje de error
                 if (error.includes('tipo de documento')) errorsObj.tipo_documento_id = error;
                 else if (error.includes('asunto')) errorsObj.asunto = error;
@@ -639,14 +628,14 @@ const FormularioEmision = () => {
             return;
         }
 
-        // Validación adicional para Préstamo de Número si es OFICIO
-        if (requierePrestamoNumero && !formData.prestamo_numero_id) {
-            toast.error('Los documentos tipo OFICIO requieren un préstamo de número', 5000);
+        // Para OFICIO se requiere préstamo aprobado o una reserva configurada.
+        if (requierePrestamoNumero && !formData.prestamo_numero_id && !solicitudReserva) {
+            toast.error('Para OFICIO debe seleccionar un préstamo aprobado o configurar reserva', 5000);
             return;
         }
 
-        // Validación adicional: Si es OFICIO, debe tener prestamo_numero_id válido
-        if (formData.contexto === 'OFICIO' && (!formData.prestamo_numero_id || !Number.isInteger(Number(formData.prestamo_numero_id)))) {
+        // Si se usa préstamo aprobado, debe ser un entero válido.
+        if (formData.contexto === 'OFICIO' && formData.prestamo_numero_id && !Number.isInteger(Number(formData.prestamo_numero_id))) {
             toast.error('Documentos tipo OFICIO requieren un préstamo de número válido', 5000);
             return;
         }
@@ -660,17 +649,52 @@ const FormularioEmision = () => {
         setIsEmitting(true);
 
         try {
-            // **PASO 1: Emitir documento usando el hook**
-            const resultado = await emitir();
-            
-            if (!resultado) {
-                toast.error('Error al emitir documento', 5000);
-                setIsEmitting(false);
-                return;
+            let resultado = null;
+            let esPendientePrestamo = false;
+
+            // PASO 1: Para OFICIO sin préstamo aprobado, usar flujo de reserva.
+            if (formData.contexto === 'OFICIO' && !formData.prestamo_numero_id && solicitudReserva) {
+                const reservaResp = await prestamoService.solicitarPrestamoConReserva({
+                    area_prestamista_id: solicitudReserva.area_prestamista_id,
+                    motivacion: solicitudReserva.motivacion,
+                    tipo_documento_id: parseInt(formData.tipo_documento_id, 10),
+                    asunto: formData.asunto.trim(),
+                    contenido: formData.contenido?.trim() || null,
+                    fecha_limite: formData.fecha_limite || null,
+                    prioridad: formData.prioridad,
+                    instrucciones: formData.instrucciones?.trim() || null,
+                    observaciones: formData.observaciones?.trim() || null
+                });
+
+                const data = reservaResp?.data || {};
+                resultado = {
+                    documentoId: data.documento_id,
+                    nodoId: data.nodo_id,
+                    folio: data.folio_reservado,
+                    estadoDocumento: data.estado_documento
+                };
+
+                esPendientePrestamo = data.estado_documento === 'PENDIENTE_PRESTAMO';
+
+                setDocumentoRegistrado({
+                    documento_id: data.documento_id,
+                    nodo_id: data.nodo_id,
+                    folio: data.folio_reservado,
+                    asunto: formData.asunto,
+                    estado: data.estado_documento
+                });
+            } else {
+                // PASO 1: Emisión normal con préstamo aprobado (flujo actual).
+                resultado = await emitir();
+                if (!resultado) {
+                    toast.error('Error al emitir documento', 5000);
+                    setIsEmitting(false);
+                    return;
+                }
             }
 
             // **PASO 1.5: Marcar préstamo como UTILIZADO si se usó uno**
-            if (formData.prestamo_numero_id) {
+            if (!esPendientePrestamo && formData.prestamo_numero_id) {
                 try {
                     await prestamoService.marcarPrestamoUtilizado(Number(formData.prestamo_numero_id));
                     console.log('Préstamo marcado como UTILIZADO:', formData.prestamo_numero_id);
@@ -681,7 +705,7 @@ const FormularioEmision = () => {
             }
 
             // **PASO 2: Turnar a cada destinatario**
-            if (destinatarios.length > 0 && resultado.documentoId) {
+            if (!esPendientePrestamo && destinatarios.length > 0 && resultado.documentoId) {
                 console.log('Iniciando turnado a destinatarios:', destinatarios);
                 
                 for (const destinatario of destinatarios) {
@@ -702,7 +726,7 @@ const FormularioEmision = () => {
             }
 
             // **PASO 3: Crear copias de conocimiento**
-            if (copias.length > 0 && resultado.documentoId) {
+            if (!esPendientePrestamo && copias.length > 0 && resultado.documentoId) {
                 console.log('Creando copias de conocimiento:', copias);
                 
                 try {
@@ -719,7 +743,7 @@ const FormularioEmision = () => {
             }
 
             // **PASO 4: Vincular archivos adjuntos**
-            if (archivos.length > 0 && resultado.documentoId) {
+            if (!esPendientePrestamo && archivos.length > 0 && resultado.documentoId) {
                 console.log('Vinculando archivos al documento:', archivos);
                 
                 try {
@@ -755,9 +779,18 @@ const FormularioEmision = () => {
             setArchivosSubiendo([]);
             setErrorArchivos(null);
             setPrestamoSeleccionado(null);
+            setSolicitudReserva(null);
             setFieldErrors({});
-            
-            toast.success(`¡Documento emitido exitosamente! Folio: ${resultado.folio || 'N/A'}`, 7000);
+
+            if (esPendientePrestamo) {
+                toast.success(
+                    `Documento registrado con folio ${resultado.folio || 'N/A'} en estado PENDIENTE_PRESTAMO.`,
+                    8000
+                );
+                toast.info('No se puede turnar, editar ni adjuntar archivos hasta aprobar el préstamo.', 7000);
+            } else {
+                toast.success(`¡Documento emitido exitosamente! Folio: ${resultado.folio || 'N/A'}`, 7000);
+            }
         } catch (error) {
             console.error('Error en emisión:', error);
             toast.error('Ocurrió un error al emitir el documento', 5000);
@@ -776,17 +809,21 @@ const FormularioEmision = () => {
         setArchivosSubiendo([]);
         setErrorArchivos(null);
         setPrestamoSeleccionado(null);
+        setSolicitudReserva(null);
+        setDocumentoRegistrado(null);
     };
 
     // Handler para ver detalle del documento emitido
     const handleVerDetalle = () => {
-        if (documentoEmitido?.documento_id) {
-            navigate(`/documentos/${documentoEmitido.documento_id}`);
+        const documentoResultado = documentoEmitido || documentoRegistrado;
+        if (documentoResultado?.documento_id) {
+            navigate(`/documentos/${documentoResultado.documento_id}`);
         }
     };
 
     // Calcular fecha mínima para fecha límite (hoy)
     const fechaMinima = new Date().toISOString().split('T')[0];
+    const documentoResultado = documentoEmitido || documentoRegistrado;
 
     return (
         <AppLayout activeRoute="emitir">
@@ -834,12 +871,16 @@ const FormularioEmision = () => {
                         )}
 
                         {/* Mensaje de Éxito inline (alternativo al modal) */}
-                        {success && !showSuccessModal && documentoEmitido && (
+                        {(success || documentoRegistrado) && !showSuccessModal && documentoResultado && (
                             <div className="bg-emerald-100 text-emerald-800 p-3 rounded-lg mb-4 flex items-start gap-2 border border-emerald-300">
                                 <span className="material-symbols-outlined !text-base">check_circle</span>
                                 <div className="flex-1">
-                                    <p className="text-sm font-bold">¡Documento emitido exitosamente!</p>
-                                    <p className="text-sm">Folio: <span className="font-mono font-semibold">{documentoEmitido.folio || 'N/A'}</span></p>
+                                    <p className="text-sm font-bold">
+                                        {documentoResultado.estado === 'PENDIENTE_PRESTAMO'
+                                            ? 'Documento registrado con préstamo pendiente'
+                                            : '¡Documento emitido exitosamente!'}
+                                    </p>
+                                    <p className="text-sm">Folio: <span className="font-mono font-semibold">{documentoResultado.folio || 'N/A'}</span></p>
                                 </div>
                             </div>
                         )}
@@ -1073,289 +1114,459 @@ const FormularioEmision = () => {
                             </div>
                         </section>
 
-                        {/* Card 3: Detalles del Contenido */}
-                        <section className="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                            <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-primary !text-base">description</span>
-                                    Detalles del Contenido
-                                </h3>
-                            </div>
-                            <div className="p-4 space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">
-                                        Tema / Asunto <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        name="asunto"
-                                        value={formData.asunto}
-                                        onChange={handleInputChange}
-                                        disabled={!puedeCrearDocumento}
-                                        className={`w-full rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            fieldErrors.asunto 
-                                                ? 'border-2 border-red-500 dark:border-red-500' 
-                                                : 'border-slate-200 dark:border-slate-700'
-                                        }`}
-                                        placeholder="Escriba el tema principal del documento (10-500 caracteres)..."
-                                        type="text"
-                                        maxLength="500"
-                                    />
-                                    <p className="text-xs text-slate-400 mt-1">{formData.asunto.length}/500 caracteres</p>
-                                    {fieldErrors.asunto && (
-                                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-xs">error</span>
-                                            {fieldErrors.asunto}
-                                        </p>
-                                    )}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                            {/* Card 3: Detalles del Contenido */}
+                            <section className="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden h-full">
+                                <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-primary !text-base">description</span>
+                                        Detalles del Contenido
+                                    </h3>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">
-                                        Síntesis / Contenido <span className="text-red-500">*</span>
-                                    </label>
-                                    <textarea
-                                        name="contenido"
-                                        value={formData.contenido}
-                                        onChange={handleInputChange}
-                                        disabled={!puedeCrearDocumento}
-                                        className={`w-full rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
-                                            fieldErrors.contenido 
-                                                ? 'border-2 border-red-500 dark:border-red-500' 
-                                                : 'border-slate-200 dark:border-slate-700'
-                                        }`}
-                                        placeholder="Resumen detallado del contenido (mínimo 20 caracteres)..."
-                                        rows="3"
-                                    />
-                                    <p className="text-xs text-slate-400 mt-1">{formData.contenido.length} caracteres</p>
-                                    {fieldErrors.contenido && (
-                                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-xs">error</span>
-                                            {fieldErrors.contenido}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="p-4 space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Prioridad</label>
-                                        <select
-                                            name="prioridad"
-                                            value={formData.prioridad}
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">
+                                            Tema / Asunto <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            name="asunto"
+                                            value={formData.asunto}
                                             onChange={handleInputChange}
                                             disabled={!puedeCrearDocumento}
-                                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            <option value="BAJA">Baja</option>
-                                            <option value="MEDIA">Media</option>
-                                            <option value="ALTA">Alta</option>
-                                            <option value="URGENTE">Urgente</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Contexto</label>
-                                        <select
-                                            name="contexto"
-                                            value={formData.contexto}
-                                            onChange={handleInputChange}
-                                            disabled={!puedeCrearDocumento}
-                                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            <option value="OFICIO">Oficio</option>
-                                            <option value="MEMORANDUM">Memorándum</option>
-                                            <option value="CIRCULAR">Circular</option>
-                                            <option value="COMUNICADO_INT">Comunicado Interno</option>
-                                            <option value="INFORME">Informe</option>
-                                            <option value="EXPEDIENTE">Expediente</option>
-                                            <option value="OTRO">Otro</option>
-                                        </select>
+                                            className={`w-full rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                fieldErrors.asunto 
+                                                    ? 'border-2 border-red-500 dark:border-red-500' 
+                                                    : 'border-slate-200 dark:border-slate-700'
+                                            }`}
+                                            placeholder="Escriba el tema principal del documento (10-500 caracteres)..."
+                                            type="text"
+                                            maxLength="500"
+                                        />
+                                        <p className="text-xs text-slate-400 mt-1">{formData.asunto.length}/500 caracteres</p>
+                                        {fieldErrors.asunto && (
+                                            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-xs">error</span>
+                                                {fieldErrors.asunto}
+                                            </p>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">
-                                            Fecha límite de atención
+                                            Síntesis / Contenido <span className="text-red-500">*</span>
                                         </label>
-                                        <input
-                                            name="fecha_limite"
-                                            value={formData.fecha_limite}
+                                        <textarea
+                                            name="contenido"
+                                            value={formData.contenido}
                                             onChange={handleInputChange}
                                             disabled={!puedeCrearDocumento}
-                                            min={fechaMinima}
-                                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                            type="date"
+                                            className={`w-full rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                fieldErrors.contenido 
+                                                    ? 'border-2 border-red-500 dark:border-red-500' 
+                                                    : 'border-slate-200 dark:border-slate-700'
+                                            }`}
+                                            placeholder="Resumen detallado del contenido (mínimo 20 caracteres)..."
+                                            rows="3"
+                                        />
+                                        <p className="text-xs text-slate-400 mt-1">{formData.contenido.length} caracteres</p>
+                                        {fieldErrors.contenido && (
+                                            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-xs">error</span>
+                                                {fieldErrors.contenido}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Prioridad</label>
+                                            <select
+                                                name="prioridad"
+                                                value={formData.prioridad}
+                                                onChange={handleInputChange}
+                                                disabled={!puedeCrearDocumento}
+                                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <option value="BAJA">Baja</option>
+                                                <option value="MEDIA">Media</option>
+                                                <option value="ALTA">Alta</option>
+                                                <option value="URGENTE">Urgente</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Contexto</label>
+                                            <select
+                                                name="contexto"
+                                                value={formData.contexto}
+                                                onChange={handleInputChange}
+                                                disabled={!puedeCrearDocumento}
+                                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <option value="OFICIO">Oficio</option>
+                                                <option value="MEMORANDUM">Memorándum</option>
+                                                <option value="CIRCULAR">Circular</option>
+                                                <option value="COMUNICADO_INT">Comunicado Interno</option>
+                                                <option value="INFORME">Informe</option>
+                                                <option value="EXPEDIENTE">Expediente</option>
+                                                <option value="OTRO">Otro</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">
+                                                Fecha límite de atención
+                                            </label>
+                                            <input
+                                                name="fecha_limite"
+                                                value={formData.fecha_limite}
+                                                onChange={handleInputChange}
+                                                disabled={!puedeCrearDocumento}
+                                                min={fechaMinima}
+                                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                type="date"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Campo condicional: Préstamo de Número (solo si contexto === 'OFICIO') */}
+                                    {requierePrestamoNumero && (
+                                        <div className="border-l-4 border-primary pl-4 bg-primary/5 dark:bg-primary/10 p-3 rounded-r-lg">
+                                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
+                                                Préstamo de Número <span className="text-red-500">*</span>
+                                            </label>
+                                            {prestamoSeleccionado ? (
+                                                <div className="space-y-2">
+                                                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                                                {prestamoSeleccionado.folio_asignado}
+                                                            </span>
+                                                            <span className="text-xs px-2 py-0.5 bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full">
+                                                                Aprobado
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                                                            Área: {prestamoSeleccionado.area_prestamista_nombre}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-500">
+                                                            Vence en {Math.floor(prestamoSeleccionado.dias_restantes)} días
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleCambiarPrestamo}
+                                                        disabled={!puedeCrearDocumento}
+                                                        className="w-full py-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                                                    >
+                                                        <span className="material-symbols-outlined !text-sm">swap_horiz</span>
+                                                        Cambiar préstamo
+                                                    </button>
+                                                </div>
+                                            ) : solicitudReserva ? (
+                                                <div className="space-y-2">
+                                                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <span className="font-semibold text-amber-700 dark:text-amber-400">
+                                                                Reserva configurada
+                                                            </span>
+                                                            <span className="text-xs px-2 py-0.5 bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 rounded-full">
+                                                                Pendiente
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                                                            Área: {solicitudReserva.area_prestamista_nombre}
+                                                            {solicitudReserva.area_prestamista_clave ? ` (${solicitudReserva.area_prestamista_clave})` : ''}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                                                            Motivo: {solicitudReserva.motivacion}
+                                                        </p>
+                                                        <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+                                                            Al emitir se registrará como PENDIENTE_PRESTAMO hasta aprobación.
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsModalFolioOpen(true)}
+                                                        disabled={!puedeCrearDocumento}
+                                                        className="w-full py-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
+                                                    >
+                                                        <span className="material-symbols-outlined !text-sm">swap_horiz</span>
+                                                        Cambiar selección
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsModalFolioOpen(true)}
+                                                        disabled={!puedeCrearDocumento}
+                                                        className="w-full py-3 px-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-sm text-slate-600 dark:text-slate-400 hover:text-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <span className="material-symbols-outlined !text-lg">add_circle</span>
+                                                        Seleccionar préstamo aprobado
+                                                    </button>
+                                                    <p className="text-xs text-slate-500 mt-2">
+                                                        <span className="material-symbols-outlined !text-xs align-middle">info</span>
+                                                        Campo obligatorio para documentos tipo OFICIO
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Instrucciones Adicionales</label>
+                                        <textarea
+                                            name="instrucciones"
+                                            value={formData.instrucciones}
+                                            onChange={handleInputChange}
+                                            disabled={!puedeCrearDocumento}
+                                            className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                            placeholder="Instrucciones u observaciones adicionales (opcional)..."
+                                            rows="2"
                                         />
                                     </div>
                                 </div>
-                                
-                                {/* Campo condicional: Préstamo de Número (solo si contexto === 'OFICIO') */}
-                                {requierePrestamoNumero && (
-                                    <div className="border-l-4 border-primary pl-4 bg-primary/5 dark:bg-primary/10 p-3 rounded-r-lg">
-                                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
-                                            Préstamo de Número <span className="text-red-500">*</span>
-                                        </label>
-                                        {prestamoSeleccionado ? (
-                                            <div className="space-y-2">
-                                                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                                                            {prestamoSeleccionado.folio_asignado}
-                                                        </span>
-                                                        <span className="text-xs px-2 py-0.5 bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full">
-                                                            Aprobado
-                                                        </span>
+                            </section>
+
+                            <div className="space-y-6">
+                                {/* Card 6: Archivos Adjuntos */}
+                                <section className="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                    <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-primary !text-base">attach_file</span>
+                                                Archivos Adjuntos
+                                            </h3>
+                                            <button
+                                                type="button"
+                                                onClick={handleAbrirSelectorArchivos}
+                                                disabled={!puedeCrearDocumento}
+                                                className="text-xs font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <span className="material-symbols-outlined !text-sm">add</span> Agregar más archivos
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="p-4">
+                                        {/* Input file oculto */}
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            multiple
+                                            accept=".pdf,.docx,.doc,.xlsx,.xls,.jpg,.jpeg,.png"
+                                            onChange={handleFileInputChange}
+                                            className="hidden"
+                                            disabled={!puedeCrearDocumento}
+                                        />
+
+                                        {/* Zona de drag & drop */}
+                                        <div
+                                            onDragOver={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={handleDrop}
+                                            onClick={handleAbrirSelectorArchivos}
+                                            className={`border-2 border-dashed rounded-xl p-4 text-center flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                                                isDragging
+                                                    ? 'border-primary bg-primary/10'
+                                                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 hover:border-primary/50'
+                                            } ${!puedeCrearDocumento ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            <span className="material-symbols-outlined text-3xl text-slate-300 mb-1">upload_file</span>
+                                            <p className="text-xs text-slate-500">
+                                                {isDragging ? 'Suelta los archivos aquí' : 'Arrastra y suelta archivos o haz clic para subir'}
+                                            </p>
+                                            <p className="text-xs text-slate-400 mt-1">
+                                                Formatos: PDF, DOCX, XLSX, JPG, PNG • Máximo 50 MB por archivo
+                                            </p>
+                                        </div>
+
+                                        {/* Error de archivos */}
+                                        {errorArchivos && (
+                                            <div className="mt-3 bg-red-100 text-red-700 p-3 rounded-lg text-sm flex items-start gap-2">
+                                                <span className="material-symbols-outlined !text-base">error</span>
+                                                <span>{errorArchivos}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Lista de archivos subiendo */}
+                                        {archivosSubiendo.length > 0 && (
+                                            <div className="mt-4 space-y-2">
+                                                {archivosSubiendo.map(archivo => (
+                                                    <div
+                                                        key={archivo.id}
+                                                        className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800"
+                                                    >
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <span className="material-symbols-outlined text-primary animate-spin">
+                                                                progress_activity
+                                                            </span>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-semibold truncate">{archivo.nombre_archivo}</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-full bg-slate-200 rounded-full h-1.5">
+                                                                        <div
+                                                                            className="bg-primary h-1.5 rounded-full transition-all"
+                                                                            style={{ width: `${archivo.progreso}%` }}
+                                                                        ></div>
+                                                                    </div>
+                                                                    <span className="text-xs text-slate-500 whitespace-nowrap">
+                                                                        {archivo.progreso}%
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-xs text-slate-600 dark:text-slate-400">
-                                                        Área: {prestamoSeleccionado.area_prestamista_nombre}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-500">
-                                                        Vence en {Math.floor(prestamoSeleccionado.dias_restantes)} días
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleCambiarPrestamo}
-                                                    disabled={!puedeCrearDocumento}
-                                                    className="w-full py-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1 disabled:opacity-50"
-                                                >
-                                                    <span className="material-symbols-outlined !text-sm">swap_horiz</span>
-                                                    Cambiar préstamo
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsModalFolioOpen(true)}
-                                                    disabled={!puedeCrearDocumento}
-                                                    className="w-full py-3 px-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-sm text-slate-600 dark:text-slate-400 hover:text-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    <span className="material-symbols-outlined !text-lg">add_circle</span>
-                                                    Seleccionar préstamo aprobado
-                                                </button>
-                                                <p className="text-xs text-slate-500 mt-2">
-                                                    <span className="material-symbols-outlined !text-xs align-middle">info</span>
-                                                    Campo obligatorio para documentos tipo OFICIO
-                                                </p>
+                                                ))}
                                             </div>
                                         )}
-                                    </div>
-                                )}
-                                
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Instrucciones Adicionales</label>
-                                    <textarea
-                                        name="instrucciones"
-                                        value={formData.instrucciones}
-                                        onChange={handleInputChange}
-                                        disabled={!puedeCrearDocumento}
-                                        className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                                        placeholder="Instrucciones u observaciones adicionales (opcional)..."
-                                        rows="2"
-                                    />
-                                </div>
-                            </div>
-                        </section>
 
-                        {/* Card 4: Destinatarios y Copias */}
-                        <section className="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                            <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-primary !text-base">group</span>
-                                    Destinatarios y Copias
-                                </h3>
-                            </div>
-                            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Destinatarios */}
-                                <div className="space-y-3">
-                                    <label className="block text-xs font-bold text-slate-500 uppercase">
-                                        Destinatarios (Turnar)
-                                    </label>
-                                    <select 
-                                        onChange={handleAgregarDestinatario}
-                                        disabled={!puedeCrearDocumento || loadingAreas}
-                                        className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        value=""
-                                    >
-                                        <option value="">
-                                            {loadingAreas ? 'Cargando áreas...' : 'Seleccionar destinatario...'}
-                                        </option>
-                                        {errorAreas && <option disabled>Error al cargar áreas</option>}
-                                        {!loadingAreas && areasParaDestinatarios.map(area => (
-                                            <option key={area.id} value={area.id}>
-                                                {area.nombre} ({area.clave})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    
-                                    {/* Chips de destinatarios seleccionados */}
-                                    <div className="flex flex-wrap gap-2 min-h-[32px] p-2 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                                        {destinatarios.length === 0 && (
-                                            <span className="text-xs text-slate-400 italic">Sin destinatarios seleccionados</span>
+                                        {/* Lista de archivos subidos */}
+                                        {archivos.length > 0 && (
+                                            <div className="mt-4 space-y-2">
+                                                {archivos.map(archivo => {
+                                                    const { icono, color } = obtenerIconoArchivo(archivo.tipo_mime);
+                                                    return (
+                                                        <div
+                                                            key={archivo.id}
+                                                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700"
+                                                        >
+                                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                                <span className={`material-symbols-outlined ${color}`}>{icono}</span>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-sm font-semibold truncate">{archivo.nombre_archivo}</p>
+                                                                    <p className="text-[10px] text-slate-500">
+                                                                        {archivoService.formatearTamaño(archivo.tamaño)}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoverArchivo(archivo.id)}
+                                                                disabled={!puedeCrearDocumento}
+                                                                className="material-symbols-outlined text-slate-400 hover:text-danger transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                title="Eliminar archivo"
+                                                            >
+                                                                delete
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         )}
-                                        {destinatarios.map(destinatario => (
-                                            <span 
-                                                key={destinatario.id}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20"
-                                            >
-                                                {destinatario.nombre}
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => handleRemoverDestinatario(destinatario.id)}
-                                                    disabled={!puedeCrearDocumento}
-                                                    className="material-symbols-outlined !text-xs hover:text-red-600 transition-colors disabled:opacity-50"
-                                                    title="Remover"
-                                                >
-                                                    close
-                                                </button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
 
-                                {/* Copias de conocimiento (CC) */}
-                                <div className="space-y-3">
-                                    <label className="block text-xs font-bold text-slate-500 uppercase">
-                                        Copias de conocimiento (CC)
-                                    </label>
-                                    <select
-                                        onChange={handleAgregarCopia}
-                                        disabled={!puedeCrearDocumento || loadingAreas}
-                                        className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        value=""
-                                    >
-                                        <option value="">
-                                            {loadingAreas ? 'Cargando áreas...' : 'Seleccionar CC...'}
-                                        </option>
-                                        {errorAreas && <option disabled>Error al cargar áreas</option>}
-                                        {!loadingAreas && areasParaCopias.map(area => (
-                                            <option key={area.id} value={area.id}>
-                                                {area.nombre} ({area.clave})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    
-                                    {/* Chips de copias seleccionadas */}
-                                    <div className="flex flex-wrap gap-2 min-h-[32px] p-2 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                                        {copias.length === 0 && (
-                                            <span className="text-xs text-slate-400 italic">Sin copias seleccionadas</span>
+                                        {/* Mensaje cuando no hay archivos */}
+                                        {archivos.length === 0 && archivosSubiendo.length === 0 && !errorArchivos && (
+                                            <p className="text-xs text-slate-400 text-center mt-3">
+                                                No se han adjuntado archivos
+                                            </p>
                                         )}
-                                        {copias.map(copia => (
-                                            <span 
-                                                key={copia.id}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-full"
-                                            >
-                                                {copia.nombre}
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => handleRemoverCopia(copia.id)}
-                                                    disabled={!puedeCrearDocumento}
-                                                    className="material-symbols-outlined !text-xs hover:text-red-600 transition-colors disabled:opacity-50"
-                                                    title="Remover"
-                                                >
-                                                    close
-                                                </button>
-                                            </span>
-                                        ))}
                                     </div>
-                                </div>
+                                </section>
+
+                                {/* Card 4: Destinatarios y Copias */}
+                                <section className="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                    <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-primary !text-base">group</span>
+                                            Destinatarios y Copias
+                                        </h3>
+                                    </div>
+                                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Destinatarios */}
+                                        <div className="space-y-3">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase">
+                                                Destinatarios (Turnar)
+                                            </label>
+                                            <select 
+                                                onChange={handleAgregarDestinatario}
+                                                disabled={!puedeCrearDocumento || loadingAreas}
+                                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                value=""
+                                            >
+                                                <option value="">
+                                                    {loadingAreas ? 'Cargando áreas...' : 'Seleccionar destinatario...'}
+                                                </option>
+                                                {errorAreas && <option disabled>Error al cargar áreas</option>}
+                                                {!loadingAreas && areasParaDestinatarios.map(area => (
+                                                    <option key={area.id} value={area.id}>
+                                                        {area.nombre} ({area.clave})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            
+                                            {/* Chips de destinatarios seleccionados */}
+                                            <div className="flex flex-wrap gap-2 min-h-[32px] p-2 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                                                {destinatarios.length === 0 && (
+                                                    <span className="text-xs text-slate-400 italic">Sin destinatarios seleccionados</span>
+                                                )}
+                                                {destinatarios.map(destinatario => (
+                                                    <span 
+                                                        key={destinatario.id}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20"
+                                                    >
+                                                        {destinatario.nombre}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => handleRemoverDestinatario(destinatario.id)}
+                                                            disabled={!puedeCrearDocumento}
+                                                            className="material-symbols-outlined !text-xs hover:text-red-600 transition-colors disabled:opacity-50"
+                                                            title="Remover"
+                                                        >
+                                                            close
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Copias de conocimiento (CC) */}
+                                        <div className="space-y-3">
+                                            <label className="block text-xs font-bold text-slate-500 uppercase">
+                                                Copias de conocimiento (CC)
+                                            </label>
+                                            <select
+                                                onChange={handleAgregarCopia}
+                                                disabled={!puedeCrearDocumento || loadingAreas}
+                                                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                value=""
+                                            >
+                                                <option value="">
+                                                    {loadingAreas ? 'Cargando áreas...' : 'Seleccionar CC...'}
+                                                </option>
+                                                {errorAreas && <option disabled>Error al cargar áreas</option>}
+                                                {!loadingAreas && areasParaCopias.map(area => (
+                                                    <option key={area.id} value={area.id}>
+                                                        {area.nombre} ({area.clave})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            
+                                            {/* Chips de copias seleccionadas */}
+                                            <div className="flex flex-wrap gap-2 min-h-[32px] p-2 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                                                {copias.length === 0 && (
+                                                    <span className="text-xs text-slate-400 italic">Sin copias seleccionadas</span>
+                                                )}
+                                                {copias.map(copia => (
+                                                    <span 
+                                                        key={copia.id}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-full"
+                                                    >
+                                                        {copia.nombre}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => handleRemoverCopia(copia.id)}
+                                                            disabled={!puedeCrearDocumento}
+                                                            className="material-symbols-outlined !text-xs hover:text-red-600 transition-colors disabled:opacity-50"
+                                                            title="Remover"
+                                                        >
+                                                            close
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
-                        </section>
+                        </div>
 
                         {/* Card 5: Control y Seguimiento */}
                         <section className="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -1412,140 +1623,6 @@ const FormularioEmision = () => {
                             </div>
                         </section>
 
-                        {/* Card 6: Archivos Adjuntos */}
-                        <section className="card-hover bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                            <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-primary !text-base">attach_file</span>
-                                        Archivos Adjuntos
-                                    </h3>
-                                    <button
-                                        type="button"
-                                        onClick={handleAbrirSelectorArchivos}
-                                        disabled={!puedeCrearDocumento}
-                                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <span className="material-symbols-outlined !text-sm">add</span> Agregar más archivos
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="p-4">
-                                {/* Input file oculto */}
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    multiple
-                                    accept=".pdf,.docx,.doc,.xlsx,.xls,.jpg,.jpeg,.png"
-                                    onChange={handleFileInputChange}
-                                    className="hidden"
-                                    disabled={!puedeCrearDocumento}
-                                />
-
-                                {/* Zona de drag & drop */}
-                                <div
-                                    onDragOver={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={handleDrop}
-                                    onClick={handleAbrirSelectorArchivos}
-                                    className={`border-2 border-dashed rounded-xl p-4 text-center flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                                        isDragging
-                                            ? 'border-primary bg-primary/10'
-                                            : 'border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20 hover:border-primary/50'
-                                    } ${!puedeCrearDocumento ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    <span className="material-symbols-outlined text-3xl text-slate-300 mb-1">upload_file</span>
-                                    <p className="text-xs text-slate-500">
-                                        {isDragging ? 'Suelta los archivos aquí' : 'Arrastra y suelta archivos o haz clic para subir'}
-                                    </p>
-                                    <p className="text-xs text-slate-400 mt-1">
-                                        Formatos: PDF, DOCX, XLSX, JPG, PNG • Máximo 50 MB por archivo
-                                    </p>
-                                </div>
-
-                                {/* Error de archivos */}
-                                {errorArchivos && (
-                                    <div className="mt-3 bg-red-100 text-red-700 p-3 rounded-lg text-sm flex items-start gap-2">
-                                        <span className="material-symbols-outlined !text-base">error</span>
-                                        <span>{errorArchivos}</span>
-                                    </div>
-                                )}
-
-                                {/* Lista de archivos subiendo */}
-                                {archivosSubiendo.length > 0 && (
-                                    <div className="mt-4 space-y-2">
-                                        {archivosSubiendo.map(archivo => (
-                                            <div
-                                                key={archivo.id}
-                                                className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800"
-                                            >
-                                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                    <span className="material-symbols-outlined text-primary animate-spin">
-                                                        progress_activity
-                                                    </span>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-semibold truncate">{archivo.nombre_archivo}</p>
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-full bg-slate-200 rounded-full h-1.5">
-                                                                <div
-                                                                    className="bg-primary h-1.5 rounded-full transition-all"
-                                                                    style={{ width: `${archivo.progreso}%` }}
-                                                                ></div>
-                                                            </div>
-                                                            <span className="text-xs text-slate-500 whitespace-nowrap">
-                                                                {archivo.progreso}%
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Lista de archivos subidos */}
-                                {archivos.length > 0 && (
-                                    <div className="mt-4 space-y-2">
-                                        {archivos.map(archivo => {
-                                            const { icono, color } = obtenerIconoArchivo(archivo.tipo_mime);
-                                            return (
-                                                <div
-                                                    key={archivo.id}
-                                                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700"
-                                                >
-                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                        <span className={`material-symbols-outlined ${color}`}>{icono}</span>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-semibold truncate">{archivo.nombre_archivo}</p>
-                                                            <p className="text-[10px] text-slate-500">
-                                                                {archivoService.formatearTamaño(archivo.tamaño)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoverArchivo(archivo.id)}
-                                                        disabled={!puedeCrearDocumento}
-                                                        className="material-symbols-outlined text-slate-400 hover:text-danger transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        title="Eliminar archivo"
-                                                    >
-                                                        delete
-                                                    </button>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
-                                {/* Mensaje cuando no hay archivos */}
-                                {archivos.length === 0 && archivosSubiendo.length === 0 && !errorArchivos && (
-                                    <p className="text-xs text-slate-400 text-center mt-3">
-                                        No se han adjuntado archivos
-                                    </p>
-                                )}
-                            </div>
-                        </section>
-
                         {/* Sticky Footer Actions */}
                         <footer className="fixed bottom-0 left-64 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between z-20">
                             <div className="flex items-center gap-3">
@@ -1561,13 +1638,19 @@ const FormularioEmision = () => {
                                 <button
                                     type="button"
                                     onClick={handleGuardar}
-                                    disabled={!puedeCrearDocumento || loading || success}
+                                    disabled={!puedeCrearDocumento || loading || isEmitting || success || documentoRegistrado !== null}
                                     className="px-5 py-2 bg-success text-white text-sm font-bold rounded-lg hover:bg-success/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
-                                    {loading && (
+                                    {(loading || isEmitting) && (
                                         <span className="material-symbols-outlined !text-base animate-spin">progress_activity</span>
                                     )}
-                                    {loading ? 'Emitiendo...' : success ? 'Emitido' : 'Emitir Documento'}
+                                    {loading || isEmitting
+                                        ? 'Procesando...'
+                                        : success
+                                            ? 'Emitido'
+                                            : documentoRegistrado !== null
+                                                ? 'Registrado'
+                                                : 'Emitir Documento'}
                                 </button>
                                 
                                 {success && (
@@ -1657,18 +1740,28 @@ const FormularioEmision = () => {
                         )}
 
                         {/* Modal: Éxito en Emisión */}
-                        {showSuccessModal && documentoEmitido && (
+                        {showSuccessModal && documentoResultado && (
                             <div className="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
                                 <div className="modal-content bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg p-8 shadow-2xl border border-slate-200 dark:border-slate-800 mx-4">
                                     <div className="text-center mb-6">
-                                        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-4xl">check_circle</span>
-                                        </div>
+                                        {documentoResultado.estado === 'PENDIENTE_PRESTAMO' ? (
+                                            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-4xl">pending</span>
+                                            </div>
+                                        ) : (
+                                            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-4xl">check_circle</span>
+                                            </div>
+                                        )}
                                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                                            ¡Documento Emitido!
+                                            {documentoResultado.estado === 'PENDIENTE_PRESTAMO'
+                                                ? 'Documento Registrado'
+                                                : '¡Documento Emitido!'}
                                         </h2>
                                         <p className="text-sm text-slate-500">
-                                            El documento se ha emitido exitosamente en el sistema
+                                            {documentoResultado.estado === 'PENDIENTE_PRESTAMO'
+                                                ? 'El documento fue registrado con folio reservado. Queda bloqueado hasta que el área prestamista apruebe el préstamo.'
+                                                : 'El documento se ha emitido exitosamente en el sistema'}
                                         </p>
                                     </div>
                                     
@@ -1677,20 +1770,20 @@ const FormularioEmision = () => {
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs font-bold text-slate-500 uppercase">Folio generado:</span>
                                                 <span className="text-sm font-mono font-bold text-primary">
-                                                    {documentoEmitido.folio || 'N/A'}
+                                                    {documentoResultado?.folio || 'N/A'}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs font-bold text-slate-500 uppercase">ID Documento:</span>
                                                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                                    #{documentoEmitido.documento_id || 'N/A'}
+                                                    #{documentoResultado?.documento_id || 'N/A'}
                                                 </span>
                                             </div>
-                                            {documentoEmitido.asunto && (
+                                            {documentoResultado?.asunto && (
                                                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                                                     <span className="text-xs font-bold text-slate-500 uppercase block mb-1">Asunto:</span>
                                                     <p className="text-sm text-slate-700 dark:text-slate-300">
-                                                        {documentoEmitido.asunto}
+                                                        {documentoResultado.asunto}
                                                     </p>
                                                 </div>
                                             )}
@@ -2008,16 +2101,29 @@ const FormularioEmision = () => {
                     )}
 
                     {/* Advertencia final */}
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                        <div className="flex items-start gap-2">
-                            <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">
-                                warning
-                            </span>
-                            <p className="text-xs text-amber-800 dark:text-amber-200">
-                                Una vez emitido, el documento será registrado oficialmente y se generará su folio permanente.
-                            </p>
+                    {solicitudReserva && formData.contexto === 'OFICIO' && !formData.prestamo_numero_id ? (
+                        <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                            <div className="flex items-start gap-2">
+                                <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-base">
+                                    pending
+                                </span>
+                                <p className="text-xs text-orange-800 dark:text-orange-200">
+                                    El documento quedará en estado <strong>PENDIENTE_PRESTAMO</strong>. No podrá turnarse ni adjuntar archivos hasta que el área <strong>{solicitudReserva.area_prestamista_nombre}</strong> apruebe el préstamo.
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                            <div className="flex items-start gap-2">
+                                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-base">
+                                    warning
+                                </span>
+                                <p className="text-xs text-amber-800 dark:text-amber-200">
+                                    Una vez emitido, el documento será registrado oficialmente y se generará su folio permanente.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </ConfirmDialog>
         </AppLayout>

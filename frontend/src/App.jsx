@@ -11,9 +11,11 @@ import Login from '@pages/Login/Login';
 import Dashboard from '@pages/Dashboard/Dashboard';
 import Usuarios from '@pages/Usuarios/Usuarios';
 import UnidadesAdministrativas from '@pages/UnidadesAdministrativas/UnidadesAdministrativas';
+import DetalleUnidad from '@pages/UnidadesAdministrativas/DetalleUnidad';
 import TiposDocumento from '@pages/TiposDocumento/TiposDocumento';
 import FormularioEmision from '@pages/Emision/FormularioEmision';
 import Unauthorized from '@pages/Unauthorized/Unauthorized';
+import RegistroAccesos from '@pages/Accesos/RegistroAccesos';
 import { BandejaRecepcionLayout } from './pages/BandejaRecepcion';
 
 
@@ -52,7 +54,9 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/unidades" element={<UnidadesAdministrativas />} />
+          <Route path="/unidades/:id" element={<DetalleUnidad />} />
           <Route path="/documentos" element={<TiposDocumento />} />
+          <Route path="/accesos" element={<RegistroAccesos />} />
         </Route>
 
         {/* Rutas protegidas por permisos específicos */}

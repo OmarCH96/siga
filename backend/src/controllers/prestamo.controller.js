@@ -126,6 +126,83 @@ const solicitarPrestamo = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Solicitar préstamo con reserva inmediata de folio y creación de documento bloqueado.
+ * POST /prestamos/solicitar-con-reserva
+ * Body: {
+ *   area_prestamista_id,
+ *   motivacion,
+ *   tipo_documento_id,
+ *   asunto,
+ *   contenido?,
+ *   fecha_limite?,
+ *   prioridad?,
+ *   instrucciones?,
+ *   observaciones?
+ * }
+ */
+const solicitarPrestamoConReserva = asyncHandler(async (req, res) => {
+  const {
+    area_prestamista_id,
+    motivacion,
+    tipo_documento_id,
+    asunto,
+    contenido,
+    fecha_limite,
+    prioridad = 'MEDIA',
+    instrucciones,
+    observaciones
+  } = req.body;
+
+  const { id: usuario_solicita_id, areaId: area_solicitante_id } = req.user;
+
+  if (!area_prestamista_id) {
+    throw new ValidationError('El área prestamista es requerida');
+  }
+
+  if (!motivacion || motivacion.trim().length < 10) {
+    throw new ValidationError('La motivación debe tener al menos 10 caracteres');
+  }
+
+  if (!tipo_documento_id || !Number.isInteger(Number(tipo_documento_id)) || Number(tipo_documento_id) <= 0) {
+    throw new ValidationError('El tipo de documento es requerido y debe ser un ID válido');
+  }
+
+  if (!asunto || typeof asunto !== 'string' || asunto.trim().length < 5) {
+    throw new ValidationError('El asunto es requerido y debe tener al menos 5 caracteres');
+  }
+
+  const resultado = await prestamoRepository.solicitarConReserva({
+    area_solicitante_id,
+    area_prestamista_id: parseInt(area_prestamista_id, 10),
+    usuario_solicita_id,
+    motivacion: motivacion.trim(),
+    tipo_documento_id: parseInt(tipo_documento_id, 10),
+    asunto: asunto.trim(),
+    contenido: contenido?.trim() || null,
+    fecha_limite: fecha_limite || null,
+    prioridad,
+    instrucciones: instrucciones?.trim() || null,
+    observaciones: observaciones?.trim() || null
+  });
+
+  if (!resultado) {
+    throw new ValidationError('No se pudo crear la solicitud con reserva');
+  }
+
+  res.status(201).json({
+    success: true,
+    message: 'Solicitud creada. Documento registrado en estado PENDIENTE_PRESTAMO',
+    data: {
+      prestamo_id: resultado.p_prestamo_id,
+      documento_id: resultado.p_documento_id,
+      nodo_id: resultado.p_nodo_id,
+      folio_reservado: resultado.p_folio_reservado,
+      estado_documento: 'PENDIENTE_PRESTAMO'
+    }
+  });
+});
+
+/**
  * Obtener préstamos aprobados disponibles para el usuario
  * GET /prestamos/aprobados
  */
@@ -227,6 +304,7 @@ module.exports = {
   getAreasPrestamistas,
   getPreviewFolio,
   solicitarPrestamo,
+  solicitarPrestamoConReserva,
   getPrestamosAprobados,
   getPrestamosPendientes,
   resolverPrestamo,

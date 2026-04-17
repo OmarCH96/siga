@@ -200,8 +200,9 @@ export const useEmisionDocumento = () => {
         datosEmision.fecha_limite = formData.fecha_limite;
       }
 
-      if (formData.prestamo_numero_id && formData.prestamo_numero_id.trim() !== '') {
-        datosEmision.prestamo_numero_id = formData.prestamo_numero_id.trim();
+      const prestamoIdNumerico = Number(formData.prestamo_numero_id);
+      if (Number.isInteger(prestamoIdNumerico) && prestamoIdNumerico > 0) {
+        datosEmision.prestamo_numero_id = prestamoIdNumerico;
       }
 
       if (formData.instrucciones && formData.instrucciones.trim() !== '') {

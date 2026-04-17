@@ -164,6 +164,95 @@ class AuditoriaRepository {
     const result = await db.query(query, values);
     return result.rows;
   }
+
+  /**
+   * Lista registros de auditoria_sistema con paginación y filtros.
+   * @param {Object} opts
+   * @param {number}  opts.page        - Número de página (1-based)
+   * @param {number}  opts.limit       - Registros por página
+   * @param {string}  [opts.busqueda]  - Busca en nombre de usuario o ip_address
+   * @param {string}  [opts.estado]    - Filtra por accion normalizada (EXITOSO|FALLIDO|MFA_REQUERIDO)
+   * @param {string}  [opts.dispositivo] - 'movil' o 'escritorio'
+   * @returns {Promise<{rows: Array, total: number}>}
+   */
+  async listarAccesos({ page = 1, limit = 10, busqueda = '', estado = '', dispositivo = '' } = {}) {
+    const offset = (page - 1) * limit;
+    const values = [];
+    let paramIndex = 1;
+
+    // Condición de búsqueda por texto
+    let whereBusqueda = '';
+    if (busqueda) {
+      whereBusqueda = `
+        AND (
+          LOWER(u.nombre || ' ' || u.apellidos) LIKE $${paramIndex}
+          OR a_s.ip_address LIKE $${paramIndex}
+        )`;
+      values.push(`%${busqueda.toLowerCase()}%`);
+      paramIndex++;
+    }
+
+    // Filtro por estado (accion del registro de auditoría)
+    let whereEstado = '';
+    if (estado && estado !== 'Todos') {
+      whereEstado = ` AND a_s.accion = $${paramIndex}`;
+      values.push(estado);
+      paramIndex++;
+    }
+
+    // Filtro por tipo de dispositivo (inferido del user_agent)
+    let whereDispositivo = '';
+    if (dispositivo === 'movil') {
+      whereDispositivo = ` AND (a_s.user_agent ILIKE '%mobile%' OR a_s.user_agent ILIKE '%android%' OR a_s.user_agent ILIKE '%iphone%' OR a_s.user_agent ILIKE '%ipad%')`;
+    } else if (dispositivo === 'escritorio') {
+      whereDispositivo = ` AND NOT (a_s.user_agent ILIKE '%mobile%' OR a_s.user_agent ILIKE '%android%' OR a_s.user_agent ILIKE '%iphone%' OR a_s.user_agent ILIKE '%ipad%')`;
+    }
+
+    const baseWhere = `WHERE 1=1 ${whereBusqueda} ${whereEstado} ${whereDispositivo}`;
+
+    const dataQuery = `
+      SELECT
+        a_s.id,
+        a_s.accion,
+        a_s.descripcion,
+        a_s.ip_address,
+        a_s.user_agent,
+        a_s.fecha,
+        a_s.detalles,
+        u.id          AS usuario_id,
+        u.nombre      AS usuario_nombre,
+        u.apellidos   AS usuario_apellidos,
+        ar.nombre     AS area_nombre,
+        r.nombre      AS rol_nombre
+      FROM auditoria_sistema a_s
+      LEFT JOIN usuario u  ON a_s.usuario_id = u.id
+      LEFT JOIN area   ar  ON a_s.area_id    = ar.id
+      LEFT JOIN rol    r   ON u.rol_id       = r.id
+      ${baseWhere}
+      ORDER BY a_s.fecha DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+    values.push(limit, offset);
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM auditoria_sistema a_s
+      LEFT JOIN usuario u ON a_s.usuario_id = u.id
+      ${baseWhere}
+    `;
+    // countQuery usa los mismos params menos limit/offset
+    const countValues = values.slice(0, paramIndex - 1);
+
+    const [dataResult, countResult] = await Promise.all([
+      db.query(dataQuery, values),
+      db.query(countQuery, countValues),
+    ]);
+
+    return {
+      rows: dataResult.rows,
+      total: parseInt(countResult.rows[0].total, 10),
+    };
+  }
 }
 
 module.exports = new AuditoriaRepository();

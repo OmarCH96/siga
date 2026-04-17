@@ -6,6 +6,8 @@
 const areaService = require('../services/area.service');
 const { asyncHandler } = require('../middlewares/error.middleware');
 const { ValidationError } = require('../utils/errors');
+const documentoRepository = require('../repositories/documento.repository');
+const log = require('../utils/logger');
 
 /**
  * Obtener todas las áreas con filtros y paginación
@@ -254,6 +256,82 @@ const toggleStatusArea = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Obtiene los documentos (emisiones o recepciones) de un área específica.
+ * GET /api/areas/:id/documentos
+ *
+ * Query params:
+ *   tipo       {string} 'emisiones' | 'recepciones'  (default: 'emisiones')
+ *   page       {number} Página (default 1)
+ *   limit      {number} Registros por página (default 10, max 100)
+ *   busqueda   {string} Filtra por folio o asunto (max 100 chars)
+ *   estado     {string} Estado del documento (valor exacto del enum)
+ *   claveTipo  {string} Clave del tipo de documento (EC, EO, EM…) — solo emisiones
+ */
+const getDocumentosPorArea = asyncHandler(async (req, res) => {
+  const areaId = parseInt(req.params.id, 10);
+
+  if (isNaN(areaId) || areaId <= 0) {
+    throw new ValidationError('ID de área inválido');
+  }
+
+  const tipo = req.query.tipo === 'recepciones' ? 'recepciones' : 'emisiones';
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 10));
+  const busqueda = (req.query.busqueda || '').trim().substring(0, 100);
+  const estado = (req.query.estado || '').trim();
+  const claveTipo = (req.query.claveTipo || '').trim();
+
+  log.debug('Obteniendo documentos por área', { areaId, tipo, page, limit });
+
+  let rows, total;
+
+  if (tipo === 'emisiones') {
+    ({ rows, total } = await documentoRepository.listarEmisionesPorArea(areaId, {
+      page, limit, busqueda, estado, claveTipo,
+    }));
+  } else {
+    ({ rows, total } = await documentoRepository.listarRecepcionesPorArea(areaId, {
+      page, limit, busqueda, estado,
+    }));
+  }
+
+  const documentos = rows.map((r) => ({
+    id: r.id,
+    folio: r.folio,
+    asunto: r.asunto,
+    estado: r.estado,
+    prioridad: r.prioridad,
+    fechaCreacion: r.fecha_creacion,
+    contexto: r.contexto,
+    tipoDocumento: {
+      id: r.tipo_documento_id,
+      nombre: r.tipo_documento_nombre,
+      clave: r.tipo_documento_clave,
+    },
+    responsable: {
+      id: r.usuario_id,
+      nombre: r.usuario_nombre,
+      apellidos: r.usuario_apellidos,
+    },
+    // Emisiones: destino actual; Recepciones: origen
+    contraparte: tipo === 'emisiones'
+      ? { id: r.area_destino_id, nombre: r.area_destino_nombre }
+      : { id: null, nombre: r.area_origen_nombre },
+  }));
+
+  res.status(200).json({
+    success: true,
+    data: {
+      documentos,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
+});
+
 module.exports = {
   getAllAreas,
   getAreasActivas,
@@ -266,4 +344,5 @@ module.exports = {
   createArea,
   updateArea,
   toggleStatusArea,
+  getDocumentosPorArea,
 };

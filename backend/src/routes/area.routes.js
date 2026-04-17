@@ -125,4 +125,15 @@ router.patch(
   areaController.toggleStatusArea
 );
 
+/**
+ * GET /api/areas/:id/documentos
+ * Obtiene los documentos (emisiones o recepciones) de un área.
+ * Query params: tipo, page, limit, busqueda, estado, claveTipo
+ */
+router.get(
+  '/:id/documentos',
+  validateIdParam(),
+  areaController.getDocumentosPorArea
+);
+
 module.exports = router;

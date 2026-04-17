@@ -21,6 +21,7 @@ const tipoDocumentoRoutes = require('./routes/tipoDocumento.routes');
 const documentoRoutes = require('./routes/documento.routes');
 const archivoRoutes = require('./routes/archivo.routes');
 const prestamoRoutes = require('./routes/prestamo.routes');
+const accesosRoutes = require('./routes/accesos.routes');
 
 // Crear aplicación Express
 const app = express();
@@ -88,6 +89,7 @@ app.use('/api/tipo-documento', tipoDocumentoRoutes); //Ruta para administradores
 app.use('/api/documentos', documentoRoutes);
 app.use('/api/archivos', archivoRoutes);
 app.use('/api/prestamos', prestamoRoutes);
+app.use('/api/accesos', accesosRoutes);
 
 // ============================================================================
 // MANEJO DE ERRORES
