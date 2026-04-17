@@ -1,29 +1,136 @@
-PS F:\siga> psql -U postgres -d gestordocumental1 -f "migrations\fix_consecutivos_por_tipo.sql"
-Contraseña para usuario postgres: 
-BEGIN
-INSERT 0 0
-                         accion                          | cantidad
----------------------------------------------------------+----------
- Consecutivos creados/actualizados por tipo de documento |        6
-(1 fila)
+PS F:\GESTOR REACT-TAURI\SIGA\frontend> npm run tauri:dev
 
+> siga-frontend@1.0.0 tauri:dev
+> tauri dev
 
-                   accion                    | cantidad
----------------------------------------------+----------
- Consecutivos antiguos con EMISION gen├®rico |       25
-(1 fila)
+     Running BeforeDevCommand (`npm run dev`)
 
+> siga-frontend@1.0.0 dev
+> vite
 
-     area      | tipo_operacion | anio | ultimo_consecutivo
----------------+----------------+------+--------------------
- Administrador | EC             | 2026 |                  1
- Administrador | EM             | 2026 |                  1
- Administrador | EO             | 2026 |                  1
- Administrador | ET             | 2026 |                  1
- Administrador | MC             | 2026 |                  1
- Administrador | RECEPCION      | 2026 |                  4
-(6 filas)
+        Warn Waiting for your frontend dev server to start on http://localhost:5173/...
 
+  VITE v5.4.21  ready in 7014 ms
 
-COMMIT
-PS F:\siga> 
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.56.1:5173/
+  ➜  Network: http://192.168.137.1:5173/
+  ➜  Network: http://10.0.5.10:5173/
+  ➜  Network: http://192.168.32.1:5173/
+        Info Watching F:\GESTOR REACT-TAURI\SIGA\frontend\src-tauri for changes...
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.74s
+1:11:33 p.m. [vite] Pre-transform error: F:\GESTOR REACT-TAURI\SIGA\frontend\src\pages\UnidadesAdministrativas\DetalleUnidad.jsx: Identifier 'BADGE_ESTADO' has already been declared. (543:6)
+
+  541 |
+  542 | // ─── Mapeo de estatus a estilos ────────────────────────────────────────────────
+> 543 | const BADGE_ESTADO = {
+      |       ^
+  544 |   Concluido: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
+  545 |   'En Proceso': 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
+  546 |   Pendiente: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+1:11:33 p.m. [vite] Internal server error: F:\GESTOR REACT-TAURI\SIGA\frontend\src\pages\UnidadesAdministrativas\DetalleUnidad.jsx: Identifier 'BADGE_ESTADO' has already been declared. (543:6)
+
+  541 |
+  542 | // ─── Mapeo de estatus a estilos ────────────────────────────────────────────────
+> 543 | const BADGE_ESTADO = {
+      |       ^
+  544 |   Concluido: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
+  545 |   'En Proceso': 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
+  546 |   Pendiente: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+  Plugin: vite:react-babel
+  File: F:/GESTOR REACT-TAURI/SIGA/frontend/src/pages/UnidadesAdministrativas/DetalleUnidad.jsx:543:6
+  556|    primary: 'bg-primary/10 text-primary',
+  557|    secondary: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  558|  };
+     |    ^
+  559|
+  560|  const TIPOS_EMISION = [
+      at constructor (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:365:19)
+      at JSXParserMixin.raise (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:6599:19)
+      at ScopeHandler.checkRedeclarationInScope (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:1619:19)
+      at ScopeHandler.declareName (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:1585:12)
+      at JSXParserMixin.declareNameFromIdentifier (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7567:16)
+      at JSXParserMixin.checkIdentifier (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7563:12)
+      at JSXParserMixin.checkLVal (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7500:12)
+      at JSXParserMixin.parseVarId (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13412:10)
+      at JSXParserMixin.parseVar (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13383:12)
+      at JSXParserMixin.parseVarStatement (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13309:10)
+      at JSXParserMixin.parseProgram (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12612:25)
+      at JSXParserMixin.parse (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:14488:25)
+      at parse (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:14522:38)
+      at parser (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\parser\index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transformation\index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:261:32)
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:273:13
+      at async.call.result.err.err (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:223:11)
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:189:28
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\gensync-utils\async.js:67:7
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:113:33
+      at step (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:287:14)
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:273:13
+      at async.call.result.err.err (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:223:11)
+1:11:33 p.m. [vite] Internal server error: F:\GESTOR REACT-TAURI\SIGA\frontend\src\pages\UnidadesAdministrativas\DetalleUnidad.jsx: Identifier 'BADGE_ESTADO' has already been declared. (543:6)
+
+  541 |
+  542 | // ─── Mapeo de estatus a estilos ────────────────────────────────────────────────
+> 543 | const BADGE_ESTADO = {
+      |       ^
+  544 |   Concluido: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
+  545 |   'En Proceso': 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
+  546 |   Pendiente: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+  Plugin: vite:react-babel
+  File: F:/GESTOR REACT-TAURI/SIGA/frontend/src/pages/UnidadesAdministrativas/DetalleUnidad.jsx:543:6
+  556|    primary: 'bg-primary/10 text-primary',
+  557|    secondary: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  558|  };
+     |    ^
+  559|
+  560|  const TIPOS_EMISION = [
+      at constructor (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:365:19)
+      at JSXParserMixin.raise (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:6599:19)
+      at ScopeHandler.checkRedeclarationInScope (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:1619:19)
+      at ScopeHandler.declareName (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:1585:12)
+      at JSXParserMixin.declareNameFromIdentifier (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7567:16)
+      at JSXParserMixin.checkIdentifier (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7563:12)
+      at JSXParserMixin.checkLVal (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7500:12)
+      at JSXParserMixin.parseVarId (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13412:10)
+      at JSXParserMixin.parseVar (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13383:12)
+      at JSXParserMixin.parseVarStatement (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13309:10)
+      at JSXParserMixin.parseProgram (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12612:25)
+      at JSXParserMixin.parse (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:14488:25)
+      at parse (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:14522:38)
+      at parser (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\parser\index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transformation\index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:261:32)
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:273:13
+      at async.call.result.err.err (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:223:11)
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:189:28
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\gensync-utils\async.js:67:7
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:113:33
+      at step (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:287:14)
+      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:273:13
+      at async.call.result.err.err (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:223:11)

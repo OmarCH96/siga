@@ -157,40 +157,74 @@ ALTER TYPE public.estado_prestamo_enum OWNER TO postgres;
 -- Name: TYPE estado_prestamo_enum; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TYPE public.estado_prestamo_enum IS 'Estados del prestamo de numero de oficio:
-
-
-
-FLUJO TRADICIONAL (aprobacion previa):
-
-  SOLICITADO -> APROBADO -> UTILIZADO | RECHAZADO | VENCIDO
-
-
-
-FLUJO CON REVISION DIFERIDA (aprobacion posterior):
-
-  SOLICITADO -> EN_REVISION -> APROBADO_POSTERIOR | RECHAZADO_POSTERIOR | APROBADO_AUTOMATICO
-
-
-
-Descripcion detallada:
-
-- SOLICITADO: Solicitud inicial creada por el area descendiente
-
-- APROBADO: Prestamo aprobado previo a emision (flujo tradicional)
-
-- EN_REVISION: Documento emitido inmediatamente, esperando revision del area prestamista
-
-- APROBADO_POSTERIOR: Aprobado despues de la emision del documento (valida retroactivamente)
-
-- RECHAZADO_POSTERIOR: Rechazado despues de emision (invalida el documento emitido)
-
-- APROBADO_AUTOMATICO: Aprobado automaticamente por vencimiento del plazo sin respuesta
-
-- UTILIZADO: Prestamo utilizado en flujo tradicional despues de aprobacion previa
-
-- RECHAZADO: Rechazado antes de emision (flujo tradicional, bloquea emision)
-
+COMMENT ON TYPE public.estado_prestamo_enum IS 'Estados del prestamo de numero de oficio:
+
+
+
+
+
+
+
+FLUJO TRADICIONAL (aprobacion previa):
+
+
+
+  SOLICITADO -> APROBADO -> UTILIZADO | RECHAZADO | VENCIDO
+
+
+
+
+
+
+
+FLUJO CON REVISION DIFERIDA (aprobacion posterior):
+
+
+
+  SOLICITADO -> EN_REVISION -> APROBADO_POSTERIOR | RECHAZADO_POSTERIOR | APROBADO_AUTOMATICO
+
+
+
+
+
+
+
+Descripcion detallada:
+
+
+
+- SOLICITADO: Solicitud inicial creada por el area descendiente
+
+
+
+- APROBADO: Prestamo aprobado previo a emision (flujo tradicional)
+
+
+
+- EN_REVISION: Documento emitido inmediatamente, esperando revision del area prestamista
+
+
+
+- APROBADO_POSTERIOR: Aprobado despues de la emision del documento (valida retroactivamente)
+
+
+
+- RECHAZADO_POSTERIOR: Rechazado despues de emision (invalida el documento emitido)
+
+
+
+- APROBADO_AUTOMATICO: Aprobado automaticamente por vencimiento del plazo sin respuesta
+
+
+
+- UTILIZADO: Prestamo utilizado en flujo tradicional despues de aprobacion previa
+
+
+
+- RECHAZADO: Rechazado antes de emision (flujo tradicional, bloquea emision)
+
+
+
 - VENCIDO: Prestamo aprobado pero no utilizado dentro del tiempo limite';
 
 
@@ -249,18 +283,30 @@ ALTER TYPE public.tipo_area_enum OWNER TO postgres;
 -- Name: TYPE tipo_area_enum; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TYPE public.tipo_area_enum IS 'Tipos estructurales de area. Orden conceptual de jerarquia:
-
-
-
-
-
-OFICIALIA (solo entrada externa) > SECRETARIA > SECRETARIA_PARTICULAR / SUBSECRETARIA / INSTITUTO >
-
-
-
-
-
+COMMENT ON TYPE public.tipo_area_enum IS 'Tipos estructurales de area. Orden conceptual de jerarquia:
+
+
+
+
+
+
+
+
+
+
+
+OFICIALIA (solo entrada externa) > SECRETARIA > SECRETARIA_PARTICULAR / SUBSECRETARIA / INSTITUTO >
+
+
+
+
+
+
+
+
+
+
+
 DIRECCION_GENERAL > DIRECCION > COORDINACION / SUBDIRECCION > DEPARTAMENTO / UNIDAD / COMITE';
 
 
@@ -333,51 +379,96 @@ ALTER TYPE public.tipo_relacion_archivo_enum OWNER TO postgres;
 
 CREATE FUNCTION public.fn_es_ancestro(p_ancestro_id integer, p_descendiente_id integer) RETURNS boolean
     LANGUAGE plpgsql STABLE
-    AS $$
-
-
-BEGIN
-
-
-    RETURN EXISTS (
-
-
-        WITH RECURSIVE ascendencia AS (
-
-
-            SELECT area_padre_id AS padre
-
-
-            FROM public.area
-
-
-            WHERE id = p_descendiente_id
-
-
-            UNION ALL
-
-
-            SELECT a.area_padre_id
-
-
-            FROM public.area a
-
-
-            INNER JOIN ascendencia anc ON a.id = anc.padre
-
-
-        )
-
-
-        SELECT 1 FROM ascendencia WHERE padre = p_ancestro_id
-
-
-    );
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    RETURN EXISTS (
+
+
+
+
+
+        WITH RECURSIVE ascendencia AS (
+
+
+
+
+
+            SELECT area_padre_id AS padre
+
+
+
+
+
+            FROM public.area
+
+
+
+
+
+            WHERE id = p_descendiente_id
+
+
+
+
+
+            UNION ALL
+
+
+
+
+
+            SELECT a.area_padre_id
+
+
+
+
+
+            FROM public.area a
+
+
+
+
+
+            INNER JOIN ascendencia anc ON a.id = anc.padre
+
+
+
+
+
+        )
+
+
+
+
+
+        SELECT 1 FROM ascendencia WHERE padre = p_ancestro_id
+
+
+
+
+
+    );
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -396,12 +487,18 @@ COMMENT ON FUNCTION public.fn_es_ancestro(p_ancestro_id integer, p_descendiente_
 
 CREATE FUNCTION public.fn_es_hijo_directo_secretaria(p_area_id integer) RETURNS boolean
     LANGUAGE sql STABLE
-    AS $$
-
-
-    SELECT public.fn_padre_directo_tipo(p_area_id) = 'SECRETARIA';
-
-
+    AS $$
+
+
+
+
+
+    SELECT public.fn_padre_directo_tipo(p_area_id) = 'SECRETARIA';
+
+
+
+
+
 $$;
 
 
@@ -420,96 +517,186 @@ COMMENT ON FUNCTION public.fn_es_hijo_directo_secretaria(p_area_id integer) IS '
 
 CREATE FUNCTION public.fn_establecer_usuario_actual(p_usuario_id integer) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-
-
-DECLARE
-
-
-  v_rol_id INTEGER;
-
-
-  v_area_id INTEGER;
-
-
-  v_permisos TEXT;
-
-
-BEGIN
-
-
-  -- Obtener informaciÃ³n del usuario
-
-
-  SELECT rol_id, area_id INTO v_rol_id, v_area_id
-
-
-  FROM usuario
-
-
-  WHERE id = p_usuario_id AND activo = true;
-
-
-  
-
-
-  -- Si el usuario no existe o estÃ¡ inactivo, lanzar error
-
-
-  IF NOT FOUND THEN
-
-
-    RAISE EXCEPTION 'Usuario % no existe o estÃ¡ inactivo', p_usuario_id;
-
-
-  END IF;
-
-
-  
-
-
-  -- Obtener permisos del rol
-
-
-  SELECT permisos INTO v_permisos
-
-
-  FROM rol
-
-
-  WHERE id = v_rol_id;
-
-
-  
-
-
-  -- Establecer variables de sesiÃ³n
-
-
-  PERFORM set_config('app.usuario_id', p_usuario_id::TEXT, false);
-
-
-  PERFORM set_config('app.rol_id', v_rol_id::TEXT, false);
-
-
-  PERFORM set_config('app.area_id', v_area_id::TEXT, false);
-
-
-  PERFORM set_config('app.permisos', v_permisos, false);
-
-
-  
-
-
-  -- Log para debugging (comentar en producciÃ³n si causa overhead)
-
-
-  RAISE DEBUG 'Usuario establecido: id=%, rol=%, area=%', p_usuario_id, v_rol_id, v_area_id;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+  v_rol_id INTEGER;
+
+
+
+
+
+  v_area_id INTEGER;
+
+
+
+
+
+  v_permisos TEXT;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+  -- Obtener informaciÃ³n del usuario
+
+
+
+
+
+  SELECT rol_id, area_id INTO v_rol_id, v_area_id
+
+
+
+
+
+  FROM usuario
+
+
+
+
+
+  WHERE id = p_usuario_id AND activo = true;
+
+
+
+
+
+  
+
+
+
+
+
+  -- Si el usuario no existe o estÃ¡ inactivo, lanzar error
+
+
+
+
+
+  IF NOT FOUND THEN
+
+
+
+
+
+    RAISE EXCEPTION 'Usuario % no existe o estÃ¡ inactivo', p_usuario_id;
+
+
+
+
+
+  END IF;
+
+
+
+
+
+  
+
+
+
+
+
+  -- Obtener permisos del rol
+
+
+
+
+
+  SELECT permisos INTO v_permisos
+
+
+
+
+
+  FROM rol
+
+
+
+
+
+  WHERE id = v_rol_id;
+
+
+
+
+
+  
+
+
+
+
+
+  -- Establecer variables de sesiÃ³n
+
+
+
+
+
+  PERFORM set_config('app.usuario_id', p_usuario_id::TEXT, false);
+
+
+
+
+
+  PERFORM set_config('app.rol_id', v_rol_id::TEXT, false);
+
+
+
+
+
+  PERFORM set_config('app.area_id', v_area_id::TEXT, false);
+
+
+
+
+
+  PERFORM set_config('app.permisos', v_permisos, false);
+
+
+
+
+
+  
+
+
+
+
+
+  -- Log para debugging (comentar en producciÃ³n si causa overhead)
+
+
+
+
+
+  RAISE DEBUG 'Usuario establecido: id=%, rol=%, area=%', p_usuario_id, v_rol_id, v_area_id;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -519,9 +706,12 @@ ALTER FUNCTION public.fn_establecer_usuario_actual(p_usuario_id integer) OWNER T
 -- Name: FUNCTION fn_establecer_usuario_actual(p_usuario_id integer); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.fn_establecer_usuario_actual(p_usuario_id integer) IS 'Establece el contexto del usuario actual para polÃ­ticas RLS. 
-
-
+COMMENT ON FUNCTION public.fn_establecer_usuario_actual(p_usuario_id integer) IS 'Establece el contexto del usuario actual para polÃ­ticas RLS. 
+
+
+
+
+
 Debe ser llamada por la aplicaciÃ³n al inicio de cada request autenticado.';
 
 
@@ -531,18 +721,30 @@ Debe ser llamada por la aplicaciÃ³n al inicio de cada request autenticado.';
 
 CREATE FUNCTION public.fn_folio(p_area integer, p_tipo character varying, p_anio smallint DEFAULT (EXTRACT(year FROM CURRENT_DATE))::smallint) RETURNS character varying
     LANGUAGE plpgsql
-    AS $$
-
-
-BEGIN
-
-
-    RETURN fn_generar_folio(p_area, p_tipo, p_anio);
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    RETURN fn_generar_folio(p_area, p_tipo, p_anio);
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -572,40 +774,74 @@ ALTER FUNCTION public.fn_folio(p_area integer, p_tipo character varying, p_anio 
 
 CREATE FUNCTION public.fn_generar_folio(p_area_id integer, p_tipo_operacion character varying, p_anio smallint DEFAULT (EXTRACT(year FROM CURRENT_DATE))::smallint, p_tipo_documento_id integer DEFAULT NULL::integer) RETURNS character varying
     LANGUAGE plpgsql
-    AS $$
-
-DECLARE
-
-    v_prefijo_op VARCHAR(5); v_clave_area VARCHAR(50); v_consecutivo INTEGER; v_clave_tipo_doc VARCHAR(5);
-
-BEGIN
-
-    IF p_tipo_operacion = 'EMISION' AND p_tipo_documento_id IS NOT NULL THEN
-
-        SELECT clave INTO v_clave_tipo_doc FROM tipo_documento WHERE id = p_tipo_documento_id AND activo = TRUE;
-
-        IF v_clave_tipo_doc IS NULL THEN RAISE EXCEPTION 'Tipo de documento no encontrado'; END IF;
-
-        v_prefijo_op := v_clave_tipo_doc;
-
-        v_consecutivo := public.fn_siguiente_consecutivo(p_area_id, v_clave_tipo_doc, p_anio);
-
-    ELSE
-
-        v_prefijo_op := CASE p_tipo_operacion WHEN 'EMISION' THEN 'EM' WHEN 'RECEPCION' THEN 'RE' ELSE UPPER(LEFT(p_tipo_operacion, 2)) END;
-
-        v_consecutivo := public.fn_siguiente_consecutivo(p_area_id, p_tipo_operacion, p_anio);
-
-    END IF;
-
-    SELECT clave INTO v_clave_area FROM area WHERE id = p_area_id;
-
-    IF v_clave_area IS NULL THEN RAISE EXCEPTION 'Area no encontrada'; END IF;
-
-    RETURN FORMAT('%s-SMADSOT.%s-%s/%s', v_prefijo_op, v_clave_area, LPAD(v_consecutivo::TEXT, 4, '0'), p_anio);
-
-END;
-
+    AS $$
+
+
+
+DECLARE
+
+
+
+    v_prefijo_op VARCHAR(5); v_clave_area VARCHAR(50); v_consecutivo INTEGER; v_clave_tipo_doc VARCHAR(5);
+
+
+
+BEGIN
+
+
+
+    IF p_tipo_operacion = 'EMISION' AND p_tipo_documento_id IS NOT NULL THEN
+
+
+
+        SELECT clave INTO v_clave_tipo_doc FROM tipo_documento WHERE id = p_tipo_documento_id AND activo = TRUE;
+
+
+
+        IF v_clave_tipo_doc IS NULL THEN RAISE EXCEPTION 'Tipo de documento no encontrado'; END IF;
+
+
+
+        v_prefijo_op := v_clave_tipo_doc;
+
+
+
+        v_consecutivo := public.fn_siguiente_consecutivo(p_area_id, v_clave_tipo_doc, p_anio);
+
+
+
+    ELSE
+
+
+
+        v_prefijo_op := CASE p_tipo_operacion WHEN 'EMISION' THEN 'EM' WHEN 'RECEPCION' THEN 'RE' ELSE UPPER(LEFT(p_tipo_operacion, 2)) END;
+
+
+
+        v_consecutivo := public.fn_siguiente_consecutivo(p_area_id, p_tipo_operacion, p_anio);
+
+
+
+    END IF;
+
+
+
+    SELECT clave INTO v_clave_area FROM area WHERE id = p_area_id;
+
+
+
+    IF v_clave_area IS NULL THEN RAISE EXCEPTION 'Area no encontrada'; END IF;
+
+
+
+    RETURN FORMAT('%s-SMADSOT.%s-%s/%s', v_prefijo_op, v_clave_area, LPAD(v_consecutivo::TEXT, 4, '0'), p_anio);
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -617,42 +853,78 @@ ALTER FUNCTION public.fn_generar_folio(p_area_id integer, p_tipo_operacion chara
 
 CREATE FUNCTION public.fn_limpiar_tokens_expirados() RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_tokens_eliminados INTEGER;
-
-
-BEGIN
-
-
-    -- Eliminar tokens expirados hace más de 30 días
-
-
-    DELETE FROM refresh_tokens 
-
-
-    WHERE fecha_expiracion < NOW() - INTERVAL '30 days';
-
-
-    
-
-
-    GET DIAGNOSTICS v_tokens_eliminados = ROW_COUNT;
-
-
-    
-
-
-    RETURN v_tokens_eliminados;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_tokens_eliminados INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Eliminar tokens expirados hace más de 30 días
+
+
+
+
+
+    DELETE FROM refresh_tokens 
+
+
+
+
+
+    WHERE fecha_expiracion < NOW() - INTERVAL '30 days';
+
+
+
+
+
+    
+
+
+
+
+
+    GET DIAGNOSTICS v_tokens_eliminados = ROW_COUNT;
+
+
+
+
+
+    
+
+
+
+
+
+    RETURN v_tokens_eliminados;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -662,9 +934,12 @@ ALTER FUNCTION public.fn_limpiar_tokens_expirados() OWNER TO postgres;
 -- Name: FUNCTION fn_limpiar_tokens_expirados(); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.fn_limpiar_tokens_expirados() IS 'Elimina tokens de refresco expirados hace más de 30 días.
-
-
+COMMENT ON FUNCTION public.fn_limpiar_tokens_expirados() IS 'Elimina tokens de refresco expirados hace más de 30 días.
+
+
+
+
+
 Devuelve el número de tokens eliminados.';
 
 
@@ -674,42 +949,78 @@ Devuelve el número de tokens eliminados.';
 
 CREATE FUNCTION public.fn_limpiar_tokens_revocados_antiguos() RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_tokens_eliminados INTEGER;
-
-
-BEGIN
-
-
-    DELETE FROM refresh_tokens 
-
-
-    WHERE revocado = TRUE 
-
-
-      AND fecha_revocacion < NOW() - INTERVAL '90 days';
-
-
-    
-
-
-    GET DIAGNOSTICS v_tokens_eliminados = ROW_COUNT;
-
-
-    
-
-
-    RETURN v_tokens_eliminados;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_tokens_eliminados INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    DELETE FROM refresh_tokens 
+
+
+
+
+
+    WHERE revocado = TRUE 
+
+
+
+
+
+      AND fecha_revocacion < NOW() - INTERVAL '90 days';
+
+
+
+
+
+    
+
+
+
+
+
+    GET DIAGNOSTICS v_tokens_eliminados = ROW_COUNT;
+
+
+
+
+
+    
+
+
+
+
+
+    RETURN v_tokens_eliminados;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -719,9 +1030,12 @@ ALTER FUNCTION public.fn_limpiar_tokens_revocados_antiguos() OWNER TO postgres;
 -- Name: FUNCTION fn_limpiar_tokens_revocados_antiguos(); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.fn_limpiar_tokens_revocados_antiguos() IS 'Elimina tokens revocados hace más de 90 días.
-
-
+COMMENT ON FUNCTION public.fn_limpiar_tokens_revocados_antiguos() IS 'Elimina tokens revocados hace más de 90 días.
+
+
+
+
+
 Devuelve el número de tokens eliminados.';
 
 
@@ -731,106 +1045,206 @@ Devuelve el número de tokens eliminados.';
 
 CREATE FUNCTION public.fn_marcar_prestamos_revision_vencidos() RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-DECLARE
-
-    v_count INTEGER := 0;
-
-    v_prestamo RECORD;
-
-BEGIN
-
-    -- Buscar prestamos en estado EN_REVISION vencidos
-
-    FOR v_prestamo IN
-
-        SELECT 
-
-            p.id,
-
-            p.documento_id,
-
-            p.folio_asignado,
-
-            p.area_prestamista_id
-
-        FROM prestamo_numero_oficio p
-
-        WHERE p.estado = 'EN_REVISION'
-
-        AND p.fecha_limite_revision < CURRENT_TIMESTAMP
-
-        ORDER BY p.fecha_limite_revision ASC
-
-    LOOP
-
-        -- Actualizar prestamo a APROBADO_AUTOMATICO
-
-        UPDATE prestamo_numero_oficio
-
-        SET estado = 'APROBADO_AUTOMATICO',
-
-            usuario_resuelve_id = NULL, -- NULL indica aprobacion automatica del sistema
-
-            fecha_resolucion = CURRENT_TIMESTAMP
-
-        WHERE id = v_prestamo.id;
-
-
-
-        -- Registrar en historial del documento
-
-        INSERT INTO historial_documento (
-
-            documento_id,
-
-            accion,
-
-            usuario_id,
-
-            area_id,
-
-            observaciones
-
-        ) VALUES (
-
-            v_prestamo.documento_id,
-
-            'APROBACION_AUTOMATICA',
-
-            NULL, -- Sistema
-
-            v_prestamo.area_prestamista_id,
-
-            'Prestamo aprobado automaticamente por vencimiento del plazo de revision. Documento validado.'
-
-        );
-
-
-
-        v_count := v_count + 1;
-
-
-
-        RAISE DEBUG 'Prestamo % aprobado automaticamente', v_prestamo.id;
-
-    END LOOP;
-
-
-
-    IF v_count > 0 THEN
-
-        RAISE NOTICE 'Prestamos aprobados automaticamente por vencimiento: %', v_count;
-
-    END IF;
-
-
-
-    RETURN v_count;
-
-END;
-
+    AS $$
+
+
+
+DECLARE
+
+
+
+    v_count INTEGER := 0;
+
+
+
+    v_prestamo RECORD;
+
+
+
+BEGIN
+
+
+
+    -- Buscar prestamos en estado EN_REVISION vencidos
+
+
+
+    FOR v_prestamo IN
+
+
+
+        SELECT 
+
+
+
+            p.id,
+
+
+
+            p.documento_id,
+
+
+
+            p.folio_asignado,
+
+
+
+            p.area_prestamista_id
+
+
+
+        FROM prestamo_numero_oficio p
+
+
+
+        WHERE p.estado = 'EN_REVISION'
+
+
+
+        AND p.fecha_limite_revision < CURRENT_TIMESTAMP
+
+
+
+        ORDER BY p.fecha_limite_revision ASC
+
+
+
+    LOOP
+
+
+
+        -- Actualizar prestamo a APROBADO_AUTOMATICO
+
+
+
+        UPDATE prestamo_numero_oficio
+
+
+
+        SET estado = 'APROBADO_AUTOMATICO',
+
+
+
+            usuario_resuelve_id = NULL, -- NULL indica aprobacion automatica del sistema
+
+
+
+            fecha_resolucion = CURRENT_TIMESTAMP
+
+
+
+        WHERE id = v_prestamo.id;
+
+
+
+
+
+
+
+        -- Registrar en historial del documento
+
+
+
+        INSERT INTO historial_documento (
+
+
+
+            documento_id,
+
+
+
+            accion,
+
+
+
+            usuario_id,
+
+
+
+            area_id,
+
+
+
+            observaciones
+
+
+
+        ) VALUES (
+
+
+
+            v_prestamo.documento_id,
+
+
+
+            'APROBACION_AUTOMATICA',
+
+
+
+            NULL, -- Sistema
+
+
+
+            v_prestamo.area_prestamista_id,
+
+
+
+            'Prestamo aprobado automaticamente por vencimiento del plazo de revision. Documento validado.'
+
+
+
+        );
+
+
+
+
+
+
+
+        v_count := v_count + 1;
+
+
+
+
+
+
+
+        RAISE DEBUG 'Prestamo % aprobado automaticamente', v_prestamo.id;
+
+
+
+    END LOOP;
+
+
+
+
+
+
+
+    IF v_count > 0 THEN
+
+
+
+        RAISE NOTICE 'Prestamos aprobados automaticamente por vencimiento: %', v_count;
+
+
+
+    END IF;
+
+
+
+
+
+
+
+    RETURN v_count;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -840,34 +1254,62 @@ ALTER FUNCTION public.fn_marcar_prestamos_revision_vencidos() OWNER TO postgres;
 -- Name: FUNCTION fn_marcar_prestamos_revision_vencidos(); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.fn_marcar_prestamos_revision_vencidos() IS 'Job automatico que aprueba prestamos en estado EN_REVISION cuando vence 
-
-el plazo de revision (fecha_limite_revision < NOW). 
-
-
-
-El area prestamista tiene un plazo configurable (default: 5 dias) para 
-
-revisar y aprobar/rechazar. Si el plazo vence sin respuesta, el prestamo 
-
-se aprueba automaticamente con estado APROBADO_AUTOMATICO.
-
-
-
-Debe ejecutarse diariamente via pg_cron:
-
-  SELECT cron.schedule(
-
-    ''aprobar-prestamos-revision-vencidos'',
-
-    ''0 2 * * *'',
-
-    ''SELECT fn_marcar_prestamos_revision_vencidos();''
-
-  );
-
-
-
+COMMENT ON FUNCTION public.fn_marcar_prestamos_revision_vencidos() IS 'Job automatico que aprueba prestamos en estado EN_REVISION cuando vence 
+
+
+
+el plazo de revision (fecha_limite_revision < NOW). 
+
+
+
+
+
+
+
+El area prestamista tiene un plazo configurable (default: 5 dias) para 
+
+
+
+revisar y aprobar/rechazar. Si el plazo vence sin respuesta, el prestamo 
+
+
+
+se aprueba automaticamente con estado APROBADO_AUTOMATICO.
+
+
+
+
+
+
+
+Debe ejecutarse diariamente via pg_cron:
+
+
+
+  SELECT cron.schedule(
+
+
+
+    ''aprobar-prestamos-revision-vencidos'',
+
+
+
+    ''0 2 * * *'',
+
+
+
+    ''SELECT fn_marcar_prestamos_revision_vencidos();''
+
+
+
+  );
+
+
+
+
+
+
+
 Retorna: Cantidad de prestamos aprobados automaticamente.';
 
 
@@ -877,51 +1319,96 @@ Retorna: Cantidad de prestamos aprobados automaticamente.';
 
 CREATE FUNCTION public.fn_marcar_prestamos_vencidos() RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_prestamos_actualizados INTEGER;
-
-
-BEGIN
-
-
-    UPDATE public.prestamo_numero_oficio
-
-
-    SET estado = 'VENCIDO'
-
-
-    WHERE estado = 'APROBADO'
-
-
-      AND fecha_vencimiento < CURRENT_TIMESTAMP;
-
-
-    
-
-
-    GET DIAGNOSTICS v_prestamos_actualizados = ROW_COUNT;
-
-
-    
-
-
-    RAISE NOTICE 'Préstamos marcados como VENCIDO: %', v_prestamos_actualizados;
-
-
-    
-
-
-    RETURN v_prestamos_actualizados;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_prestamos_actualizados INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    UPDATE public.prestamo_numero_oficio
+
+
+
+
+
+    SET estado = 'VENCIDO'
+
+
+
+
+
+    WHERE estado = 'APROBADO'
+
+
+
+
+
+      AND fecha_vencimiento < CURRENT_TIMESTAMP;
+
+
+
+
+
+    
+
+
+
+
+
+    GET DIAGNOSTICS v_prestamos_actualizados = ROW_COUNT;
+
+
+
+
+
+    
+
+
+
+
+
+    RAISE NOTICE 'Préstamos marcados como VENCIDO: %', v_prestamos_actualizados;
+
+
+
+
+
+    
+
+
+
+
+
+    RETURN v_prestamos_actualizados;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -940,66 +1427,126 @@ COMMENT ON FUNCTION public.fn_marcar_prestamos_vencidos() IS 'Marca como VENCIDO
 
 CREATE FUNCTION public.fn_obtener_ruta_area(p_area_id integer) RETURNS text
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_ruta TEXT := '';
-
-
-    v_nombre_area VARCHAR(200);
-
-
-    v_area_padre_id INTEGER;
-
-
-BEGIN
-
-
-    SELECT nombre, area_padre_id INTO v_nombre_area, v_area_padre_id
-
-
-    FROM area WHERE id = p_area_id;
-
-
-    
-
-
-    v_ruta := v_nombre_area;
-
-
-    
-
-
-    WHILE v_area_padre_id IS NOT NULL LOOP
-
-
-        SELECT nombre, area_padre_id INTO v_nombre_area, v_area_padre_id
-
-
-        FROM area WHERE id = v_area_padre_id;
-
-
-        
-
-
-        v_ruta := v_nombre_area || ' > ' || v_ruta;
-
-
-    END LOOP;
-
-
-    
-
-
-    RETURN v_ruta;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_ruta TEXT := '';
+
+
+
+
+
+    v_nombre_area VARCHAR(200);
+
+
+
+
+
+    v_area_padre_id INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    SELECT nombre, area_padre_id INTO v_nombre_area, v_area_padre_id
+
+
+
+
+
+    FROM area WHERE id = p_area_id;
+
+
+
+
+
+    
+
+
+
+
+
+    v_ruta := v_nombre_area;
+
+
+
+
+
+    
+
+
+
+
+
+    WHILE v_area_padre_id IS NOT NULL LOOP
+
+
+
+
+
+        SELECT nombre, area_padre_id INTO v_nombre_area, v_area_padre_id
+
+
+
+
+
+        FROM area WHERE id = v_area_padre_id;
+
+
+
+
+
+        
+
+
+
+
+
+        v_ruta := v_nombre_area || ' > ' || v_ruta;
+
+
+
+
+
+    END LOOP;
+
+
+
+
+
+    
+
+
+
+
+
+    RETURN v_ruta;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1018,21 +1565,36 @@ COMMENT ON FUNCTION public.fn_obtener_ruta_area(p_area_id integer) IS 'Obtiene l
 
 CREATE FUNCTION public.fn_padre_directo_tipo(p_area_id integer) RETURNS public.tipo_area_enum
     LANGUAGE sql STABLE
-    AS $$
-
-
-    SELECT a_padre.tipo
-
-
-    FROM public.area a_hijo
-
-
-    JOIN public.area a_padre ON a_padre.id = a_hijo.area_padre_id
-
-
-    WHERE a_hijo.id = p_area_id;
-
-
+    AS $$
+
+
+
+
+
+    SELECT a_padre.tipo
+
+
+
+
+
+    FROM public.area a_hijo
+
+
+
+
+
+    JOIN public.area a_padre ON a_padre.id = a_hijo.area_padre_id
+
+
+
+
+
+    WHERE a_hijo.id = p_area_id;
+
+
+
+
+
 $$;
 
 
@@ -1051,93 +1613,180 @@ COMMENT ON FUNCTION public.fn_padre_directo_tipo(p_area_id integer) IS 'Devuelve
 
 CREATE FUNCTION public.fn_pertenece_a_area_o_descendientes(p_area_id integer) RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-
-
-DECLARE
-
-
-  v_area_id INTEGER;
-
-
-BEGIN
-
-
-  -- Obtener Ã¡rea del usuario actual
-
-
-  v_area_id := current_setting('app.area_id', true)::INTEGER;
-
-
-  
-
-
-  IF v_area_id IS NULL THEN
-
-
-    RETURN false;
-
-
-  END IF;
-
-
-  
-
-
-  -- Verificar si el Ã¡rea del usuario es la misma o ancestro del Ã¡rea especificada
-
-
-  RETURN EXISTS (
-
-
-    WITH RECURSIVE jerarquia AS (
-
-
-      -- Caso base: Ã¡rea especificada
-
-
-      SELECT id, area_padre_id
-
-
-      FROM area
-
-
-      WHERE id = p_area_id
-
-
-      
-
-
-      UNION ALL
-
-
-      
-
-
-      -- Recursivo: subir por la jerarquÃ­a
-
-
-      SELECT a.id, a.area_padre_id
-
-
-      FROM area a
-
-
-      INNER JOIN jerarquia j ON a.id = j.area_padre_id
-
-
-    )
-
-
-    SELECT 1 FROM jerarquia WHERE id = v_area_id
-
-
-  );
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+  v_area_id INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+  -- Obtener Ã¡rea del usuario actual
+
+
+
+
+
+  v_area_id := current_setting('app.area_id', true)::INTEGER;
+
+
+
+
+
+  
+
+
+
+
+
+  IF v_area_id IS NULL THEN
+
+
+
+
+
+    RETURN false;
+
+
+
+
+
+  END IF;
+
+
+
+
+
+  
+
+
+
+
+
+  -- Verificar si el Ã¡rea del usuario es la misma o ancestro del Ã¡rea especificada
+
+
+
+
+
+  RETURN EXISTS (
+
+
+
+
+
+    WITH RECURSIVE jerarquia AS (
+
+
+
+
+
+      -- Caso base: Ã¡rea especificada
+
+
+
+
+
+      SELECT id, area_padre_id
+
+
+
+
+
+      FROM area
+
+
+
+
+
+      WHERE id = p_area_id
+
+
+
+
+
+      
+
+
+
+
+
+      UNION ALL
+
+
+
+
+
+      
+
+
+
+
+
+      -- Recursivo: subir por la jerarquÃ­a
+
+
+
+
+
+      SELECT a.id, a.area_padre_id
+
+
+
+
+
+      FROM area a
+
+
+
+
+
+      INNER JOIN jerarquia j ON a.id = j.area_padre_id
+
+
+
+
+
+    )
+
+
+
+
+
+    SELECT 1 FROM jerarquia WHERE id = v_area_id
+
+
+
+
+
+  );
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1156,57 +1805,108 @@ COMMENT ON FUNCTION public.fn_pertenece_a_area_o_descendientes(p_area_id integer
 
 CREATE FUNCTION public.fn_puede_aprobar_prestamo(p_usuario_id integer, p_prestamo_id integer) RETURNS boolean
     LANGUAGE plpgsql STABLE
-    AS $$
-DECLARE
-    v_area_usuario INTEGER;
-    v_area_prestamista INTEGER;
-    v_permisos TEXT;
-    v_nombre_rol TEXT;
-BEGIN
-    -- Obtener el área del usuario y sus permisos
-    SELECT u.area_id, r.permisos, r.nombre
-    INTO v_area_usuario, v_permisos, v_nombre_rol
-    FROM public.usuario u
-    INNER JOIN public.rol r ON u.rol_id = r.id
-    WHERE u.id = p_usuario_id AND u.activo = TRUE;
-
-    IF NOT FOUND THEN
-        RETURN FALSE;
-    END IF;
-
-    -- Obtener el área prestamista del préstamo
-    SELECT area_prestamista_id
-    INTO v_area_prestamista
-    FROM public.prestamo_numero_oficio
-    WHERE id = p_prestamo_id;
-
-    IF NOT FOUND THEN
-        RETURN FALSE;
-    END IF;
-
-    -- Validar que el usuario pertenezca al área prestamista
-    IF v_area_usuario <> v_area_prestamista THEN
-        RETURN FALSE;
-    END IF;
-
-    -- Validar permisos:
-    -- 1. Administrador tiene acceso total (*)
-    -- 2. Roles específicos autorizados: Secretario, Subsecretario, Director, Enlace Administrativo
-    -- 3. O tener explícitamente el permiso APROBAR_PRESTAMO
-    IF v_permisos = '*' THEN
-        RETURN TRUE;
-    END IF;
-
-    IF v_nombre_rol IN ('Secretario', 'Subsecretario', 'Director', 'Enlace Administrativo') THEN
-        RETURN TRUE;
-    END IF;
-
-    IF v_permisos LIKE '%APROBAR_PRESTAMO%' THEN
-        RETURN TRUE;
-    END IF;
-
-    RETURN FALSE;
-END;
+    AS $$
+
+DECLARE
+
+    v_area_usuario INTEGER;
+
+    v_area_prestamista INTEGER;
+
+    v_permisos TEXT;
+
+    v_nombre_rol TEXT;
+
+BEGIN
+
+    -- Obtener el área del usuario y sus permisos
+
+    SELECT u.area_id, r.permisos, r.nombre
+
+    INTO v_area_usuario, v_permisos, v_nombre_rol
+
+    FROM public.usuario u
+
+    INNER JOIN public.rol r ON u.rol_id = r.id
+
+    WHERE u.id = p_usuario_id AND u.activo = TRUE;
+
+
+
+    IF NOT FOUND THEN
+
+        RETURN FALSE;
+
+    END IF;
+
+
+
+    -- Obtener el área prestamista del préstamo
+
+    SELECT area_prestamista_id
+
+    INTO v_area_prestamista
+
+    FROM public.prestamo_numero_oficio
+
+    WHERE id = p_prestamo_id;
+
+
+
+    IF NOT FOUND THEN
+
+        RETURN FALSE;
+
+    END IF;
+
+
+
+    -- Validar que el usuario pertenezca al área prestamista
+
+    IF v_area_usuario <> v_area_prestamista THEN
+
+        RETURN FALSE;
+
+    END IF;
+
+
+
+    -- Validar permisos:
+
+    -- 1. Administrador tiene acceso total (*)
+
+    -- 2. Roles específicos autorizados: Secretario, Subsecretario, Director, Enlace Administrativo
+
+    -- 3. O tener explícitamente el permiso APROBAR_PRESTAMO
+
+    IF v_permisos = '*' THEN
+
+        RETURN TRUE;
+
+    END IF;
+
+
+
+    IF v_nombre_rol IN ('Secretario', 'Subsecretario', 'Director', 'Enlace Administrativo') THEN
+
+        RETURN TRUE;
+
+    END IF;
+
+
+
+    IF v_permisos LIKE '%APROBAR_PRESTAMO%' THEN
+
+        RETURN TRUE;
+
+    END IF;
+
+
+
+    RETURN FALSE;
+
+END;
+
 $$;
 
 
@@ -1225,132 +1925,258 @@ COMMENT ON FUNCTION public.fn_puede_aprobar_prestamo(p_usuario_id integer, p_pre
 
 CREATE FUNCTION public.fn_puede_solicitar_prestamo(p_area_solicitante_id integer, p_area_prestamista_id integer) RETURNS text
     LANGUAGE plpgsql STABLE
-    AS $$
-
-
-DECLARE
-
-
-    v_nombre_sol    VARCHAR(200);
-
-
-    v_nombre_prest  VARCHAR(200);
-
-
-    v_tipo_prest    public.tipo_area_enum;
-
-
-    v_tipos_prestamista CONSTANT public.tipo_area_enum[] :=
-
-
-        ARRAY['SECRETARIA','SUBSECRETARIA','INSTITUTO','DIRECCION_GENERAL','DIRECCION']::public.tipo_area_enum[];
-
-
-BEGIN
-
-
-    -- La propia área siempre puede (genera su propio número)
-
-
-    IF p_area_solicitante_id = p_area_prestamista_id THEN
-
-
-        RETURN NULL;
-
-
-    END IF;
-
-
-
-
-
-    SELECT nombre INTO v_nombre_sol   FROM public.area WHERE id = p_area_solicitante_id;
-
-
-    SELECT nombre, tipo INTO v_nombre_prest, v_tipo_prest
-
-
-    FROM public.area WHERE id = p_area_prestamista_id AND activa = TRUE;
-
-
-
-
-
-    IF NOT FOUND THEN
-
-
-        RETURN FORMAT('El área prestamista %s no existe o está inactiva.', p_area_prestamista_id);
-
-
-    END IF;
-
-
-
-
-
-    -- El prestamista debe ser de un tipo que puede prestar números
-
-
-    IF v_tipo_prest <> ALL(v_tipos_prestamista) THEN
-
-
-        RETURN FORMAT(
-
-
-            '"%s" no puede prestar números: su tipo (%s) no está autorizado para ello. '
-
-
-            'Solo pueden prestar: Secretaría, Subsecretaría, Instituto, Dirección General, Dirección.',
-
-
-            v_nombre_prest, v_tipo_prest
-
-
-        );
-
-
-    END IF;
-
-
-
-
-
-    -- El prestamista debe ser ancestro del solicitante
-
-
-    IF NOT public.fn_es_ancestro(p_area_prestamista_id, p_area_solicitante_id) THEN
-
-
-        RETURN FORMAT(
-
-
-            '"%s" no puede solicitar un número a "%s": '
-
-
-            'el área prestamista no es ancestro del área solicitante. '
-
-
-            'Solo puede pedirse a la propia área, su Subsecretaría o la Secretaría.',
-
-
-            v_nombre_sol, v_nombre_prest
-
-
-        );
-
-
-    END IF;
-
-
-
-
-
-    RETURN NULL; -- válido
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_nombre_sol    VARCHAR(200);
+
+
+
+
+
+    v_nombre_prest  VARCHAR(200);
+
+
+
+
+
+    v_tipo_prest    public.tipo_area_enum;
+
+
+
+
+
+    v_tipos_prestamista CONSTANT public.tipo_area_enum[] :=
+
+
+
+
+
+        ARRAY['SECRETARIA','SUBSECRETARIA','INSTITUTO','DIRECCION_GENERAL','DIRECCION']::public.tipo_area_enum[];
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- La propia área siempre puede (genera su propio número)
+
+
+
+
+
+    IF p_area_solicitante_id = p_area_prestamista_id THEN
+
+
+
+
+
+        RETURN NULL;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    SELECT nombre INTO v_nombre_sol   FROM public.area WHERE id = p_area_solicitante_id;
+
+
+
+
+
+    SELECT nombre, tipo INTO v_nombre_prest, v_tipo_prest
+
+
+
+
+
+    FROM public.area WHERE id = p_area_prestamista_id AND activa = TRUE;
+
+
+
+
+
+
+
+
+
+
+
+    IF NOT FOUND THEN
+
+
+
+
+
+        RETURN FORMAT('El área prestamista %s no existe o está inactiva.', p_area_prestamista_id);
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- El prestamista debe ser de un tipo que puede prestar números
+
+
+
+
+
+    IF v_tipo_prest <> ALL(v_tipos_prestamista) THEN
+
+
+
+
+
+        RETURN FORMAT(
+
+
+
+
+
+            '"%s" no puede prestar números: su tipo (%s) no está autorizado para ello. '
+
+
+
+
+
+            'Solo pueden prestar: Secretaría, Subsecretaría, Instituto, Dirección General, Dirección.',
+
+
+
+
+
+            v_nombre_prest, v_tipo_prest
+
+
+
+
+
+        );
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- El prestamista debe ser ancestro del solicitante
+
+
+
+
+
+    IF NOT public.fn_es_ancestro(p_area_prestamista_id, p_area_solicitante_id) THEN
+
+
+
+
+
+        RETURN FORMAT(
+
+
+
+
+
+            '"%s" no puede solicitar un número a "%s": '
+
+
+
+
+
+            'el área prestamista no es ancestro del área solicitante. '
+
+
+
+
+
+            'Solo puede pedirse a la propia área, su Subsecretaría o la Secretaría.',
+
+
+
+
+
+            v_nombre_sol, v_nombre_prest
+
+
+
+
+
+        );
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    RETURN NULL; -- válido
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1369,18 +2195,30 @@ COMMENT ON FUNCTION public.fn_puede_solicitar_prestamo(p_area_solicitante_id int
 
 CREATE FUNCTION public.fn_rel(p_origen integer, p_destino integer) RETURNS character varying
     LANGUAGE plpgsql STABLE
-    AS $$
-
-
-BEGIN
-
-
-    RETURN fn_relacion_jerarquica(p_origen, p_destino);
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    RETURN fn_relacion_jerarquica(p_origen, p_destino);
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1399,102 +2237,198 @@ COMMENT ON FUNCTION public.fn_rel(p_origen integer, p_destino integer) IS 'Alias
 
 CREATE FUNCTION public.fn_relacion_jerarquica(p_area_origen_id integer, p_area_destino_id integer) RETURNS character varying
     LANGUAGE plpgsql STABLE
-    AS $$
-
-
-DECLARE
-
-
-    v_padre_origen  INTEGER;
-
-
-    v_padre_destino INTEGER;
-
-
-BEGIN
-
-
-    IF p_area_origen_id = p_area_destino_id THEN
-
-
-        RETURN 'MISMO';
-
-
-    END IF;
-
-
-
-
-
-    -- ¿El destino es descendiente del origen?
-
-
-    IF public.fn_es_ancestro(p_area_origen_id, p_area_destino_id) THEN
-
-
-        RETURN 'DESCENDENTE';
-
-
-    END IF;
-
-
-
-
-
-    -- ¿El destino es ancestro del origen?
-
-
-    IF public.fn_es_ancestro(p_area_destino_id, p_area_origen_id) THEN
-
-
-        RETURN 'ASCENDENTE';
-
-
-    END IF;
-
-
-
-
-
-    -- ¿Comparten padre inmediato? → Lateral
-
-
-    SELECT area_padre_id INTO v_padre_origen  FROM public.area WHERE id = p_area_origen_id;
-
-
-    SELECT area_padre_id INTO v_padre_destino FROM public.area WHERE id = p_area_destino_id;
-
-
-
-
-
-    IF v_padre_origen IS NOT NULL
-
-
-       AND v_padre_destino IS NOT NULL
-
-
-       AND v_padre_origen = v_padre_destino THEN
-
-
-        RETURN 'LATERAL';
-
-
-    END IF;
-
-
-
-
-
-    -- En cualquier otro caso: cruce de ramas
-
-
-    RETURN 'CRUCE';
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_padre_origen  INTEGER;
+
+
+
+
+
+    v_padre_destino INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    IF p_area_origen_id = p_area_destino_id THEN
+
+
+
+
+
+        RETURN 'MISMO';
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- ¿El destino es descendiente del origen?
+
+
+
+
+
+    IF public.fn_es_ancestro(p_area_origen_id, p_area_destino_id) THEN
+
+
+
+
+
+        RETURN 'DESCENDENTE';
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- ¿El destino es ancestro del origen?
+
+
+
+
+
+    IF public.fn_es_ancestro(p_area_destino_id, p_area_origen_id) THEN
+
+
+
+
+
+        RETURN 'ASCENDENTE';
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- ¿Comparten padre inmediato? → Lateral
+
+
+
+
+
+    SELECT area_padre_id INTO v_padre_origen  FROM public.area WHERE id = p_area_origen_id;
+
+
+
+
+
+    SELECT area_padre_id INTO v_padre_destino FROM public.area WHERE id = p_area_destino_id;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_padre_origen IS NOT NULL
+
+
+
+
+
+       AND v_padre_destino IS NOT NULL
+
+
+
+
+
+       AND v_padre_origen = v_padre_destino THEN
+
+
+
+
+
+        RETURN 'LATERAL';
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- En cualquier otro caso: cruce de ramas
+
+
+
+
+
+    RETURN 'CRUCE';
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1513,84 +2447,162 @@ COMMENT ON FUNCTION public.fn_relacion_jerarquica(p_area_origen_id integer, p_ar
 
 CREATE FUNCTION public.fn_ruta_folio(p_nodo_id integer) RETURNS text
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_nodo_actual_id    INTEGER := p_nodo_id;
-
-
-    v_folio             VARCHAR(80);
-
-
-    v_padre_id          INTEGER;
-
-
-    v_folios            TEXT[] := ARRAY[]::TEXT[];
-
-
-BEGIN
-
-
-    LOOP
-
-
-        SELECT folio_propio, nodo_padre_id
-
-
-        INTO v_folio, v_padre_id
-
-
-        FROM public.nodo_documental
-
-
-        WHERE id = v_nodo_actual_id;
-
-
-
-
-
-        EXIT WHEN NOT FOUND;
-
-
-
-
-
-        -- Solo incluir folios con valor real
-
-
-        IF v_folio <> '' THEN
-
-
-            v_folios := ARRAY[v_folio] || v_folios;
-
-
-        END IF;
-
-
-
-
-
-        EXIT WHEN v_padre_id IS NULL;
-
-
-        v_nodo_actual_id := v_padre_id;
-
-
-    END LOOP;
-
-
-
-
-
-    RETURN ARRAY_TO_STRING(v_folios, ' → ');
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_nodo_actual_id    INTEGER := p_nodo_id;
+
+
+
+
+
+    v_folio             VARCHAR(80);
+
+
+
+
+
+    v_padre_id          INTEGER;
+
+
+
+
+
+    v_folios            TEXT[] := ARRAY[]::TEXT[];
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    LOOP
+
+
+
+
+
+        SELECT folio_propio, nodo_padre_id
+
+
+
+
+
+        INTO v_folio, v_padre_id
+
+
+
+
+
+        FROM public.nodo_documental
+
+
+
+
+
+        WHERE id = v_nodo_actual_id;
+
+
+
+
+
+
+
+
+
+
+
+        EXIT WHEN NOT FOUND;
+
+
+
+
+
+
+
+
+
+
+
+        -- Solo incluir folios con valor real
+
+
+
+
+
+        IF v_folio <> '' THEN
+
+
+
+
+
+            v_folios := ARRAY[v_folio] || v_folios;
+
+
+
+
+
+        END IF;
+
+
+
+
+
+
+
+
+
+
+
+        EXIT WHEN v_padre_id IS NULL;
+
+
+
+
+
+        v_nodo_actual_id := v_padre_id;
+
+
+
+
+
+    END LOOP;
+
+
+
+
+
+
+
+
+
+
+
+    RETURN ARRAY_TO_STRING(v_folios, ' → ');
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1609,72 +2621,138 @@ COMMENT ON FUNCTION public.fn_ruta_folio(p_nodo_id integer) IS 'Reconstruye la c
 
 CREATE FUNCTION public.fn_siguiente_consecutivo(p_area_id integer, p_tipo_operacion character varying, p_anio smallint DEFAULT (EXTRACT(year FROM CURRENT_DATE))::smallint) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_siguiente INTEGER;
-
-
-BEGIN
-
-
-    -- Insertar registro si no existe (primer folio del año/área/tipo)
-
-
-    INSERT INTO public.consecutivo_area (area_id, tipo_operacion, anio, ultimo_consecutivo)
-
-
-    VALUES (p_area_id, p_tipo_operacion, p_anio, 0)
-
-
-    ON CONFLICT (area_id, tipo_operacion, anio) DO NOTHING;
-
-
-
-
-
-    -- Incrementar con bloqueo de fila (el FOR UPDATE implícito del UPDATE)
-
-
-    UPDATE public.consecutivo_area
-
-
-    SET
-
-
-        ultimo_consecutivo  = ultimo_consecutivo + 1,
-
-
-        fecha_actualizacion = CURRENT_TIMESTAMP
-
-
-    WHERE
-
-
-        area_id        = p_area_id
-
-
-        AND tipo_operacion = p_tipo_operacion
-
-
-        AND anio           = p_anio
-
-
-    RETURNING ultimo_consecutivo INTO v_siguiente;
-
-
-
-
-
-    RETURN v_siguiente;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_siguiente INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Insertar registro si no existe (primer folio del año/área/tipo)
+
+
+
+
+
+    INSERT INTO public.consecutivo_area (area_id, tipo_operacion, anio, ultimo_consecutivo)
+
+
+
+
+
+    VALUES (p_area_id, p_tipo_operacion, p_anio, 0)
+
+
+
+
+
+    ON CONFLICT (area_id, tipo_operacion, anio) DO NOTHING;
+
+
+
+
+
+
+
+
+
+
+
+    -- Incrementar con bloqueo de fila (el FOR UPDATE implícito del UPDATE)
+
+
+
+
+
+    UPDATE public.consecutivo_area
+
+
+
+
+
+    SET
+
+
+
+
+
+        ultimo_consecutivo  = ultimo_consecutivo + 1,
+
+
+
+
+
+        fecha_actualizacion = CURRENT_TIMESTAMP
+
+
+
+
+
+    WHERE
+
+
+
+
+
+        area_id        = p_area_id
+
+
+
+
+
+        AND tipo_operacion = p_tipo_operacion
+
+
+
+
+
+        AND anio           = p_anio
+
+
+
+
+
+    RETURNING ultimo_consecutivo INTO v_siguiente;
+
+
+
+
+
+
+
+
+
+
+
+    RETURN v_siguiente;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1693,102 +2771,198 @@ COMMENT ON FUNCTION public.fn_siguiente_consecutivo(p_area_id integer, p_tipo_op
 
 CREATE FUNCTION public.fn_subsecretaria_de(p_area_id integer) RETURNS integer
     LANGUAGE plpgsql STABLE
-    AS $$
-
-
-DECLARE
-
-
-    v_actual_id   INTEGER;
-
-
-    v_padre_id    INTEGER;
-
-
-    v_tipo        public.tipo_area_enum;
-
-
-BEGIN
-
-
-    v_actual_id := p_area_id;
-
-
-
-
-
-    LOOP
-
-
-        SELECT area_padre_id, tipo
-
-
-        INTO v_padre_id, v_tipo
-
-
-        FROM public.area
-
-
-        WHERE id = v_actual_id;
-
-
-
-
-
-        EXIT WHEN NOT FOUND OR v_padre_id IS NULL;
-
-
-
-
-
-        -- El padre inmediato es Subsecretaría/Instituto → retornar ese padre
-
-
-        SELECT tipo INTO v_tipo FROM public.area WHERE id = v_padre_id;
-
-
-        IF v_tipo IN ('SUBSECRETARIA', 'INSTITUTO') THEN
-
-
-            RETURN v_padre_id;
-
-
-        END IF;
-
-
-
-
-
-        -- Ya llegamos a la Secretaría o por encima → no hay Subsecretaría en la cadena
-
-
-        IF v_tipo IN ('SECRETARIA', 'OFICIALÍA') THEN
-
-
-            RETURN NULL;
-
-
-        END IF;
-
-
-
-
-
-        v_actual_id := v_padre_id;
-
-
-    END LOOP;
-
-
-
-
-
-    RETURN NULL;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_actual_id   INTEGER;
+
+
+
+
+
+    v_padre_id    INTEGER;
+
+
+
+
+
+    v_tipo        public.tipo_area_enum;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    v_actual_id := p_area_id;
+
+
+
+
+
+
+
+
+
+
+
+    LOOP
+
+
+
+
+
+        SELECT area_padre_id, tipo
+
+
+
+
+
+        INTO v_padre_id, v_tipo
+
+
+
+
+
+        FROM public.area
+
+
+
+
+
+        WHERE id = v_actual_id;
+
+
+
+
+
+
+
+
+
+
+
+        EXIT WHEN NOT FOUND OR v_padre_id IS NULL;
+
+
+
+
+
+
+
+
+
+
+
+        -- El padre inmediato es Subsecretaría/Instituto → retornar ese padre
+
+
+
+
+
+        SELECT tipo INTO v_tipo FROM public.area WHERE id = v_padre_id;
+
+
+
+
+
+        IF v_tipo IN ('SUBSECRETARIA', 'INSTITUTO') THEN
+
+
+
+
+
+            RETURN v_padre_id;
+
+
+
+
+
+        END IF;
+
+
+
+
+
+
+
+
+
+
+
+        -- Ya llegamos a la Secretaría o por encima → no hay Subsecretaría en la cadena
+
+
+
+
+
+        IF v_tipo IN ('SECRETARIA', 'OFICIALÍA') THEN
+
+
+
+
+
+            RETURN NULL;
+
+
+
+
+
+        END IF;
+
+
+
+
+
+
+
+
+
+
+
+        v_actual_id := v_padre_id;
+
+
+
+
+
+    END LOOP;
+
+
+
+
+
+
+
+
+
+
+
+    RETURN NULL;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1807,66 +2981,126 @@ COMMENT ON FUNCTION public.fn_subsecretaria_de(p_area_id integer) IS 'Devuelve e
 
 CREATE FUNCTION public.fn_tiene_permiso(p_permiso text) RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-
-
-DECLARE
-
-
-  v_permisos TEXT;
-
-
-BEGIN
-
-
-  -- Obtener permisos del contexto
-
-
-  v_permisos := current_setting('app.permisos', true);
-
-
-  
-
-
-  -- Si es NULL (request no autenticado), denegar
-
-
-  IF v_permisos IS NULL THEN
-
-
-    RETURN false;
-
-
-  END IF;
-
-
-  
-
-
-  -- Si tiene '*', es admin con todos los permisos
-
-
-  IF v_permisos = '*' THEN
-
-
-    RETURN true;
-
-
-  END IF;
-
-
-  
-
-
-  -- Verificar si el permiso estÃ¡ en la lista (formato: PERM1,PERM2,PERM3)
-
-
-  RETURN ',' || v_permisos || ',' LIKE '%,' || p_permiso || ',%';
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+  v_permisos TEXT;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+  -- Obtener permisos del contexto
+
+
+
+
+
+  v_permisos := current_setting('app.permisos', true);
+
+
+
+
+
+  
+
+
+
+
+
+  -- Si es NULL (request no autenticado), denegar
+
+
+
+
+
+  IF v_permisos IS NULL THEN
+
+
+
+
+
+    RETURN false;
+
+
+
+
+
+  END IF;
+
+
+
+
+
+  
+
+
+
+
+
+  -- Si tiene '*', es admin con todos los permisos
+
+
+
+
+
+  IF v_permisos = '*' THEN
+
+
+
+
+
+    RETURN true;
+
+
+
+
+
+  END IF;
+
+
+
+
+
+  
+
+
+
+
+
+  -- Verificar si el permiso estÃ¡ en la lista (formato: PERM1,PERM2,PERM3)
+
+
+
+
+
+  RETURN ',' || v_permisos || ',' LIKE '%,' || p_permiso || ',%';
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1876,9 +3110,12 @@ ALTER FUNCTION public.fn_tiene_permiso(p_permiso text) OWNER TO postgres;
 -- Name: FUNCTION fn_tiene_permiso(p_permiso text); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.fn_tiene_permiso(p_permiso text) IS 'Verifica si el usuario actual tiene un permiso especÃ­fico.
-
-
+COMMENT ON FUNCTION public.fn_tiene_permiso(p_permiso text) IS 'Verifica si el usuario actual tiene un permiso especÃ­fico.
+
+
+
+
+
 Retorna true si tiene el permiso o es administrador (*).';
 
 
@@ -1888,18 +3125,30 @@ Retorna true si tiene el permiso o es administrador (*).';
 
 CREATE FUNCTION public.fn_validar(p_origen integer, p_destino integer) RETURNS text
     LANGUAGE plpgsql STABLE
-    AS $$
-
-
-BEGIN
-
-
-    RETURN fn_validar_turno(p_origen, p_destino);
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    RETURN fn_validar_turno(p_origen, p_destino);
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -1918,243 +3167,480 @@ COMMENT ON FUNCTION public.fn_validar(p_origen integer, p_destino integer) IS 'A
 
 CREATE FUNCTION public.fn_validar_turno(p_area_origen_id integer, p_area_destino_id integer) RETURNS text
     LANGUAGE plpgsql STABLE
-    AS $$
-
-
-DECLARE
-
-
-    v_tipo_origen         public.tipo_area_enum;
-
-
-    v_tipo_destino        public.tipo_area_enum;
-
-
-    v_nombre_origen       VARCHAR(200);
-
-
-    v_nombre_destino      VARCHAR(200);
-
-
-    v_relacion            VARCHAR(20);
-
-
-    v_regla_existe        BOOLEAN;
-
-
-    v_excepcion_existe    BOOLEAN;
-
-
-BEGIN
-
-
-    -- 0. Misma área
-
-
-    IF p_area_origen_id = p_area_destino_id THEN
-
-
-        RETURN 'No se puede turnar un documento a la misma área.';
-
-
-    END IF;
-
-
-
-
-
-    -- Obtener datos de ambas áreas
-
-
-    SELECT tipo, nombre INTO v_tipo_origen, v_nombre_origen
-
-
-    FROM public.area WHERE id = p_area_origen_id AND activa = TRUE;
-
-
-
-
-
-    IF NOT FOUND THEN
-
-
-        RETURN FORMAT('Área origen %s no existe o está inactiva.', p_area_origen_id);
-
-
-    END IF;
-
-
-
-
-
-    SELECT tipo, nombre INTO v_tipo_destino, v_nombre_destino
-
-
-    FROM public.area WHERE id = p_area_destino_id AND activa = TRUE;
-
-
-
-
-
-    IF NOT FOUND THEN
-
-
-        RETURN FORMAT('Área destino %s no existe o está inactiva.', p_area_destino_id);
-
-
-    END IF;
-
-
-
-
-
-    -- COMITÉ nunca puede originar ni recibir turnos operativos
-
-
-    IF v_tipo_origen = 'COMITE' THEN
-
-
-        RETURN FORMAT('Los COMITÉS (%s) no pueden turnar documentos operativos.', v_nombre_origen);
-
-
-    END IF;
-
-
-    IF v_tipo_destino = 'COMITE' THEN
-
-
-        RETURN FORMAT('Los COMITÉS (%s) no pueden recibir documentos por turno operativo.', v_nombre_destino);
-
-
-    END IF;
-
-
-
-
-
-    -- a) EXCEPCIÓN EXPLÍCITA ÁREA-ÁREA (mayor prioridad)
-
-
-    SELECT EXISTS (
-
-
-        SELECT 1 FROM public.excepcion_turno_area
-
-
-        WHERE activa = TRUE
-
-
-          AND (
-
-
-              (area_origen_id = p_area_origen_id AND area_destino_id = p_area_destino_id)
-
-
-              OR
-
-
-              (bidireccional = TRUE AND area_origen_id = p_area_destino_id AND area_destino_id = p_area_origen_id)
-
-
-          )
-
-
-    ) INTO v_excepcion_existe;
-
-
-
-
-
-    IF v_excepcion_existe THEN
-
-
-        RETURN NULL; -- Permitido por excepción explícita
-
-
-    END IF;
-
-
-
-
-
-    -- b) REGLA POR TIPO + condición posicional
-
-
-    v_relacion := public.fn_relacion_jerarquica(p_area_origen_id, p_area_destino_id);
-
-
-
-
-
-    SELECT EXISTS (
-
-
-        SELECT 1 FROM public.regla_turno
-
-
-        WHERE activa         = TRUE
-
-
-          AND tipo_origen    = v_tipo_origen
-
-
-          AND tipo_destino   = v_tipo_destino
-
-
-          AND (condicion_relacion = v_relacion OR condicion_relacion = 'CUALQUIERA')
-
-
-    ) INTO v_regla_existe;
-
-
-
-
-
-    IF v_regla_existe THEN
-
-
-        RETURN NULL; -- Permitido por regla
-
-
-    END IF;
-
-
-
-
-
-    -- c) DENEGADO — construir mensaje detallado
-
-
-    RETURN FORMAT(
-
-
-        'TURNO NO PERMITIDO: "%s" (%s) → "%s" (%s). '
-
-
-        'Relación jerárquica: %s. '
-
-
-        'No existe una regla activa que autorice esta combinación. '
-
-
-        'Contacte al administrador del sistema para configurarla.',
-
-
-        v_nombre_origen, v_tipo_origen,
-
-
-        v_nombre_destino, v_tipo_destino,
-
-
-        v_relacion
-
-
-    );
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_tipo_origen         public.tipo_area_enum;
+
+
+
+
+
+    v_tipo_destino        public.tipo_area_enum;
+
+
+
+
+
+    v_nombre_origen       VARCHAR(200);
+
+
+
+
+
+    v_nombre_destino      VARCHAR(200);
+
+
+
+
+
+    v_relacion            VARCHAR(20);
+
+
+
+
+
+    v_regla_existe        BOOLEAN;
+
+
+
+
+
+    v_excepcion_existe    BOOLEAN;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- 0. Misma área
+
+
+
+
+
+    IF p_area_origen_id = p_area_destino_id THEN
+
+
+
+
+
+        RETURN 'No se puede turnar un documento a la misma área.';
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- Obtener datos de ambas áreas
+
+
+
+
+
+    SELECT tipo, nombre INTO v_tipo_origen, v_nombre_origen
+
+
+
+
+
+    FROM public.area WHERE id = p_area_origen_id AND activa = TRUE;
+
+
+
+
+
+
+
+
+
+
+
+    IF NOT FOUND THEN
+
+
+
+
+
+        RETURN FORMAT('Área origen %s no existe o está inactiva.', p_area_origen_id);
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    SELECT tipo, nombre INTO v_tipo_destino, v_nombre_destino
+
+
+
+
+
+    FROM public.area WHERE id = p_area_destino_id AND activa = TRUE;
+
+
+
+
+
+
+
+
+
+
+
+    IF NOT FOUND THEN
+
+
+
+
+
+        RETURN FORMAT('Área destino %s no existe o está inactiva.', p_area_destino_id);
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- COMITÉ nunca puede originar ni recibir turnos operativos
+
+
+
+
+
+    IF v_tipo_origen = 'COMITE' THEN
+
+
+
+
+
+        RETURN FORMAT('Los COMITÉS (%s) no pueden turnar documentos operativos.', v_nombre_origen);
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    IF v_tipo_destino = 'COMITE' THEN
+
+
+
+
+
+        RETURN FORMAT('Los COMITÉS (%s) no pueden recibir documentos por turno operativo.', v_nombre_destino);
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- a) EXCEPCIÓN EXPLÍCITA ÁREA-ÁREA (mayor prioridad)
+
+
+
+
+
+    SELECT EXISTS (
+
+
+
+
+
+        SELECT 1 FROM public.excepcion_turno_area
+
+
+
+
+
+        WHERE activa = TRUE
+
+
+
+
+
+          AND (
+
+
+
+
+
+              (area_origen_id = p_area_origen_id AND area_destino_id = p_area_destino_id)
+
+
+
+
+
+              OR
+
+
+
+
+
+              (bidireccional = TRUE AND area_origen_id = p_area_destino_id AND area_destino_id = p_area_origen_id)
+
+
+
+
+
+          )
+
+
+
+
+
+    ) INTO v_excepcion_existe;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_excepcion_existe THEN
+
+
+
+
+
+        RETURN NULL; -- Permitido por excepción explícita
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- b) REGLA POR TIPO + condición posicional
+
+
+
+
+
+    v_relacion := public.fn_relacion_jerarquica(p_area_origen_id, p_area_destino_id);
+
+
+
+
+
+
+
+
+
+
+
+    SELECT EXISTS (
+
+
+
+
+
+        SELECT 1 FROM public.regla_turno
+
+
+
+
+
+        WHERE activa         = TRUE
+
+
+
+
+
+          AND tipo_origen    = v_tipo_origen
+
+
+
+
+
+          AND tipo_destino   = v_tipo_destino
+
+
+
+
+
+          AND (condicion_relacion = v_relacion OR condicion_relacion = 'CUALQUIERA')
+
+
+
+
+
+    ) INTO v_regla_existe;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_regla_existe THEN
+
+
+
+
+
+        RETURN NULL; -- Permitido por regla
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- c) DENEGADO — construir mensaje detallado
+
+
+
+
+
+    RETURN FORMAT(
+
+
+
+
+
+        'TURNO NO PERMITIDO: "%s" (%s) → "%s" (%s). '
+
+
+
+
+
+        'Relación jerárquica: %s. '
+
+
+
+
+
+        'No existe una regla activa que autorice esta combinación. '
+
+
+
+
+
+        'Contacte al administrador del sistema para configurarla.',
+
+
+
+
+
+        v_nombre_origen, v_tipo_origen,
+
+
+
+
+
+        v_nombre_destino, v_tipo_destino,
+
+
+
+
+
+        v_relacion
+
+
+
+
+
+    );
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -2173,279 +3659,552 @@ COMMENT ON FUNCTION public.fn_validar_turno(p_area_origen_id integer, p_area_des
 
 CREATE FUNCTION public.fn_verificar_integridad_sistema() RETURNS TABLE(check_name text, status text, detalles text)
     LANGUAGE plpgsql
-    AS $$
-
-
-BEGIN
-
-
-    -- Check 1: Documentos sin nodo activo
-
-
-    RETURN QUERY
-
-
-    SELECT 
-
-
-        'Documentos sin nodo activo'::TEXT,
-
-
-        CASE 
-
-
-            WHEN COUNT(*) = 0 THEN '✅ OK'
-
-
-            ELSE '⚠️ ERROR'
-
-
-        END::TEXT,
-
-
-        FORMAT('%s documentos sin nodo activo', COUNT(*))::TEXT
-
-
-    FROM public.documento d
-
-
-    LEFT JOIN public.nodo_documental n ON d.id = n.documento_id AND n.es_nodo_activo = TRUE
-
-
-    WHERE n.id IS NULL
-
-
-      AND d.estado NOT IN ('CANCELADO', 'CERRADO', 'DESPACHADO');
-
-
-    
-
-
-    -- Check 2: Documentos con múltiples nodos activos
-
-
-    RETURN QUERY
-
-
-    SELECT 
-
-
-        'Documentos con múltiples nodos activos'::TEXT,
-
-
-        CASE 
-
-
-            WHEN COUNT(*) = 0 THEN '✅ OK'
-
-
-            ELSE '⚠️ ERROR'
-
-
-        END::TEXT,
-
-
-        FORMAT('%s documentos con múltiples nodos activos', COUNT(*))::TEXT
-
-
-    FROM (
-
-
-        SELECT documento_id, COUNT(*) AS cnt
-
-
-        FROM public.nodo_documental
-
-
-        WHERE es_nodo_activo = TRUE
-
-
-        GROUP BY documento_id
-
-
-        HAVING COUNT(*) > 1
-
-
-    ) subq;
-
-
-    
-
-
-    -- Check 3: Nodos huérfanos (sin documento)
-
-
-    RETURN QUERY
-
-
-    SELECT 
-
-
-        'Nodos huérfanos'::TEXT,
-
-
-        CASE 
-
-
-            WHEN COUNT(*) = 0 THEN '✅ OK'
-
-
-            ELSE '⚠️ WARNING'
-
-
-        END::TEXT,
-
-
-        FORMAT('%s nodos sin documento válido', COUNT(*))::TEXT
-
-
-    FROM public.nodo_documental n
-
-
-    LEFT JOIN public.documento d ON n.documento_id = d.id
-
-
-    WHERE d.id IS NULL;
-
-
-    
-
-
-    -- Check 4: Oficios sin préstamo
-
-
-    RETURN QUERY
-
-
-    SELECT 
-
-
-        'Oficios sin préstamo'::TEXT,
-
-
-        CASE 
-
-
-            WHEN COUNT(*) = 0 THEN '✅ OK'
-
-
-            ELSE '⚠️ ERROR'
-
-
-        END::TEXT,
-
-
-        FORMAT('%s oficios sin prestamo_numero_id', COUNT(*))::TEXT
-
-
-    FROM public.documento
-
-
-    WHERE contexto = 'OFICIO' AND prestamo_numero_id IS NULL;
-
-
-    
-
-
-    -- Check 5: Préstamos aprobados sin folio
-
-
-    RETURN QUERY
-
-
-    SELECT 
-
-
-        'Préstamos aprobados sin folio'::TEXT,
-
-
-        CASE 
-
-
-            WHEN COUNT(*) = 0 THEN '✅ OK'
-
-
-            ELSE '⚠️ ERROR'
-
-
-        END::TEXT,
-
-
-        FORMAT('%s préstamos aprobados sin folio_asignado', COUNT(*))::TEXT
-
-
-    FROM public.prestamo_numero_oficio
-
-
-    WHERE estado = 'APROBADO' AND folio_asignado IS NULL;
-
-
-    
-
-
-    -- Check 6: Préstamos vencidos no marcados
-
-
-    RETURN QUERY
-
-
-    SELECT 
-
-
-        'Préstamos vencidos sin marcar'::TEXT,
-
-
-        CASE 
-
-
-            WHEN COUNT(*) = 0 THEN '✅ OK'
-
-
-            ELSE '⚠️ WARNING'
-
-
-        END::TEXT,
-
-
-        FORMAT('%s préstamos vencidos en estado APROBADO', COUNT(*))::TEXT
-
-
-    FROM public.prestamo_numero_oficio
-
-
-    WHERE estado = 'APROBADO' 
-
-
-      AND fecha_vencimiento < CURRENT_TIMESTAMP;
-
-
-    
-
-
-    -- Check 7: Áreas sin jerarquía correcta
-
-
-    RETURN QUERY
-
-
-    SELECT 
-
-
-        'Áreas con ciclos'::TEXT,
-
-
-        '✅ OK (Trigger previene ciclos)'::TEXT,
-
-
-        'Validado por trg_validar_jerarquia_area'::TEXT;
-
-
-    
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Check 1: Documentos sin nodo activo
+
+
+
+
+
+    RETURN QUERY
+
+
+
+
+
+    SELECT 
+
+
+
+
+
+        'Documentos sin nodo activo'::TEXT,
+
+
+
+
+
+        CASE 
+
+
+
+
+
+            WHEN COUNT(*) = 0 THEN '✅ OK'
+
+
+
+
+
+            ELSE '⚠️ ERROR'
+
+
+
+
+
+        END::TEXT,
+
+
+
+
+
+        FORMAT('%s documentos sin nodo activo', COUNT(*))::TEXT
+
+
+
+
+
+    FROM public.documento d
+
+
+
+
+
+    LEFT JOIN public.nodo_documental n ON d.id = n.documento_id AND n.es_nodo_activo = TRUE
+
+
+
+
+
+    WHERE n.id IS NULL
+
+
+
+
+
+      AND d.estado NOT IN ('CANCELADO', 'CERRADO', 'DESPACHADO');
+
+
+
+
+
+    
+
+
+
+
+
+    -- Check 2: Documentos con múltiples nodos activos
+
+
+
+
+
+    RETURN QUERY
+
+
+
+
+
+    SELECT 
+
+
+
+
+
+        'Documentos con múltiples nodos activos'::TEXT,
+
+
+
+
+
+        CASE 
+
+
+
+
+
+            WHEN COUNT(*) = 0 THEN '✅ OK'
+
+
+
+
+
+            ELSE '⚠️ ERROR'
+
+
+
+
+
+        END::TEXT,
+
+
+
+
+
+        FORMAT('%s documentos con múltiples nodos activos', COUNT(*))::TEXT
+
+
+
+
+
+    FROM (
+
+
+
+
+
+        SELECT documento_id, COUNT(*) AS cnt
+
+
+
+
+
+        FROM public.nodo_documental
+
+
+
+
+
+        WHERE es_nodo_activo = TRUE
+
+
+
+
+
+        GROUP BY documento_id
+
+
+
+
+
+        HAVING COUNT(*) > 1
+
+
+
+
+
+    ) subq;
+
+
+
+
+
+    
+
+
+
+
+
+    -- Check 3: Nodos huérfanos (sin documento)
+
+
+
+
+
+    RETURN QUERY
+
+
+
+
+
+    SELECT 
+
+
+
+
+
+        'Nodos huérfanos'::TEXT,
+
+
+
+
+
+        CASE 
+
+
+
+
+
+            WHEN COUNT(*) = 0 THEN '✅ OK'
+
+
+
+
+
+            ELSE '⚠️ WARNING'
+
+
+
+
+
+        END::TEXT,
+
+
+
+
+
+        FORMAT('%s nodos sin documento válido', COUNT(*))::TEXT
+
+
+
+
+
+    FROM public.nodo_documental n
+
+
+
+
+
+    LEFT JOIN public.documento d ON n.documento_id = d.id
+
+
+
+
+
+    WHERE d.id IS NULL;
+
+
+
+
+
+    
+
+
+
+
+
+    -- Check 4: Oficios sin préstamo
+
+
+
+
+
+    RETURN QUERY
+
+
+
+
+
+    SELECT 
+
+
+
+
+
+        'Oficios sin préstamo'::TEXT,
+
+
+
+
+
+        CASE 
+
+
+
+
+
+            WHEN COUNT(*) = 0 THEN '✅ OK'
+
+
+
+
+
+            ELSE '⚠️ ERROR'
+
+
+
+
+
+        END::TEXT,
+
+
+
+
+
+        FORMAT('%s oficios sin prestamo_numero_id', COUNT(*))::TEXT
+
+
+
+
+
+    FROM public.documento
+
+
+
+
+
+    WHERE contexto = 'OFICIO' AND prestamo_numero_id IS NULL;
+
+
+
+
+
+    
+
+
+
+
+
+    -- Check 5: Préstamos aprobados sin folio
+
+
+
+
+
+    RETURN QUERY
+
+
+
+
+
+    SELECT 
+
+
+
+
+
+        'Préstamos aprobados sin folio'::TEXT,
+
+
+
+
+
+        CASE 
+
+
+
+
+
+            WHEN COUNT(*) = 0 THEN '✅ OK'
+
+
+
+
+
+            ELSE '⚠️ ERROR'
+
+
+
+
+
+        END::TEXT,
+
+
+
+
+
+        FORMAT('%s préstamos aprobados sin folio_asignado', COUNT(*))::TEXT
+
+
+
+
+
+    FROM public.prestamo_numero_oficio
+
+
+
+
+
+    WHERE estado = 'APROBADO' AND folio_asignado IS NULL;
+
+
+
+
+
+    
+
+
+
+
+
+    -- Check 6: Préstamos vencidos no marcados
+
+
+
+
+
+    RETURN QUERY
+
+
+
+
+
+    SELECT 
+
+
+
+
+
+        'Préstamos vencidos sin marcar'::TEXT,
+
+
+
+
+
+        CASE 
+
+
+
+
+
+            WHEN COUNT(*) = 0 THEN '✅ OK'
+
+
+
+
+
+            ELSE '⚠️ WARNING'
+
+
+
+
+
+        END::TEXT,
+
+
+
+
+
+        FORMAT('%s préstamos vencidos en estado APROBADO', COUNT(*))::TEXT
+
+
+
+
+
+    FROM public.prestamo_numero_oficio
+
+
+
+
+
+    WHERE estado = 'APROBADO' 
+
+
+
+
+
+      AND fecha_vencimiento < CURRENT_TIMESTAMP;
+
+
+
+
+
+    
+
+
+
+
+
+    -- Check 7: Áreas sin jerarquía correcta
+
+
+
+
+
+    RETURN QUERY
+
+
+
+
+
+    SELECT 
+
+
+
+
+
+        'Áreas con ciclos'::TEXT,
+
+
+
+
+
+        '✅ OK (Trigger previene ciclos)'::TEXT,
+
+
+
+
+
+        'Validado por trg_validar_jerarquia_area'::TEXT;
+
+
+
+
+
+    
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -2464,126 +4223,246 @@ COMMENT ON FUNCTION public.fn_verificar_integridad_sistema() IS 'Verifica la int
 
 CREATE FUNCTION public.sp_cancelar_documento(p_documento_id integer, p_usuario_cancela_id integer, p_motivo_cancelacion character varying) RETURNS void
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_area_id INTEGER;
-
-
-BEGIN
-
-
-    -- Cerrar nodo activo si existe
-
-
-    UPDATE public.nodo_documental
-
-
-    SET
-
-
-        estado         = 'CANCELADO',
-
-
-        es_nodo_activo = FALSE,
-
-
-        fecha_cierre   = CURRENT_TIMESTAMP,
-
-
-        observaciones  = COALESCE(observaciones || ' | ', '')
-
-
-                         || 'CANCELADO: ' || p_motivo_cancelacion
-
-
-    WHERE documento_id = p_documento_id AND es_nodo_activo = TRUE
-
-
-    RETURNING area_id INTO v_area_id;
-
-
-
-
-
-    -- Fallback para documentos sin nodo (registros legacy)
-
-
-    IF v_area_id IS NULL THEN
-
-
-        SELECT area_origen_id INTO v_area_id
-
-
-        FROM public.documento WHERE id = p_documento_id;
-
-
-    END IF;
-
-
-
-
-
-    -- Cerrar todos los turnos legacy
-
-
-    UPDATE public.turno_documento
-
-
-    SET activo = FALSE
-
-
-    WHERE documento_id = p_documento_id AND activo = TRUE;
-
-
-
-
-
-    -- Actualizar estado
-
-
-    UPDATE public.documento
-
-
-    SET estado = 'CANCELADO',
-
-
-        fecha_modificacion = CURRENT_TIMESTAMP,
-
-
-        observaciones = p_motivo_cancelacion
-
-
-    WHERE id = p_documento_id;
-
-
-
-
-
-    -- Historial
-
-
-    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id, detalles)
-
-
-    VALUES (p_documento_id, 'CANCELADO', 'Documento cancelado',
-
-
-            p_usuario_cancela_id, v_area_id, p_motivo_cancelacion);
-
-
-
-
-
-    RAISE NOTICE 'Documento % cancelado.', p_documento_id;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_area_id INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Cerrar nodo activo si existe
+
+
+
+
+
+    UPDATE public.nodo_documental
+
+
+
+
+
+    SET
+
+
+
+
+
+        estado         = 'CANCELADO',
+
+
+
+
+
+        es_nodo_activo = FALSE,
+
+
+
+
+
+        fecha_cierre   = CURRENT_TIMESTAMP,
+
+
+
+
+
+        observaciones  = COALESCE(observaciones || ' | ', '')
+
+
+
+
+
+                         || 'CANCELADO: ' || p_motivo_cancelacion
+
+
+
+
+
+    WHERE documento_id = p_documento_id AND es_nodo_activo = TRUE
+
+
+
+
+
+    RETURNING area_id INTO v_area_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- Fallback para documentos sin nodo (registros legacy)
+
+
+
+
+
+    IF v_area_id IS NULL THEN
+
+
+
+
+
+        SELECT area_origen_id INTO v_area_id
+
+
+
+
+
+        FROM public.documento WHERE id = p_documento_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- Cerrar todos los turnos legacy
+
+
+
+
+
+    UPDATE public.turno_documento
+
+
+
+
+
+    SET activo = FALSE
+
+
+
+
+
+    WHERE documento_id = p_documento_id AND activo = TRUE;
+
+
+
+
+
+
+
+
+
+
+
+    -- Actualizar estado
+
+
+
+
+
+    UPDATE public.documento
+
+
+
+
+
+    SET estado = 'CANCELADO',
+
+
+
+
+
+        fecha_modificacion = CURRENT_TIMESTAMP,
+
+
+
+
+
+        observaciones = p_motivo_cancelacion
+
+
+
+
+
+    WHERE id = p_documento_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- Historial
+
+
+
+
+
+    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id, detalles)
+
+
+
+
+
+    VALUES (p_documento_id, 'CANCELADO', 'Documento cancelado',
+
+
+
+
+
+            p_usuario_cancela_id, v_area_id, p_motivo_cancelacion);
+
+
+
+
+
+
+
+
+
+
+
+    RAISE NOTICE 'Documento % cancelado.', p_documento_id;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -2602,93 +4481,180 @@ COMMENT ON FUNCTION public.sp_cancelar_documento(p_documento_id integer, p_usuar
 
 CREATE FUNCTION public.sp_cerrar_documento(p_documento_id integer, p_usuario_cierra_id integer, p_observaciones text DEFAULT 'Cierre del trámite'::text) RETURNS void
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_nodo_activo_id    INTEGER;
-
-
-    v_area_activa_id    INTEGER;
-
-
-BEGIN
-
-
-    SELECT id, area_id INTO v_nodo_activo_id, v_area_activa_id
-
-
-    FROM public.nodo_documental
-
-
-    WHERE documento_id = p_documento_id AND es_nodo_activo = TRUE;
-
-
-
-
-
-    IF v_nodo_activo_id IS NOT NULL THEN
-
-
-        UPDATE public.nodo_documental
-
-
-        SET
-
-
-            estado         = 'CERRADO',
-
-
-            es_nodo_activo = FALSE,
-
-
-            fecha_cierre   = CURRENT_TIMESTAMP,
-
-
-            observaciones  = COALESCE(observaciones || ' | ', '') || p_observaciones
-
-
-        WHERE id = v_nodo_activo_id;
-
-
-    END IF;
-
-
-
-
-
-    UPDATE public.documento
-
-
-    SET estado = 'CERRADO', fecha_modificacion = CURRENT_TIMESTAMP
-
-
-    WHERE id = p_documento_id;
-
-
-
-
-
-    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
-
-
-    VALUES (p_documento_id, 'CERRADO', p_observaciones,
-
-
-            p_usuario_cierra_id, v_area_activa_id);
-
-
-
-
-
-    RAISE NOTICE 'Documento % cerrado.', p_documento_id;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_nodo_activo_id    INTEGER;
+
+
+
+
+
+    v_area_activa_id    INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    SELECT id, area_id INTO v_nodo_activo_id, v_area_activa_id
+
+
+
+
+
+    FROM public.nodo_documental
+
+
+
+
+
+    WHERE documento_id = p_documento_id AND es_nodo_activo = TRUE;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_nodo_activo_id IS NOT NULL THEN
+
+
+
+
+
+        UPDATE public.nodo_documental
+
+
+
+
+
+        SET
+
+
+
+
+
+            estado         = 'CERRADO',
+
+
+
+
+
+            es_nodo_activo = FALSE,
+
+
+
+
+
+            fecha_cierre   = CURRENT_TIMESTAMP,
+
+
+
+
+
+            observaciones  = COALESCE(observaciones || ' | ', '') || p_observaciones
+
+
+
+
+
+        WHERE id = v_nodo_activo_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    UPDATE public.documento
+
+
+
+
+
+    SET estado = 'CERRADO', fecha_modificacion = CURRENT_TIMESTAMP
+
+
+
+
+
+    WHERE id = p_documento_id;
+
+
+
+
+
+
+
+
+
+
+
+    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
+
+
+
+
+
+    VALUES (p_documento_id, 'CERRADO', p_observaciones,
+
+
+
+
+
+            p_usuario_cierra_id, v_area_activa_id);
+
+
+
+
+
+
+
+
+
+
+
+    RAISE NOTICE 'Documento % cerrado.', p_documento_id;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -2707,279 +4673,552 @@ COMMENT ON FUNCTION public.sp_cerrar_documento(p_documento_id integer, p_usuario
 
 CREATE FUNCTION public.sp_despachar_externo(p_documento_id integer, p_usuario_despacha_id integer, p_entidad_externa_id integer, p_metodo public.metodo_despacho_enum DEFAULT 'FISICO'::public.metodo_despacho_enum, p_numero_guia character varying DEFAULT NULL::character varying, p_archivo_acuse_id integer DEFAULT NULL::integer, p_observaciones text DEFAULT NULL::text, OUT p_despacho_id integer) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_nodo_activo_id INTEGER;
-
-
-    v_area_actual_id INTEGER;
-
-
-    v_estado_doc estado_documento_enum;
-
-
-    v_folio_doc VARCHAR(80);
-
-
-BEGIN
-
-
-    -- 1. Obtener nodo activo
-
-
-    SELECT nd.id, nd.area_id
-
-
-    INTO v_nodo_activo_id, v_area_actual_id
-
-
-    FROM public.nodo_documental nd
-
-
-    WHERE nd.documento_id = p_documento_id
-
-
-      AND nd.es_nodo_activo = TRUE;
-
-
-    
-
-
-    IF v_nodo_activo_id IS NULL THEN
-
-
-        RAISE EXCEPTION 'El documento % no tiene nodo activo', p_documento_id;
-
-
-    END IF;
-
-
-    
-
-
-    -- 2. Validar estado del documento
-
-
-    SELECT estado, folio
-
-
-    INTO v_estado_doc, v_folio_doc
-
-
-    FROM public.documento
-
-
-    WHERE id = p_documento_id;
-
-
-    
-
-
-    IF v_estado_doc IN ('CANCELADO', 'CERRADO', 'DESPACHADO') THEN
-
-
-        RAISE EXCEPTION 'No se puede despachar: el documento % está en estado %',
-
-
-            p_documento_id, v_estado_doc;
-
-
-    END IF;
-
-
-    
-
-
-    -- NOTA: YA NO validamos que el área sea OFICIALÍA
-
-
-    -- Cualquier área puede despachar directamente al exterior
-
-
-    
-
-
-    -- 3. Registrar el despacho
-
-
-    INSERT INTO public.despacho_externo (
-
-
-        documento_id,
-
-
-        nodo_id,
-
-
-        entidad_externa_id,
-
-
-        fecha_despacho,
-
-
-        metodo,
-
-
-        numero_guia,
-
-
-        archivo_acuse_id,
-
-
-        usuario_despacha_id,
-
-
-        observaciones,
-
-
-        acuse_recibido
-
-
-    )
-
-
-    VALUES (
-
-
-        p_documento_id,
-
-
-        v_nodo_activo_id,
-
-
-        p_entidad_externa_id,
-
-
-        CURRENT_TIMESTAMP,
-
-
-        p_metodo,
-
-
-        p_numero_guia,
-
-
-        p_archivo_acuse_id,
-
-
-        p_usuario_despacha_id,
-
-
-        p_observaciones,
-
-
-        FALSE
-
-
-    )
-
-
-    RETURNING id INTO p_despacho_id;
-
-
-    
-
-
-    -- 4. Actualizar estado del documento
-
-
-    UPDATE public.documento
-
-
-    SET estado = 'DESPACHADO',
-
-
-        entidad_externa_destino_id = p_entidad_externa_id,
-
-
-        fecha_modificacion = CURRENT_TIMESTAMP
-
-
-    WHERE id = p_documento_id;
-
-
-    
-
-
-    -- 5. Cerrar el nodo activo
-
-
-    UPDATE public.nodo_documental
-
-
-    SET estado = 'CERRADO',
-
-
-        es_nodo_activo = FALSE,
-
-
-        fecha_cierre = CURRENT_TIMESTAMP,
-
-
-        observaciones = COALESCE(observaciones || ' | ', '')
-
-
-                        || FORMAT('Despachado a entidad externa %s', p_entidad_externa_id)
-
-
-    WHERE id = v_nodo_activo_id;
-
-
-    
-
-
-    -- 6. Historial
-
-
-    INSERT INTO public.historial_documento (
-
-
-        documento_id, accion, descripcion, usuario_id, area_id
-
-
-    )
-
-
-    VALUES (
-
-
-        p_documento_id,
-
-
-        'DESPACHO_EXTERNO',
-
-
-        FORMAT('Documento despachado a entidad externa %s. Método: %s. Guía: %s',
-
-
-               p_entidad_externa_id, p_metodo, COALESCE(p_numero_guia, 'N/A')),
-
-
-        p_usuario_despacha_id,
-
-
-        v_area_actual_id
-
-
-    );
-
-
-    
-
-
-    RAISE NOTICE 'Documento % despachado desde área % hacia entidad externa %',
-
-
-        p_documento_id, v_area_actual_id, p_entidad_externa_id;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_nodo_activo_id INTEGER;
+
+
+
+
+
+    v_area_actual_id INTEGER;
+
+
+
+
+
+    v_estado_doc estado_documento_enum;
+
+
+
+
+
+    v_folio_doc VARCHAR(80);
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- 1. Obtener nodo activo
+
+
+
+
+
+    SELECT nd.id, nd.area_id
+
+
+
+
+
+    INTO v_nodo_activo_id, v_area_actual_id
+
+
+
+
+
+    FROM public.nodo_documental nd
+
+
+
+
+
+    WHERE nd.documento_id = p_documento_id
+
+
+
+
+
+      AND nd.es_nodo_activo = TRUE;
+
+
+
+
+
+    
+
+
+
+
+
+    IF v_nodo_activo_id IS NULL THEN
+
+
+
+
+
+        RAISE EXCEPTION 'El documento % no tiene nodo activo', p_documento_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    
+
+
+
+
+
+    -- 2. Validar estado del documento
+
+
+
+
+
+    SELECT estado, folio
+
+
+
+
+
+    INTO v_estado_doc, v_folio_doc
+
+
+
+
+
+    FROM public.documento
+
+
+
+
+
+    WHERE id = p_documento_id;
+
+
+
+
+
+    
+
+
+
+
+
+    IF v_estado_doc IN ('CANCELADO', 'CERRADO', 'DESPACHADO') THEN
+
+
+
+
+
+        RAISE EXCEPTION 'No se puede despachar: el documento % está en estado %',
+
+
+
+
+
+            p_documento_id, v_estado_doc;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    
+
+
+
+
+
+    -- NOTA: YA NO validamos que el área sea OFICIALÍA
+
+
+
+
+
+    -- Cualquier área puede despachar directamente al exterior
+
+
+
+
+
+    
+
+
+
+
+
+    -- 3. Registrar el despacho
+
+
+
+
+
+    INSERT INTO public.despacho_externo (
+
+
+
+
+
+        documento_id,
+
+
+
+
+
+        nodo_id,
+
+
+
+
+
+        entidad_externa_id,
+
+
+
+
+
+        fecha_despacho,
+
+
+
+
+
+        metodo,
+
+
+
+
+
+        numero_guia,
+
+
+
+
+
+        archivo_acuse_id,
+
+
+
+
+
+        usuario_despacha_id,
+
+
+
+
+
+        observaciones,
+
+
+
+
+
+        acuse_recibido
+
+
+
+
+
+    )
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        p_documento_id,
+
+
+
+
+
+        v_nodo_activo_id,
+
+
+
+
+
+        p_entidad_externa_id,
+
+
+
+
+
+        CURRENT_TIMESTAMP,
+
+
+
+
+
+        p_metodo,
+
+
+
+
+
+        p_numero_guia,
+
+
+
+
+
+        p_archivo_acuse_id,
+
+
+
+
+
+        p_usuario_despacha_id,
+
+
+
+
+
+        p_observaciones,
+
+
+
+
+
+        FALSE
+
+
+
+
+
+    )
+
+
+
+
+
+    RETURNING id INTO p_despacho_id;
+
+
+
+
+
+    
+
+
+
+
+
+    -- 4. Actualizar estado del documento
+
+
+
+
+
+    UPDATE public.documento
+
+
+
+
+
+    SET estado = 'DESPACHADO',
+
+
+
+
+
+        entidad_externa_destino_id = p_entidad_externa_id,
+
+
+
+
+
+        fecha_modificacion = CURRENT_TIMESTAMP
+
+
+
+
+
+    WHERE id = p_documento_id;
+
+
+
+
+
+    
+
+
+
+
+
+    -- 5. Cerrar el nodo activo
+
+
+
+
+
+    UPDATE public.nodo_documental
+
+
+
+
+
+    SET estado = 'CERRADO',
+
+
+
+
+
+        es_nodo_activo = FALSE,
+
+
+
+
+
+        fecha_cierre = CURRENT_TIMESTAMP,
+
+
+
+
+
+        observaciones = COALESCE(observaciones || ' | ', '')
+
+
+
+
+
+                        || FORMAT('Despachado a entidad externa %s', p_entidad_externa_id)
+
+
+
+
+
+    WHERE id = v_nodo_activo_id;
+
+
+
+
+
+    
+
+
+
+
+
+    -- 6. Historial
+
+
+
+
+
+    INSERT INTO public.historial_documento (
+
+
+
+
+
+        documento_id, accion, descripcion, usuario_id, area_id
+
+
+
+
+
+    )
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        p_documento_id,
+
+
+
+
+
+        'DESPACHO_EXTERNO',
+
+
+
+
+
+        FORMAT('Documento despachado a entidad externa %s. Método: %s. Guía: %s',
+
+
+
+
+
+               p_entidad_externa_id, p_metodo, COALESCE(p_numero_guia, 'N/A')),
+
+
+
+
+
+        p_usuario_despacha_id,
+
+
+
+
+
+        v_area_actual_id
+
+
+
+
+
+    );
+
+
+
+
+
+    
+
+
+
+
+
+    RAISE NOTICE 'Documento % despachado desde área % hacia entidad externa %',
+
+
+
+
+
+        p_documento_id, v_area_actual_id, p_entidad_externa_id;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -2989,15 +5228,24 @@ ALTER FUNCTION public.sp_despachar_externo(p_documento_id integer, p_usuario_des
 -- Name: FUNCTION sp_despachar_externo(p_documento_id integer, p_usuario_despacha_id integer, p_entidad_externa_id integer, p_metodo public.metodo_despacho_enum, p_numero_guia character varying, p_archivo_acuse_id integer, p_observaciones text, OUT p_despacho_id integer); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.sp_despachar_externo(p_documento_id integer, p_usuario_despacha_id integer, p_entidad_externa_id integer, p_metodo public.metodo_despacho_enum, p_numero_guia character varying, p_archivo_acuse_id integer, p_observaciones text, OUT p_despacho_id integer) IS 'V5 (CORREGIDO): Registra el despacho físico o digital de un documento hacia una entidad externa. 
-
-
-PUEDE ejecutarse desde CUALQUIER área, NO solo Oficialía. 
-
-
-El documento sale directamente del área emisora hacia la entidad externa.
-
-
+COMMENT ON FUNCTION public.sp_despachar_externo(p_documento_id integer, p_usuario_despacha_id integer, p_entidad_externa_id integer, p_metodo public.metodo_despacho_enum, p_numero_guia character varying, p_archivo_acuse_id integer, p_observaciones text, OUT p_despacho_id integer) IS 'V5 (CORREGIDO): Registra el despacho físico o digital de un documento hacia una entidad externa. 
+
+
+
+
+
+PUEDE ejecutarse desde CUALQUIER área, NO solo Oficialía. 
+
+
+
+
+
+El documento sale directamente del área emisora hacia la entidad externa.
+
+
+
+
+
 La Oficialía de la dependencia emisora solo maneja documentos ENTRANTES, no salientes.';
 
 
@@ -3007,237 +5255,468 @@ La Oficialía de la dependencia emisora solo maneja documentos ENTRANTES, no sal
 
 CREATE FUNCTION public.sp_devolver_documento(p_documento_id integer, p_usuario_devuelve_id integer, p_motivo character varying, OUT p_nodo_devolucion_id integer) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_nodo_activo_id        INTEGER;
-
-
-    v_nodo_padre_id         INTEGER;
-
-
-    v_area_padre_id         INTEGER;
-
-
-    v_folio_original        VARCHAR(80);
-
-
-    v_folio_propio_actual   VARCHAR(80);
-
-
-BEGIN
-
-
-    -- 1. Obtener nodo activo
-
-
-    SELECT id, nodo_padre_id, folio_original, folio_propio
-
-
-    INTO v_nodo_activo_id, v_nodo_padre_id, v_folio_original, v_folio_propio_actual
-
-
-    FROM public.nodo_documental
-
-
-    WHERE documento_id = p_documento_id AND es_nodo_activo = TRUE;
-
-
-
-
-
-    IF NOT FOUND THEN
-
-
-        RAISE EXCEPTION 'Sin nodo activo para el documento %.', p_documento_id;
-
-
-    END IF;
-
-
-
-
-
-    IF v_nodo_padre_id IS NULL THEN
-
-
-        RAISE EXCEPTION
-
-
-            'No se puede devolver el nodo de emisión original. '
-
-
-            'El documento % no tiene nodo previo al que regresar.', p_documento_id;
-
-
-    END IF;
-
-
-
-
-
-    -- 2. Obtener área del nodo padre
-
-
-    SELECT area_id INTO v_area_padre_id
-
-
-    FROM public.nodo_documental
-
-
-    WHERE id = v_nodo_padre_id;
-
-
-
-
-
-    -- 3. Cerrar el nodo activo
-
-
-    UPDATE public.nodo_documental
-
-
-    SET
-
-
-        estado         = 'RETORNADO',
-
-
-        es_nodo_activo = FALSE,
-
-
-        fecha_cierre   = CURRENT_TIMESTAMP,
-
-
-        observaciones  = COALESCE(observaciones || ' | ', '')
-
-
-                         || 'DEVUELTO: ' || p_motivo
-
-
-    WHERE id = v_nodo_activo_id;
-
-
-
-
-
-    -- 4. Crear nodo DEVOLUCION hacia el padre
-
-
-    INSERT INTO public.nodo_documental (
-
-
-        documento_id, tipo_nodo, estado,
-
-
-        nodo_padre_id,
-
-
-        folio_original, folio_padre, folio_propio,
-
-
-        area_id, usuario_responsable_id,
-
-
-        instrucciones,
-
-
-        es_nodo_activo
-
-
-    )
-
-
-    VALUES (
-
-
-        p_documento_id, 'DEVOLUCION', 'PENDIENTE',
-
-
-        v_nodo_activo_id,
-
-
-        v_folio_original,
-
-
-        v_folio_propio_actual,
-
-
-        '',                    -- asignado al confirmar recepción de la devolución
-
-
-        v_area_padre_id,
-
-
-        p_usuario_devuelve_id,
-
-
-        'DEVOLUCIÓN: ' || p_motivo,
-
-
-        TRUE
-
-
-    )
-
-
-    RETURNING id INTO p_nodo_devolucion_id;
-
-
-
-
-
-    -- 5. Actualizar estado documento
-
-
-    UPDATE public.documento
-
-
-    SET estado = 'DEVUELTO', fecha_modificacion = CURRENT_TIMESTAMP
-
-
-    WHERE id = p_documento_id;
-
-
-
-
-
-    -- 6. Historial
-
-
-    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
-
-
-    VALUES (
-
-
-        p_documento_id, 'DEVUELTO',
-
-
-        FORMAT('Devuelto a área %s. Motivo: %s', v_area_padre_id, p_motivo),
-
-
-        p_usuario_devuelve_id, v_area_padre_id
-
-
-    );
-
-
-
-
-
-    RAISE NOTICE 'Documento % devuelto. Nodo devolución: %',
-
-
-        p_documento_id, p_nodo_devolucion_id;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_nodo_activo_id        INTEGER;
+
+
+
+
+
+    v_nodo_padre_id         INTEGER;
+
+
+
+
+
+    v_area_padre_id         INTEGER;
+
+
+
+
+
+    v_folio_original        VARCHAR(80);
+
+
+
+
+
+    v_folio_propio_actual   VARCHAR(80);
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- 1. Obtener nodo activo
+
+
+
+
+
+    SELECT id, nodo_padre_id, folio_original, folio_propio
+
+
+
+
+
+    INTO v_nodo_activo_id, v_nodo_padre_id, v_folio_original, v_folio_propio_actual
+
+
+
+
+
+    FROM public.nodo_documental
+
+
+
+
+
+    WHERE documento_id = p_documento_id AND es_nodo_activo = TRUE;
+
+
+
+
+
+
+
+
+
+
+
+    IF NOT FOUND THEN
+
+
+
+
+
+        RAISE EXCEPTION 'Sin nodo activo para el documento %.', p_documento_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_nodo_padre_id IS NULL THEN
+
+
+
+
+
+        RAISE EXCEPTION
+
+
+
+
+
+            'No se puede devolver el nodo de emisión original. '
+
+
+
+
+
+            'El documento % no tiene nodo previo al que regresar.', p_documento_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- 2. Obtener área del nodo padre
+
+
+
+
+
+    SELECT area_id INTO v_area_padre_id
+
+
+
+
+
+    FROM public.nodo_documental
+
+
+
+
+
+    WHERE id = v_nodo_padre_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 3. Cerrar el nodo activo
+
+
+
+
+
+    UPDATE public.nodo_documental
+
+
+
+
+
+    SET
+
+
+
+
+
+        estado         = 'RETORNADO',
+
+
+
+
+
+        es_nodo_activo = FALSE,
+
+
+
+
+
+        fecha_cierre   = CURRENT_TIMESTAMP,
+
+
+
+
+
+        observaciones  = COALESCE(observaciones || ' | ', '')
+
+
+
+
+
+                         || 'DEVUELTO: ' || p_motivo
+
+
+
+
+
+    WHERE id = v_nodo_activo_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 4. Crear nodo DEVOLUCION hacia el padre
+
+
+
+
+
+    INSERT INTO public.nodo_documental (
+
+
+
+
+
+        documento_id, tipo_nodo, estado,
+
+
+
+
+
+        nodo_padre_id,
+
+
+
+
+
+        folio_original, folio_padre, folio_propio,
+
+
+
+
+
+        area_id, usuario_responsable_id,
+
+
+
+
+
+        instrucciones,
+
+
+
+
+
+        es_nodo_activo
+
+
+
+
+
+    )
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        p_documento_id, 'DEVOLUCION', 'PENDIENTE',
+
+
+
+
+
+        v_nodo_activo_id,
+
+
+
+
+
+        v_folio_original,
+
+
+
+
+
+        v_folio_propio_actual,
+
+
+
+
+
+        '',                    -- asignado al confirmar recepción de la devolución
+
+
+
+
+
+        v_area_padre_id,
+
+
+
+
+
+        p_usuario_devuelve_id,
+
+
+
+
+
+        'DEVOLUCIÓN: ' || p_motivo,
+
+
+
+
+
+        TRUE
+
+
+
+
+
+    )
+
+
+
+
+
+    RETURNING id INTO p_nodo_devolucion_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 5. Actualizar estado documento
+
+
+
+
+
+    UPDATE public.documento
+
+
+
+
+
+    SET estado = 'DEVUELTO', fecha_modificacion = CURRENT_TIMESTAMP
+
+
+
+
+
+    WHERE id = p_documento_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 6. Historial
+
+
+
+
+
+    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        p_documento_id, 'DEVUELTO',
+
+
+
+
+
+        FORMAT('Devuelto a área %s. Motivo: %s', v_area_padre_id, p_motivo),
+
+
+
+
+
+        p_usuario_devuelve_id, v_area_padre_id
+
+
+
+
+
+    );
+
+
+
+
+
+
+
+
+
+
+
+    RAISE NOTICE 'Documento % devuelto. Nodo devolución: %',
+
+
+
+
+
+        p_documento_id, p_nodo_devolucion_id;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -3256,24 +5735,42 @@ COMMENT ON FUNCTION public.sp_devolver_documento(p_documento_id integer, p_usuar
 
 CREATE FUNCTION public.sp_emitir_documento(p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_usuario_creador_id integer, p_area_origen_id integer, p_fecha_limite timestamp without time zone DEFAULT NULL::timestamp without time zone, p_prioridad public.prioridad_enum DEFAULT 'MEDIA'::public.prioridad_enum, p_instrucciones text DEFAULT NULL::text, p_observaciones text DEFAULT NULL::text, OUT p_documento_id integer, OUT p_nodo_id integer, OUT p_folio_emision character varying) RETURNS record
     LANGUAGE plpgsql
-    AS $$
-
-BEGIN
-
-    p_folio_emision := public.fn_generar_folio(p_area_origen_id, 'EMISION', EXTRACT(YEAR FROM CURRENT_DATE)::SMALLINT, p_tipo_documento_id);
-
-    INSERT INTO documento (folio, tipo_documento_id, asunto, contenido, usuario_creador_id, area_origen_id, estado, prioridad, fecha_limite)
-
-    VALUES (p_folio_emision, p_tipo_documento_id, p_asunto, p_contenido, p_usuario_creador_id, p_area_origen_id, 'REGISTRADO', p_prioridad, p_fecha_limite)
-
-    RETURNING id INTO p_documento_id;
-
-    INSERT INTO nodo_documental (documento_id, tipo_nodo, estado, area_id, usuario_responsable_id, folio_original, folio_propio, es_nodo_activo, instrucciones, observaciones)
-
-    VALUES (p_documento_id, 'EMISION', 'ACTIVO', p_area_origen_id, p_usuario_creador_id, p_folio_emision, p_folio_emision, TRUE, p_instrucciones, p_observaciones)
-
-    RETURNING id INTO p_nodo_id;
-
+    AS $$
+
+
+
+BEGIN
+
+
+
+    p_folio_emision := public.fn_generar_folio(p_area_origen_id, 'EMISION', EXTRACT(YEAR FROM CURRENT_DATE)::SMALLINT, p_tipo_documento_id);
+
+
+
+    INSERT INTO documento (folio, tipo_documento_id, asunto, contenido, usuario_creador_id, area_origen_id, estado, prioridad, fecha_limite)
+
+
+
+    VALUES (p_folio_emision, p_tipo_documento_id, p_asunto, p_contenido, p_usuario_creador_id, p_area_origen_id, 'REGISTRADO', p_prioridad, p_fecha_limite)
+
+
+
+    RETURNING id INTO p_documento_id;
+
+
+
+    INSERT INTO nodo_documental (documento_id, tipo_nodo, estado, area_id, usuario_responsable_id, folio_original, folio_propio, es_nodo_activo, instrucciones, observaciones)
+
+
+
+    VALUES (p_documento_id, 'EMISION', 'ACTIVO', p_area_origen_id, p_usuario_creador_id, p_folio_emision, p_folio_emision, TRUE, p_instrucciones, p_observaciones)
+
+
+
+    RETURNING id INTO p_nodo_id;
+
+
+
 END; $$;
 
 
@@ -3292,44 +5789,82 @@ COMMENT ON FUNCTION public.sp_emitir_documento(p_tipo_documento_id integer, p_as
 
 CREATE FUNCTION public.sp_emitir_documento(p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_usuario_creador_id integer, p_area_origen_id integer, p_fecha_limite timestamp without time zone DEFAULT NULL::timestamp without time zone, p_prioridad public.prioridad_enum DEFAULT 'MEDIA'::public.prioridad_enum, p_instrucciones text DEFAULT NULL::text, p_observaciones text DEFAULT NULL::text, p_contexto public.contexto_documento_enum DEFAULT 'OTRO'::public.contexto_documento_enum, p_prestamo_numero_id integer DEFAULT NULL::integer, OUT p_documento_id integer, OUT p_nodo_id integer, OUT p_folio_emision character varying) RETURNS record
     LANGUAGE plpgsql
-    AS $$
-
-DECLARE v_prestamo_folio VARCHAR(80);
-
-BEGIN
-
-    IF p_contexto = 'OFICIO' THEN
-
-        IF p_prestamo_numero_id IS NULL THEN RAISE EXCEPTION 'Contexto OFICIO requiere prestamo'; END IF;
-
-        SELECT folio_asignado INTO v_prestamo_folio FROM prestamo_numero_oficio WHERE id = p_prestamo_numero_id AND estado = 'APROBADO';
-
-        IF v_prestamo_folio IS NULL THEN RAISE EXCEPTION 'Prestamo no encontrado'; END IF;
-
-        UPDATE prestamo_numero_oficio SET estado = 'UTILIZADO' WHERE id = p_prestamo_numero_id;
-
-        p_folio_emision := v_prestamo_folio;
-
-    ELSE
-
-        p_folio_emision := public.fn_generar_folio(p_area_origen_id, 'EMISION', EXTRACT(YEAR FROM CURRENT_DATE)::SMALLINT, p_tipo_documento_id);
-
-    END IF;
-
-    INSERT INTO documento (folio, tipo_documento_id, asunto, contenido, usuario_creador_id, area_origen_id, estado, prioridad, fecha_limite, contexto, prestamo_numero_id)
-
-    VALUES (p_folio_emision, p_tipo_documento_id, p_asunto, p_contenido, p_usuario_creador_id, p_area_origen_id, 'REGISTRADO', p_prioridad, p_fecha_limite, p_contexto, p_prestamo_numero_id)
-
-    RETURNING id INTO p_documento_id;
-
-    IF p_prestamo_numero_id IS NOT NULL THEN UPDATE prestamo_numero_oficio SET documento_id = p_documento_id WHERE id = p_prestamo_numero_id; END IF;
-
-    INSERT INTO nodo_documental (documento_id, tipo_nodo, estado, area_id, usuario_responsable_id, folio_original, folio_propio, es_nodo_activo, instrucciones, observaciones)
-
-    VALUES (p_documento_id, 'EMISION', 'ACTIVO', p_area_origen_id, p_usuario_creador_id, p_folio_emision, p_folio_emision, TRUE, p_instrucciones, p_observaciones)
-
-    RETURNING id INTO p_nodo_id;
-
+    AS $$
+
+
+
+DECLARE v_prestamo_folio VARCHAR(80);
+
+
+
+BEGIN
+
+
+
+    IF p_contexto = 'OFICIO' THEN
+
+
+
+        IF p_prestamo_numero_id IS NULL THEN RAISE EXCEPTION 'Contexto OFICIO requiere prestamo'; END IF;
+
+
+
+        SELECT folio_asignado INTO v_prestamo_folio FROM prestamo_numero_oficio WHERE id = p_prestamo_numero_id AND estado = 'APROBADO';
+
+
+
+        IF v_prestamo_folio IS NULL THEN RAISE EXCEPTION 'Prestamo no encontrado'; END IF;
+
+
+
+        UPDATE prestamo_numero_oficio SET estado = 'UTILIZADO' WHERE id = p_prestamo_numero_id;
+
+
+
+        p_folio_emision := v_prestamo_folio;
+
+
+
+    ELSE
+
+
+
+        p_folio_emision := public.fn_generar_folio(p_area_origen_id, 'EMISION', EXTRACT(YEAR FROM CURRENT_DATE)::SMALLINT, p_tipo_documento_id);
+
+
+
+    END IF;
+
+
+
+    INSERT INTO documento (folio, tipo_documento_id, asunto, contenido, usuario_creador_id, area_origen_id, estado, prioridad, fecha_limite, contexto, prestamo_numero_id)
+
+
+
+    VALUES (p_folio_emision, p_tipo_documento_id, p_asunto, p_contenido, p_usuario_creador_id, p_area_origen_id, 'REGISTRADO', p_prioridad, p_fecha_limite, p_contexto, p_prestamo_numero_id)
+
+
+
+    RETURNING id INTO p_documento_id;
+
+
+
+    IF p_prestamo_numero_id IS NOT NULL THEN UPDATE prestamo_numero_oficio SET documento_id = p_documento_id WHERE id = p_prestamo_numero_id; END IF;
+
+
+
+    INSERT INTO nodo_documental (documento_id, tipo_nodo, estado, area_id, usuario_responsable_id, folio_original, folio_propio, es_nodo_activo, instrucciones, observaciones)
+
+
+
+    VALUES (p_documento_id, 'EMISION', 'ACTIVO', p_area_origen_id, p_usuario_creador_id, p_folio_emision, p_folio_emision, TRUE, p_instrucciones, p_observaciones)
+
+
+
+    RETURNING id INTO p_nodo_id;
+
+
+
 END; $$;
 
 
@@ -3341,240 +5876,474 @@ ALTER FUNCTION public.sp_emitir_documento(p_tipo_documento_id integer, p_asunto 
 
 CREATE FUNCTION public.sp_emitir_documento_con_revision_diferida(p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_usuario_creador_id integer, p_area_origen_id integer, p_fecha_limite timestamp without time zone DEFAULT NULL::timestamp without time zone, p_prioridad public.prioridad_enum DEFAULT 'MEDIA'::public.prioridad_enum, p_instrucciones text DEFAULT NULL::text, p_observaciones text DEFAULT NULL::text, p_contexto public.contexto_documento_enum DEFAULT 'OFICIO'::public.contexto_documento_enum, p_prestamo_numero_id integer DEFAULT NULL::integer, p_dias_revision integer DEFAULT 5, OUT p_documento_id integer, OUT p_nodo_id integer, OUT p_folio_emision character varying) RETURNS record
     LANGUAGE plpgsql
-    AS $$
-
-DECLARE
-
-    v_prestamo_estado estado_prestamo_enum;
-
-    v_area_prestamista_id INTEGER;
-
-    v_folio_generado VARCHAR(80);
-
-    v_fecha_limite_revision TIMESTAMP;
-
-BEGIN
-
-    -- Validar que el prestamo exista y este en estado SOLICITADO
-
-    SELECT estado, area_prestamista_id
-
-    INTO v_prestamo_estado, v_area_prestamista_id
-
-    FROM prestamo_numero_oficio
-
-    WHERE id = p_prestamo_numero_id;
-
-
-
-    IF NOT FOUND THEN
-
-        RAISE EXCEPTION 'El prestamo con ID % no existe', p_prestamo_numero_id;
-
-    END IF;
-
-
-
-    IF v_prestamo_estado <> 'SOLICITADO' THEN
-
-        RAISE EXCEPTION 'El prestamo % debe estar en estado SOLICITADO para emision diferida. Estado actual: %',
-
-            p_prestamo_numero_id, v_prestamo_estado;
-
-    END IF;
-
-
-
-    -- Generar folio del AREA PRESTAMISTA (no del area emisora)
-
-    v_folio_generado := fn_generar_folio(v_area_prestamista_id, 'EM', EXTRACT(YEAR FROM CURRENT_DATE)::SMALLINT);
-
-
-
-    IF v_folio_generado IS NULL THEN
-
-        RAISE EXCEPTION 'Error al generar folio para area prestamista %', v_area_prestamista_id;
-
-    END IF;
-
-
-
-    -- Calcular fecha limite de revision (5 dias habiles por defecto)
-
-    v_fecha_limite_revision := CURRENT_TIMESTAMP + (p_dias_revision || ' days')::INTERVAL;
-
-
-
-    -- Actualizar prestamo a estado EN_REVISION
-
-    UPDATE prestamo_numero_oficio
-
-    SET estado = 'EN_REVISION',
-
-        folio_asignado = v_folio_generado,
-
-        fecha_limite_revision = v_fecha_limite_revision,
-
-        dias_revision = p_dias_revision
-
-    WHERE id = p_prestamo_numero_id;
-
-
-
-    -- Crear el documento con el folio generado
-
-    INSERT INTO documento (
-
-        folio,
-
-        tipo_documento_id,
-
-        asunto,
-
-        contenido,
-
-        fecha_limite,
-
-        prioridad,
-
-        estado,
-
-        usuario_creador_id,
-
-        area_origen_id,
-
-        observaciones,
-
-        contexto,
-
-        prestamo_numero_id
-
-    ) VALUES (
-
-        v_folio_generado,
-
-        p_tipo_documento_id,
-
-        p_asunto,
-
-        p_contenido,
-
-        p_fecha_limite,
-
-        p_prioridad,
-
-        'REGISTRADO',
-
-        p_usuario_creador_id,
-
-        p_area_origen_id,
-
-        p_observaciones,
-
-        p_contexto,
-
-        p_prestamo_numero_id
-
-    )
-
-    RETURNING id INTO p_documento_id;
-
-
-
-    -- Vincular documento con prestamo
-
-    UPDATE prestamo_numero_oficio
-
-    SET documento_id = p_documento_id
-
-    WHERE id = p_prestamo_numero_id;
-
-
-
-    -- Crear nodo EMISION
-
-    INSERT INTO nodo_documental (
-
-        documento_id,
-
-        area_id,
-
-        usuario_responsable_id,
-
-        tipo_nodo,
-
-        estado_nodo,
-
-        instrucciones,
-
-        observaciones
-
-    ) VALUES (
-
-        p_documento_id,
-
-        p_area_origen_id,
-
-        p_usuario_creador_id,
-
-        'EMISION',
-
-        'ACTIVO',
-
-        p_instrucciones,
-
-        'Emitido con revision diferida. Limite de revision: ' || v_fecha_limite_revision::TEXT
-
-    )
-
-    RETURNING id INTO p_nodo_id;
-
-
-
-    -- Registrar en historial
-
-    INSERT INTO historial_documento (
-
-        documento_id,
-
-        accion,
-
-        usuario_id,
-
-        area_id,
-
-        observaciones
-
-    ) VALUES (
-
-        p_documento_id,
-
-        'EMISION_DIFERIDA',
-
-        p_usuario_creador_id,
-
-        p_area_origen_id,
-
-        'Documento emitido con revision diferida. Prestamo: ' || p_prestamo_numero_id || 
-
-        '. Limite revision: ' || v_fecha_limite_revision::TEXT
-
-    );
-
-
-
-    -- Asignar valores de salida
-
-    p_folio_emision := v_folio_generado;
-
-
-
-    RAISE NOTICE 'Documento % emitido con exito. Folio: %. En revision hasta: %', 
-
-        p_documento_id, v_folio_generado, v_fecha_limite_revision;
-
-END;
-
+    AS $$
+
+
+
+DECLARE
+
+
+
+    v_prestamo_estado estado_prestamo_enum;
+
+
+
+    v_area_prestamista_id INTEGER;
+
+
+
+    v_folio_generado VARCHAR(80);
+
+
+
+    v_fecha_limite_revision TIMESTAMP;
+
+
+
+BEGIN
+
+
+
+    -- Validar que el prestamo exista y este en estado SOLICITADO
+
+
+
+    SELECT estado, area_prestamista_id
+
+
+
+    INTO v_prestamo_estado, v_area_prestamista_id
+
+
+
+    FROM prestamo_numero_oficio
+
+
+
+    WHERE id = p_prestamo_numero_id;
+
+
+
+
+
+
+
+    IF NOT FOUND THEN
+
+
+
+        RAISE EXCEPTION 'El prestamo con ID % no existe', p_prestamo_numero_id;
+
+
+
+    END IF;
+
+
+
+
+
+
+
+    IF v_prestamo_estado <> 'SOLICITADO' THEN
+
+
+
+        RAISE EXCEPTION 'El prestamo % debe estar en estado SOLICITADO para emision diferida. Estado actual: %',
+
+
+
+            p_prestamo_numero_id, v_prestamo_estado;
+
+
+
+    END IF;
+
+
+
+
+
+
+
+    -- Generar folio del AREA PRESTAMISTA (no del area emisora)
+
+
+
+    v_folio_generado := fn_generar_folio(v_area_prestamista_id, 'EM', EXTRACT(YEAR FROM CURRENT_DATE)::SMALLINT);
+
+
+
+
+
+
+
+    IF v_folio_generado IS NULL THEN
+
+
+
+        RAISE EXCEPTION 'Error al generar folio para area prestamista %', v_area_prestamista_id;
+
+
+
+    END IF;
+
+
+
+
+
+
+
+    -- Calcular fecha limite de revision (5 dias habiles por defecto)
+
+
+
+    v_fecha_limite_revision := CURRENT_TIMESTAMP + (p_dias_revision || ' days')::INTERVAL;
+
+
+
+
+
+
+
+    -- Actualizar prestamo a estado EN_REVISION
+
+
+
+    UPDATE prestamo_numero_oficio
+
+
+
+    SET estado = 'EN_REVISION',
+
+
+
+        folio_asignado = v_folio_generado,
+
+
+
+        fecha_limite_revision = v_fecha_limite_revision,
+
+
+
+        dias_revision = p_dias_revision
+
+
+
+    WHERE id = p_prestamo_numero_id;
+
+
+
+
+
+
+
+    -- Crear el documento con el folio generado
+
+
+
+    INSERT INTO documento (
+
+
+
+        folio,
+
+
+
+        tipo_documento_id,
+
+
+
+        asunto,
+
+
+
+        contenido,
+
+
+
+        fecha_limite,
+
+
+
+        prioridad,
+
+
+
+        estado,
+
+
+
+        usuario_creador_id,
+
+
+
+        area_origen_id,
+
+
+
+        observaciones,
+
+
+
+        contexto,
+
+
+
+        prestamo_numero_id
+
+
+
+    ) VALUES (
+
+
+
+        v_folio_generado,
+
+
+
+        p_tipo_documento_id,
+
+
+
+        p_asunto,
+
+
+
+        p_contenido,
+
+
+
+        p_fecha_limite,
+
+
+
+        p_prioridad,
+
+
+
+        'REGISTRADO',
+
+
+
+        p_usuario_creador_id,
+
+
+
+        p_area_origen_id,
+
+
+
+        p_observaciones,
+
+
+
+        p_contexto,
+
+
+
+        p_prestamo_numero_id
+
+
+
+    )
+
+
+
+    RETURNING id INTO p_documento_id;
+
+
+
+
+
+
+
+    -- Vincular documento con prestamo
+
+
+
+    UPDATE prestamo_numero_oficio
+
+
+
+    SET documento_id = p_documento_id
+
+
+
+    WHERE id = p_prestamo_numero_id;
+
+
+
+
+
+
+
+    -- Crear nodo EMISION
+
+
+
+    INSERT INTO nodo_documental (
+
+
+
+        documento_id,
+
+
+
+        area_id,
+
+
+
+        usuario_responsable_id,
+
+
+
+        tipo_nodo,
+
+
+
+        estado_nodo,
+
+
+
+        instrucciones,
+
+
+
+        observaciones
+
+
+
+    ) VALUES (
+
+
+
+        p_documento_id,
+
+
+
+        p_area_origen_id,
+
+
+
+        p_usuario_creador_id,
+
+
+
+        'EMISION',
+
+
+
+        'ACTIVO',
+
+
+
+        p_instrucciones,
+
+
+
+        'Emitido con revision diferida. Limite de revision: ' || v_fecha_limite_revision::TEXT
+
+
+
+    )
+
+
+
+    RETURNING id INTO p_nodo_id;
+
+
+
+
+
+
+
+    -- Registrar en historial
+
+
+
+    INSERT INTO historial_documento (
+
+
+
+        documento_id,
+
+
+
+        accion,
+
+
+
+        usuario_id,
+
+
+
+        area_id,
+
+
+
+        observaciones
+
+
+
+    ) VALUES (
+
+
+
+        p_documento_id,
+
+
+
+        'EMISION_DIFERIDA',
+
+
+
+        p_usuario_creador_id,
+
+
+
+        p_area_origen_id,
+
+
+
+        'Documento emitido con revision diferida. Prestamo: ' || p_prestamo_numero_id || 
+
+
+
+        '. Limite revision: ' || v_fecha_limite_revision::TEXT
+
+
+
+    );
+
+
+
+
+
+
+
+    -- Asignar valores de salida
+
+
+
+    p_folio_emision := v_folio_generado;
+
+
+
+
+
+
+
+    RAISE NOTICE 'Documento % emitido con exito. Folio: %. En revision hasta: %', 
+
+
+
+        p_documento_id, v_folio_generado, v_fecha_limite_revision;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -3584,24 +6353,42 @@ ALTER FUNCTION public.sp_emitir_documento_con_revision_diferida(p_tipo_documento
 -- Name: FUNCTION sp_emitir_documento_con_revision_diferida(p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_usuario_creador_id integer, p_area_origen_id integer, p_fecha_limite timestamp without time zone, p_prioridad public.prioridad_enum, p_instrucciones text, p_observaciones text, p_contexto public.contexto_documento_enum, p_prestamo_numero_id integer, p_dias_revision integer, OUT p_documento_id integer, OUT p_nodo_id integer, OUT p_folio_emision character varying); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.sp_emitir_documento_con_revision_diferida(p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_usuario_creador_id integer, p_area_origen_id integer, p_fecha_limite timestamp without time zone, p_prioridad public.prioridad_enum, p_instrucciones text, p_observaciones text, p_contexto public.contexto_documento_enum, p_prestamo_numero_id integer, p_dias_revision integer, OUT p_documento_id integer, OUT p_nodo_id integer, OUT p_folio_emision character varying) IS 'Emite un documento OFICIO inmediatamente sin esperar aprobacion previa del prestamo.
-
-El documento se crea con folio del area prestamista y queda en estado EN_REVISION
-
-por un periodo configurable (default: 5 dias). El area prestamista debe aprobar
-
-o rechazar dentro de ese plazo. Si vence sin respuesta, se aprueba automaticamente.
-
-
-
-Diferencias con sp_emitir_documento() tradicional:
-
-- Estado prestamo requerido: SOLICITADO (vs APROBADO)
-
-- Estado prestamo posterior: EN_REVISION (vs UTILIZADO)
-
-- Genera folio inmediatamente (vs esperar aprobacion)
-
+COMMENT ON FUNCTION public.sp_emitir_documento_con_revision_diferida(p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_usuario_creador_id integer, p_area_origen_id integer, p_fecha_limite timestamp without time zone, p_prioridad public.prioridad_enum, p_instrucciones text, p_observaciones text, p_contexto public.contexto_documento_enum, p_prestamo_numero_id integer, p_dias_revision integer, OUT p_documento_id integer, OUT p_nodo_id integer, OUT p_folio_emision character varying) IS 'Emite un documento OFICIO inmediatamente sin esperar aprobacion previa del prestamo.
+
+
+
+El documento se crea con folio del area prestamista y queda en estado EN_REVISION
+
+
+
+por un periodo configurable (default: 5 dias). El area prestamista debe aprobar
+
+
+
+o rechazar dentro de ese plazo. Si vence sin respuesta, se aprueba automaticamente.
+
+
+
+
+
+
+
+Diferencias con sp_emitir_documento() tradicional:
+
+
+
+- Estado prestamo requerido: SOLICITADO (vs APROBADO)
+
+
+
+- Estado prestamo posterior: EN_REVISION (vs UTILIZADO)
+
+
+
+- Genera folio inmediatamente (vs esperar aprobacion)
+
+
+
 - No bloquea operacion del area emisora';
 
 
@@ -3611,236 +6398,466 @@ Diferencias con sp_emitir_documento() tradicional:
 
 CREATE FUNCTION public.sp_emitir_documento_v5(p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_usuario_creador_id integer, p_area_origen_id integer, p_fecha_limite timestamp without time zone DEFAULT NULL::timestamp without time zone, p_prioridad public.prioridad_enum DEFAULT 'MEDIA'::public.prioridad_enum, p_instrucciones text DEFAULT NULL::text, p_observaciones text DEFAULT NULL::text, p_contexto public.contexto_documento_enum DEFAULT 'OTRO'::public.contexto_documento_enum, p_prestamo_numero_id integer DEFAULT NULL::integer, OUT p_documento_id integer, OUT p_nodo_id integer, OUT p_folio_emision character varying) RETURNS record
     LANGUAGE plpgsql
-    AS $$
-
-DECLARE
-
-    v_folio_generado VARCHAR(80);
-
-    v_prestamo_estado estado_prestamo_enum;
-
-    v_area_secretaria_id INTEGER;
-
-BEGIN
-
-    -- Validar pr‚stamo si es OFICIO
-
-    IF p_contexto = 'OFICIO' THEN
-
-        IF p_prestamo_numero_id IS NULL THEN
-
-            RAISE EXCEPTION 'Un documento con contexto OFICIO requiere prestamo_numero_id';
-
-        END IF;
-
-        
-
-        -- Validar que el pr‚stamo est‚ APROBADO
-
-        SELECT estado INTO v_prestamo_estado
-
-        FROM public.prestamo_numero_oficio
-
-        WHERE id = p_prestamo_numero_id;
-
-        
-
-        IF v_prestamo_estado IS NULL THEN
-
-            RAISE EXCEPTION 'El pr‚stamo % no existe', p_prestamo_numero_id;
-
-        END IF;
-
-        
-
-        IF v_prestamo_estado <> 'APROBADO' THEN
-
-            RAISE EXCEPTION 'El pr‚stamo % debe estar en estado APROBADO (estado actual: %)',
-
-                p_prestamo_numero_id, v_prestamo_estado;
-
-        END IF;
-
-        
-
-        -- Usar el folio del pr‚stamo
-
-        SELECT folio_asignado INTO v_folio_generado
-
-        FROM public.prestamo_numero_oficio
-
-        WHERE id = p_prestamo_numero_id;
-
-        
-
-        -- Marcar pr‚stamo como UTILIZADO
-
-        UPDATE public.prestamo_numero_oficio
-
-        SET estado = 'UTILIZADO',
-
-            fecha_resolucion = CURRENT_TIMESTAMP
-
-        WHERE id = p_prestamo_numero_id;
-
-        
-
-    ELSE
-
-        -- Generar folio normal
-
-        v_folio_generado := public.fn_generar_folio(p_area_origen_id, 'EMISION');
-
-    END IF;
-
-    
-
-    -- Crear el documento
-
-    INSERT INTO public.documento (
-
-        folio, tipo_documento_id, asunto, contenido,
-
-        fecha_limite, prioridad, estado,
-
-        usuario_creador_id, area_origen_id, solo_conocimiento,
-
-        observaciones, contexto, prestamo_numero_id
-
-    )
-
-    VALUES (
-
-        v_folio_generado, p_tipo_documento_id, p_asunto, p_contenido,
-
-        p_fecha_limite, p_prioridad, 'REGISTRADO',
-
-        p_usuario_creador_id, p_area_origen_id, false,
-
-        p_observaciones, p_contexto, p_prestamo_numero_id
-
-    )
-
-    RETURNING id INTO p_documento_id;
-
-    
-
-    -- ----------------------------------------------------
-
-    -- AQUI ESTµ LA CORRECCIàN: 'ACTIVO' EN LUGAR DE 'RECIBIDO'
-
-    -- ----------------------------------------------------
-
-    INSERT INTO public.nodo_documental (
-
-        documento_id, tipo_nodo, estado, nodo_padre_id,
-
-        folio_original, folio_padre, folio_propio,
-
-        area_id, usuario_responsable_id,
-
-        instrucciones, observaciones, es_nodo_activo
-
-    )
-
-    VALUES (
-
-        p_documento_id, 'EMISION', 'ACTIVO', NULL,
-
-        v_folio_generado, NULL, v_folio_generado,
-
-        p_area_origen_id, p_usuario_creador_id,
-
-        p_instrucciones, p_observaciones, TRUE
-
-    )
-
-    RETURNING id INTO p_nodo_id;
-
-    
-
-    -- Copia autom tica a Secretar¡a (si no es la Secretar¡a misma)
-
-    SELECT id INTO v_area_secretaria_id
-
-    FROM public.area
-
-    WHERE tipo = 'SECRETARIA' AND activa = TRUE
-
-    LIMIT 1;
-
-    
-
-    IF v_area_secretaria_id IS NOT NULL AND p_area_origen_id <> v_area_secretaria_id THEN
-
-        INSERT INTO public.copia_conocimiento (
-
-            documento_id, area_id, usuario_envia_id
-
-        )
-
-        VALUES (
-
-            p_documento_id, v_area_secretaria_id, p_usuario_creador_id
-
-        )
-
-        ON CONFLICT DO NOTHING;
-
-        
-
-        -- Registrar en historial
-
-        INSERT INTO public.historial_documento (
-
-            documento_id, accion, descripcion, usuario_id, area_id
-
-        )
-
-        VALUES (
-
-            p_documento_id, 'COPIA_CONOCIMIENTO_AUTO',
-
-            'Copia enviada autom ticamente a Secretar¡a (regla institucional)',
-
-            p_usuario_creador_id, v_area_secretaria_id
-
-        );
-
-    END IF;
-
-    
-
-    -- Historial
-
-    INSERT INTO public.historial_documento (
-
-        documento_id, accion, descripcion, usuario_id, area_id
-
-    )
-
-    VALUES (
-
-        p_documento_id, 'EMITIDO',
-
-        FORMAT('Documento emitido. Folio: %s. Contexto: %s', v_folio_generado, p_contexto),
-
-        p_usuario_creador_id, p_area_origen_id
-
-    );
-
-    
-
-    p_folio_emision := v_folio_generado;
-
-    
-
-    RAISE NOTICE 'Documento % emitido con folio % (contexto: %)', 
-
-        p_documento_id, v_folio_generado, p_contexto;
-
-END;
-
+    AS $$
+
+
+
+DECLARE
+
+
+
+    v_folio_generado VARCHAR(80);
+
+
+
+    v_prestamo_estado estado_prestamo_enum;
+
+
+
+    v_area_secretaria_id INTEGER;
+
+
+
+BEGIN
+
+
+
+    -- Validar pr‚stamo si es OFICIO
+
+
+
+    IF p_contexto = 'OFICIO' THEN
+
+
+
+        IF p_prestamo_numero_id IS NULL THEN
+
+
+
+            RAISE EXCEPTION 'Un documento con contexto OFICIO requiere prestamo_numero_id';
+
+
+
+        END IF;
+
+
+
+        
+
+
+
+        -- Validar que el pr‚stamo est‚ APROBADO
+
+
+
+        SELECT estado INTO v_prestamo_estado
+
+
+
+        FROM public.prestamo_numero_oficio
+
+
+
+        WHERE id = p_prestamo_numero_id;
+
+
+
+        
+
+
+
+        IF v_prestamo_estado IS NULL THEN
+
+
+
+            RAISE EXCEPTION 'El pr‚stamo % no existe', p_prestamo_numero_id;
+
+
+
+        END IF;
+
+
+
+        
+
+
+
+        IF v_prestamo_estado <> 'APROBADO' THEN
+
+
+
+            RAISE EXCEPTION 'El pr‚stamo % debe estar en estado APROBADO (estado actual: %)',
+
+
+
+                p_prestamo_numero_id, v_prestamo_estado;
+
+
+
+        END IF;
+
+
+
+        
+
+
+
+        -- Usar el folio del pr‚stamo
+
+
+
+        SELECT folio_asignado INTO v_folio_generado
+
+
+
+        FROM public.prestamo_numero_oficio
+
+
+
+        WHERE id = p_prestamo_numero_id;
+
+
+
+        
+
+
+
+        -- Marcar pr‚stamo como UTILIZADO
+
+
+
+        UPDATE public.prestamo_numero_oficio
+
+
+
+        SET estado = 'UTILIZADO',
+
+
+
+            fecha_resolucion = CURRENT_TIMESTAMP
+
+
+
+        WHERE id = p_prestamo_numero_id;
+
+
+
+        
+
+
+
+    ELSE
+
+
+
+        -- Generar folio normal
+
+
+
+        v_folio_generado := public.fn_generar_folio(p_area_origen_id, 'EMISION');
+
+
+
+    END IF;
+
+
+
+    
+
+
+
+    -- Crear el documento
+
+
+
+    INSERT INTO public.documento (
+
+
+
+        folio, tipo_documento_id, asunto, contenido,
+
+
+
+        fecha_limite, prioridad, estado,
+
+
+
+        usuario_creador_id, area_origen_id, solo_conocimiento,
+
+
+
+        observaciones, contexto, prestamo_numero_id
+
+
+
+    )
+
+
+
+    VALUES (
+
+
+
+        v_folio_generado, p_tipo_documento_id, p_asunto, p_contenido,
+
+
+
+        p_fecha_limite, p_prioridad, 'REGISTRADO',
+
+
+
+        p_usuario_creador_id, p_area_origen_id, false,
+
+
+
+        p_observaciones, p_contexto, p_prestamo_numero_id
+
+
+
+    )
+
+
+
+    RETURNING id INTO p_documento_id;
+
+
+
+    
+
+
+
+    -- ----------------------------------------------------
+
+
+
+    -- AQUI ESTµ LA CORRECCIàN: 'ACTIVO' EN LUGAR DE 'RECIBIDO'
+
+
+
+    -- ----------------------------------------------------
+
+
+
+    INSERT INTO public.nodo_documental (
+
+
+
+        documento_id, tipo_nodo, estado, nodo_padre_id,
+
+
+
+        folio_original, folio_padre, folio_propio,
+
+
+
+        area_id, usuario_responsable_id,
+
+
+
+        instrucciones, observaciones, es_nodo_activo
+
+
+
+    )
+
+
+
+    VALUES (
+
+
+
+        p_documento_id, 'EMISION', 'ACTIVO', NULL,
+
+
+
+        v_folio_generado, NULL, v_folio_generado,
+
+
+
+        p_area_origen_id, p_usuario_creador_id,
+
+
+
+        p_instrucciones, p_observaciones, TRUE
+
+
+
+    )
+
+
+
+    RETURNING id INTO p_nodo_id;
+
+
+
+    
+
+
+
+    -- Copia autom tica a Secretar¡a (si no es la Secretar¡a misma)
+
+
+
+    SELECT id INTO v_area_secretaria_id
+
+
+
+    FROM public.area
+
+
+
+    WHERE tipo = 'SECRETARIA' AND activa = TRUE
+
+
+
+    LIMIT 1;
+
+
+
+    
+
+
+
+    IF v_area_secretaria_id IS NOT NULL AND p_area_origen_id <> v_area_secretaria_id THEN
+
+
+
+        INSERT INTO public.copia_conocimiento (
+
+
+
+            documento_id, area_id, usuario_envia_id
+
+
+
+        )
+
+
+
+        VALUES (
+
+
+
+            p_documento_id, v_area_secretaria_id, p_usuario_creador_id
+
+
+
+        )
+
+
+
+        ON CONFLICT DO NOTHING;
+
+
+
+        
+
+
+
+        -- Registrar en historial
+
+
+
+        INSERT INTO public.historial_documento (
+
+
+
+            documento_id, accion, descripcion, usuario_id, area_id
+
+
+
+        )
+
+
+
+        VALUES (
+
+
+
+            p_documento_id, 'COPIA_CONOCIMIENTO_AUTO',
+
+
+
+            'Copia enviada autom ticamente a Secretar¡a (regla institucional)',
+
+
+
+            p_usuario_creador_id, v_area_secretaria_id
+
+
+
+        );
+
+
+
+    END IF;
+
+
+
+    
+
+
+
+    -- Historial
+
+
+
+    INSERT INTO public.historial_documento (
+
+
+
+        documento_id, accion, descripcion, usuario_id, area_id
+
+
+
+    )
+
+
+
+    VALUES (
+
+
+
+        p_documento_id, 'EMITIDO',
+
+
+
+        FORMAT('Documento emitido. Folio: %s. Contexto: %s', v_folio_generado, p_contexto),
+
+
+
+        p_usuario_creador_id, p_area_origen_id
+
+
+
+    );
+
+
+
+    
+
+
+
+    p_folio_emision := v_folio_generado;
+
+
+
+    
+
+
+
+    RAISE NOTICE 'Documento % emitido con folio % (contexto: %)', 
+
+
+
+        p_documento_id, v_folio_generado, p_contexto;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -3859,174 +6876,342 @@ COMMENT ON FUNCTION public.sp_emitir_documento_v5(p_tipo_documento_id integer, p
 
 CREATE FUNCTION public.sp_recibir_documento(p_nodo_id integer, p_usuario_recibe_id integer, p_observaciones text DEFAULT NULL::text, OUT p_folio_asignado character varying) RETURNS character varying
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_documento_id      INTEGER;
-
-
-    v_area_id           INTEGER;
-
-
-    v_estado_actual     public.estado_nodo_enum;
-
-
-BEGIN
-
-
-    -- 1. Obtener datos del nodo
-
-
-    SELECT documento_id, area_id, estado
-
-
-    INTO v_documento_id, v_area_id, v_estado_actual
-
-
-    FROM public.nodo_documental
-
-
-    WHERE id = p_nodo_id;
-
-
-
-
-
-    IF NOT FOUND THEN
-
-
-        RAISE EXCEPTION 'Nodo % no encontrado.', p_nodo_id;
-
-
-    END IF;
-
-
-
-
-
-    IF v_estado_actual <> 'PENDIENTE' THEN
-
-
-        RAISE EXCEPTION
-
-
-            'El nodo % no puede confirmarse: estado actual = %. '
-
-
-            'Solo nodos PENDIENTE pueden confirmarse.',
-
-
-            p_nodo_id, v_estado_actual;
-
-
-    END IF;
-
-
-
-
-
-    -- 2. Generar folio propio para esta área
-
-
-    p_folio_asignado := public.fn_generar_folio(v_area_id, 'RECEPCION');
-
-
-
-
-
-    -- 3. Activar el nodo con su nuevo folio
-
-
-    UPDATE public.nodo_documental
-
-
-    SET
-
-
-        estado                 = 'ACTIVO',
-
-
-        folio_propio           = p_folio_asignado,
-
-
-        usuario_recibe_id      = p_usuario_recibe_id,
-
-
-        usuario_responsable_id = p_usuario_recibe_id,
-
-
-        fecha_recepcion        = CURRENT_TIMESTAMP,
-
-
-        observaciones          = TRIM(
-
-
-                                   COALESCE(observaciones || ' | ', '')
-
-
-                                   || COALESCE(p_observaciones, '')
-
-
-                                 )
-
-
-    WHERE id = p_nodo_id;
-
-
-
-
-
-    -- 4. Actualizar estado del documento
-
-
-    UPDATE public.documento
-
-
-    SET estado = 'RECIBIDO', fecha_modificacion = CURRENT_TIMESTAMP
-
-
-    WHERE id = v_documento_id;
-
-
-
-
-
-    -- 5. Historial
-
-
-    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
-
-
-    VALUES (
-
-
-        v_documento_id, 'RECIBIDO',
-
-
-        FORMAT('Recibido. Folio asignado: %s. Usuario: %s',
-
-
-               p_folio_asignado, p_usuario_recibe_id),
-
-
-        p_usuario_recibe_id, v_area_id
-
-
-    );
-
-
-
-
-
-    RAISE NOTICE 'Nodo % confirmado. Folio: %', p_nodo_id, p_folio_asignado;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_documento_id      INTEGER;
+
+
+
+
+
+    v_area_id           INTEGER;
+
+
+
+
+
+    v_estado_actual     public.estado_nodo_enum;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- 1. Obtener datos del nodo
+
+
+
+
+
+    SELECT documento_id, area_id, estado
+
+
+
+
+
+    INTO v_documento_id, v_area_id, v_estado_actual
+
+
+
+
+
+    FROM public.nodo_documental
+
+
+
+
+
+    WHERE id = p_nodo_id;
+
+
+
+
+
+
+
+
+
+
+
+    IF NOT FOUND THEN
+
+
+
+
+
+        RAISE EXCEPTION 'Nodo % no encontrado.', p_nodo_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_estado_actual <> 'PENDIENTE' THEN
+
+
+
+
+
+        RAISE EXCEPTION
+
+
+
+
+
+            'El nodo % no puede confirmarse: estado actual = %. '
+
+
+
+
+
+            'Solo nodos PENDIENTE pueden confirmarse.',
+
+
+
+
+
+            p_nodo_id, v_estado_actual;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- 2. Generar folio propio para esta área
+
+
+
+
+
+    p_folio_asignado := public.fn_generar_folio(v_area_id, 'RECEPCION');
+
+
+
+
+
+
+
+
+
+
+
+    -- 3. Activar el nodo con su nuevo folio
+
+
+
+
+
+    UPDATE public.nodo_documental
+
+
+
+
+
+    SET
+
+
+
+
+
+        estado                 = 'ACTIVO',
+
+
+
+
+
+        folio_propio           = p_folio_asignado,
+
+
+
+
+
+        usuario_recibe_id      = p_usuario_recibe_id,
+
+
+
+
+
+        usuario_responsable_id = p_usuario_recibe_id,
+
+
+
+
+
+        fecha_recepcion        = CURRENT_TIMESTAMP,
+
+
+
+
+
+        observaciones          = TRIM(
+
+
+
+
+
+                                   COALESCE(observaciones || ' | ', '')
+
+
+
+
+
+                                   || COALESCE(p_observaciones, '')
+
+
+
+
+
+                                 )
+
+
+
+
+
+    WHERE id = p_nodo_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 4. Actualizar estado del documento
+
+
+
+
+
+    UPDATE public.documento
+
+
+
+
+
+    SET estado = 'RECIBIDO', fecha_modificacion = CURRENT_TIMESTAMP
+
+
+
+
+
+    WHERE id = v_documento_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 5. Historial
+
+
+
+
+
+    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        v_documento_id, 'RECIBIDO',
+
+
+
+
+
+        FORMAT('Recibido. Folio asignado: %s. Usuario: %s',
+
+
+
+
+
+               p_folio_asignado, p_usuario_recibe_id),
+
+
+
+
+
+        p_usuario_recibe_id, v_area_id
+
+
+
+
+
+    );
+
+
+
+
+
+
+
+
+
+
+
+    RAISE NOTICE 'Nodo % confirmado. Folio: %', p_nodo_id, p_folio_asignado;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -4045,75 +7230,144 @@ COMMENT ON FUNCTION public.sp_recibir_documento(p_nodo_id integer, p_usuario_rec
 
 CREATE FUNCTION public.sp_registrar_documento(p_folio character varying, p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_usuario_creador_id integer, p_area_origen_id integer, p_fecha_limite timestamp without time zone DEFAULT NULL::timestamp without time zone, p_prioridad public.prioridad_enum DEFAULT 'MEDIA'::public.prioridad_enum, p_solo_conocimiento boolean DEFAULT false, p_observaciones text DEFAULT NULL::text, OUT p_documento_id integer) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_nodo_id       INTEGER;
-
-
-    v_folio_nuevo   VARCHAR(80);
-
-
-BEGIN
-
-
-    -- Delegar al nuevo SP (el parámetro p_folio es ignorado; el folio se genera)
-
-
-    SELECT doc_id, nodo_id, folio
-
-
-    INTO p_documento_id, v_nodo_id, v_folio_nuevo
-
-
-    FROM public.sp_emitir_documento(
-
-
-        p_tipo_documento_id,
-
-
-        p_asunto,
-
-
-        p_contenido,
-
-
-        p_usuario_creador_id,
-
-
-        p_area_origen_id,
-
-
-        p_fecha_limite,
-
-
-        p_prioridad,
-
-
-        NULL,           -- instrucciones
-
-
-        p_observaciones
-
-
-    ) AS t(doc_id, nodo_id, folio);
-
-
-
-
-
-    RAISE NOTICE '[COMPATIBILIDAD] sp_registrar_documento → sp_emitir_documento. '
-
-
-                 'Folio generado: %. El parámetro p_folio fue ignorado.', v_folio_nuevo;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_nodo_id       INTEGER;
+
+
+
+
+
+    v_folio_nuevo   VARCHAR(80);
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Delegar al nuevo SP (el parámetro p_folio es ignorado; el folio se genera)
+
+
+
+
+
+    SELECT doc_id, nodo_id, folio
+
+
+
+
+
+    INTO p_documento_id, v_nodo_id, v_folio_nuevo
+
+
+
+
+
+    FROM public.sp_emitir_documento(
+
+
+
+
+
+        p_tipo_documento_id,
+
+
+
+
+
+        p_asunto,
+
+
+
+
+
+        p_contenido,
+
+
+
+
+
+        p_usuario_creador_id,
+
+
+
+
+
+        p_area_origen_id,
+
+
+
+
+
+        p_fecha_limite,
+
+
+
+
+
+        p_prioridad,
+
+
+
+
+
+        NULL,           -- instrucciones
+
+
+
+
+
+        p_observaciones
+
+
+
+
+
+    ) AS t(doc_id, nodo_id, folio);
+
+
+
+
+
+
+
+
+
+
+
+    RAISE NOTICE '[COMPATIBILIDAD] sp_registrar_documento → sp_emitir_documento. '
+
+
+
+
+
+                 'Folio generado: %. El parámetro p_folio fue ignorado.', v_folio_nuevo;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -4132,156 +7386,306 @@ COMMENT ON FUNCTION public.sp_registrar_documento(p_folio character varying, p_t
 
 CREATE FUNCTION public.sp_registrar_entrada_externa(p_tipo_documento_id integer, p_asunto character varying, p_contenido text, p_entidad_externa_origen_id integer, p_numero_oficio_externo character varying, p_usuario_registra_id integer, "p_area_oficialía_id" integer, p_fecha_limite timestamp without time zone DEFAULT NULL::timestamp without time zone, p_prioridad public.prioridad_enum DEFAULT 'MEDIA'::public.prioridad_enum, p_instrucciones text DEFAULT NULL::text, OUT p_documento_id integer, OUT p_nodo_id integer, OUT p_folio_emision character varying) RETURNS record
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_tipo_area public.tipo_area_enum;
-
-
-BEGIN
-
-
-    -- Validar que el área sea OFICIALÍA
-
-
-    SELECT tipo INTO v_tipo_area
-
-
-    FROM public.area WHERE id = p_area_oficialía_id AND activa = TRUE;
-
-
-
-
-
-    IF v_tipo_area <> 'OFICIALÍA' THEN
-
-
-        RAISE EXCEPTION
-
-
-            'El área % no es de tipo OFICIALÍA. '
-
-
-            'Las entradas externas solo pueden registrarse desde la OFICIALÍA.',
-
-
-            p_area_oficialía_id;
-
-
-    END IF;
-
-
-
-
-
-    -- Delegar la creación del documento a sp_emitir_documento
-
-
-    SELECT doc_id, nodo_id, folio
-
-
-    INTO p_documento_id, p_nodo_id, p_folio_emision
-
-
-    FROM public.sp_emitir_documento(
-
-
-        p_tipo_documento_id,
-
-
-        p_asunto,
-
-
-        p_contenido,
-
-
-        p_usuario_registra_id,
-
-
-        p_area_oficialía_id,
-
-
-        p_fecha_limite,
-
-
-        p_prioridad,
-
-
-        p_instrucciones,
-
-
-        NULL  -- observaciones
-
-
-    ) AS t(doc_id, nodo_id, folio);
-
-
-
-
-
-    -- Marcar el documento como externo con datos del remitente externo
-
-
-    UPDATE public.documento
-
-
-    SET
-
-
-        entidad_externa_origen_id = p_entidad_externa_origen_id,
-
-
-        numero_oficio_externo     = p_numero_oficio_externo,
-
-
-        es_externo                = TRUE
-
-
-    WHERE id = p_documento_id;
-
-
-
-
-
-    -- Historial adicional
-
-
-    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
-
-
-    VALUES (
-
-
-        p_documento_id, 'ENTRADA_EXTERNA',
-
-
-        FORMAT('Documento externo registrado. Remitente: entidad %s. Oficio externo: %s',
-
-
-               p_entidad_externa_origen_id, COALESCE(p_numero_oficio_externo, 'S/N')),
-
-
-        p_usuario_registra_id, p_area_oficialía_id
-
-
-    );
-
-
-
-
-
-    RAISE NOTICE 'Entrada externa registrada — Folio SIGA: % | Doc: %',
-
-
-        p_folio_emision, p_documento_id;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_tipo_area public.tipo_area_enum;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Validar que el área sea OFICIALÍA
+
+
+
+
+
+    SELECT tipo INTO v_tipo_area
+
+
+
+
+
+    FROM public.area WHERE id = p_area_oficialía_id AND activa = TRUE;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_tipo_area <> 'OFICIALÍA' THEN
+
+
+
+
+
+        RAISE EXCEPTION
+
+
+
+
+
+            'El área % no es de tipo OFICIALÍA. '
+
+
+
+
+
+            'Las entradas externas solo pueden registrarse desde la OFICIALÍA.',
+
+
+
+
+
+            p_area_oficialía_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- Delegar la creación del documento a sp_emitir_documento
+
+
+
+
+
+    SELECT doc_id, nodo_id, folio
+
+
+
+
+
+    INTO p_documento_id, p_nodo_id, p_folio_emision
+
+
+
+
+
+    FROM public.sp_emitir_documento(
+
+
+
+
+
+        p_tipo_documento_id,
+
+
+
+
+
+        p_asunto,
+
+
+
+
+
+        p_contenido,
+
+
+
+
+
+        p_usuario_registra_id,
+
+
+
+
+
+        p_area_oficialía_id,
+
+
+
+
+
+        p_fecha_limite,
+
+
+
+
+
+        p_prioridad,
+
+
+
+
+
+        p_instrucciones,
+
+
+
+
+
+        NULL  -- observaciones
+
+
+
+
+
+    ) AS t(doc_id, nodo_id, folio);
+
+
+
+
+
+
+
+
+
+
+
+    -- Marcar el documento como externo con datos del remitente externo
+
+
+
+
+
+    UPDATE public.documento
+
+
+
+
+
+    SET
+
+
+
+
+
+        entidad_externa_origen_id = p_entidad_externa_origen_id,
+
+
+
+
+
+        numero_oficio_externo     = p_numero_oficio_externo,
+
+
+
+
+
+        es_externo                = TRUE
+
+
+
+
+
+    WHERE id = p_documento_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- Historial adicional
+
+
+
+
+
+    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        p_documento_id, 'ENTRADA_EXTERNA',
+
+
+
+
+
+        FORMAT('Documento externo registrado. Remitente: entidad %s. Oficio externo: %s',
+
+
+
+
+
+               p_entidad_externa_origen_id, COALESCE(p_numero_oficio_externo, 'S/N')),
+
+
+
+
+
+        p_usuario_registra_id, p_area_oficialía_id
+
+
+
+
+
+    );
+
+
+
+
+
+
+
+
+
+
+
+    RAISE NOTICE 'Entrada externa registrada — Folio SIGA: % | Doc: %',
+
+
+
+
+
+        p_folio_emision, p_documento_id;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -4300,264 +7704,522 @@ COMMENT ON FUNCTION public.sp_registrar_entrada_externa(p_tipo_documento_id inte
 
 CREATE FUNCTION public.sp_resolver_prestamo_numero(p_prestamo_id integer, p_usuario_resuelve_id integer, p_aprobar boolean, p_motivo text DEFAULT NULL::text, p_dias_vencimiento integer DEFAULT 5, OUT p_folio_asignado character varying) RETURNS character varying
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_estado_actual    public.estado_prestamo_enum;
-
-
-    v_area_prest_id    INTEGER;
-
-
-    v_area_sol_id      INTEGER;
-
-
-    v_usuario_sol_id   INTEGER;
-
-
-BEGIN
-
-
-    -- 1. Obtener el préstamo
-
-
-    SELECT estado, area_prestamista_id, area_solicitante_id, usuario_solicita_id
-
-
-    INTO v_estado_actual, v_area_prest_id, v_area_sol_id, v_usuario_sol_id
-
-
-    FROM public.prestamo_numero_oficio
-
-
-    WHERE id = p_prestamo_id;
-
-
-
-
-
-    IF NOT FOUND THEN
-
-
-        RAISE EXCEPTION 'Préstamo % no encontrado.', p_prestamo_id;
-
-
-    END IF;
-
-
-
-
-
-    -- 1.1 Validar que el usuario tiene permisos para aprobar este préstamo
-
-
-    IF NOT public.fn_puede_aprobar_prestamo(p_usuario_resuelve_id, p_prestamo_id) THEN
-
-
-        RAISE EXCEPTION 'El usuario % no tiene permisos para aprobar/rechazar el préstamo %. ' ||
-
-
-                        'Debe pertenecer al área prestamista y tener el rol de Enlace Administrativo, ' ||
-
-
-                        'Director, Subsecretario, Secretario o Administrador.',
-
-
-                        p_usuario_resuelve_id, p_prestamo_id;
-
-
-    END IF;
-
-
-
-
-
-    IF v_estado_actual <> 'SOLICITADO' THEN
-
-
-        RAISE EXCEPTION
-
-
-            'El préstamo % no puede resolverse: estado actual = %. '
-
-
-            'Solo los préstamos SOLICITADOS pueden aprobarse o rechazarse.',
-
-
-            p_prestamo_id, v_estado_actual;
-
-
-    END IF;
-
-
-
-
-
-    IF p_aprobar THEN
-
-
-        -- 2a. APROBAR — generar el folio del área prestamista
-
-
-        p_folio_asignado := public.fn_generar_folio(v_area_prest_id, 'EMISION');
-
-
-
-
-
-        UPDATE public.prestamo_numero_oficio
-
-
-        SET
-
-
-            estado              = 'APROBADO',
-
-
-            usuario_resuelve_id = p_usuario_resuelve_id,
-
-
-            fecha_resolucion    = CURRENT_TIMESTAMP,
-
-
-            folio_asignado      = p_folio_asignado,
-
-
-            fecha_vencimiento   = CURRENT_TIMESTAMP + (p_dias_vencimiento || ' days')::INTERVAL,
-
-
-            motivo_rechazo      = NULL
-
-
-        WHERE id = p_prestamo_id;
-
-
-
-
-
-        INSERT INTO public.auditoria_sistema (accion, descripcion, usuario_id, area_id, detalles)
-
-
-        VALUES (
-
-
-            'PRESTAMO_APROBADO',
-
-
-            FORMAT('Préstamo %s aprobado. Folio asignado: %s. Vence en %s días.',
-
-
-                   p_prestamo_id, p_folio_asignado, p_dias_vencimiento),
-
-
-            p_usuario_resuelve_id, v_area_prest_id,
-
-
-            COALESCE(p_motivo, 'Aprobado sin nota adicional')
-
-
-        );
-
-
-
-
-
-        RAISE NOTICE 'Préstamo % APROBADO. Folio: %. Válido hasta % días.',
-
-
-            p_prestamo_id, p_folio_asignado, p_dias_vencimiento;
-
-
-
-
-
-    ELSE
-
-
-        -- 2b. RECHAZAR
-
-
-        IF p_motivo IS NULL OR length(trim(p_motivo)) = 0 THEN
-
-
-            RAISE EXCEPTION 'Debe indicar el motivo del rechazo.';
-
-
-        END IF;
-
-
-
-
-
-        p_folio_asignado := NULL;
-
-
-
-
-
-        UPDATE public.prestamo_numero_oficio
-
-
-        SET
-
-
-            estado              = 'RECHAZADO',
-
-
-            usuario_resuelve_id = p_usuario_resuelve_id,
-
-
-            fecha_resolucion    = CURRENT_TIMESTAMP,
-
-
-            motivo_rechazo      = p_motivo
-
-
-        WHERE id = p_prestamo_id;
-
-
-
-
-
-        INSERT INTO public.auditoria_sistema (accion, descripcion, usuario_id, area_id, detalles)
-
-
-        VALUES (
-
-
-            'PRESTAMO_RECHAZADO',
-
-
-            FORMAT('Préstamo %s rechazado por usuario %s en área %s.',
-
-
-                   p_prestamo_id, p_usuario_resuelve_id, v_area_prest_id),
-
-
-            p_usuario_resuelve_id, v_area_prest_id,
-
-
-            p_motivo
-
-
-        );
-
-
-
-
-
-        RAISE NOTICE 'Préstamo % RECHAZADO. Motivo: %', p_prestamo_id, p_motivo;
-
-
-    END IF;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_estado_actual    public.estado_prestamo_enum;
+
+
+
+
+
+    v_area_prest_id    INTEGER;
+
+
+
+
+
+    v_area_sol_id      INTEGER;
+
+
+
+
+
+    v_usuario_sol_id   INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- 1. Obtener el préstamo
+
+
+
+
+
+    SELECT estado, area_prestamista_id, area_solicitante_id, usuario_solicita_id
+
+
+
+
+
+    INTO v_estado_actual, v_area_prest_id, v_area_sol_id, v_usuario_sol_id
+
+
+
+
+
+    FROM public.prestamo_numero_oficio
+
+
+
+
+
+    WHERE id = p_prestamo_id;
+
+
+
+
+
+
+
+
+
+
+
+    IF NOT FOUND THEN
+
+
+
+
+
+        RAISE EXCEPTION 'Préstamo % no encontrado.', p_prestamo_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- 1.1 Validar que el usuario tiene permisos para aprobar este préstamo
+
+
+
+
+
+    IF NOT public.fn_puede_aprobar_prestamo(p_usuario_resuelve_id, p_prestamo_id) THEN
+
+
+
+
+
+        RAISE EXCEPTION 'El usuario % no tiene permisos para aprobar/rechazar el préstamo %. ' ||
+
+
+
+
+
+                        'Debe pertenecer al área prestamista y tener el rol de Enlace Administrativo, ' ||
+
+
+
+
+
+                        'Director, Subsecretario, Secretario o Administrador.',
+
+
+
+
+
+                        p_usuario_resuelve_id, p_prestamo_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_estado_actual <> 'SOLICITADO' THEN
+
+
+
+
+
+        RAISE EXCEPTION
+
+
+
+
+
+            'El préstamo % no puede resolverse: estado actual = %. '
+
+
+
+
+
+            'Solo los préstamos SOLICITADOS pueden aprobarse o rechazarse.',
+
+
+
+
+
+            p_prestamo_id, v_estado_actual;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    IF p_aprobar THEN
+
+
+
+
+
+        -- 2a. APROBAR — generar el folio del área prestamista
+
+
+
+
+
+        p_folio_asignado := public.fn_generar_folio(v_area_prest_id, 'EMISION');
+
+
+
+
+
+
+
+
+
+
+
+        UPDATE public.prestamo_numero_oficio
+
+
+
+
+
+        SET
+
+
+
+
+
+            estado              = 'APROBADO',
+
+
+
+
+
+            usuario_resuelve_id = p_usuario_resuelve_id,
+
+
+
+
+
+            fecha_resolucion    = CURRENT_TIMESTAMP,
+
+
+
+
+
+            folio_asignado      = p_folio_asignado,
+
+
+
+
+
+            fecha_vencimiento   = CURRENT_TIMESTAMP + (p_dias_vencimiento || ' days')::INTERVAL,
+
+
+
+
+
+            motivo_rechazo      = NULL
+
+
+
+
+
+        WHERE id = p_prestamo_id;
+
+
+
+
+
+
+
+
+
+
+
+        INSERT INTO public.auditoria_sistema (accion, descripcion, usuario_id, area_id, detalles)
+
+
+
+
+
+        VALUES (
+
+
+
+
+
+            'PRESTAMO_APROBADO',
+
+
+
+
+
+            FORMAT('Préstamo %s aprobado. Folio asignado: %s. Vence en %s días.',
+
+
+
+
+
+                   p_prestamo_id, p_folio_asignado, p_dias_vencimiento),
+
+
+
+
+
+            p_usuario_resuelve_id, v_area_prest_id,
+
+
+
+
+
+            COALESCE(p_motivo, 'Aprobado sin nota adicional')
+
+
+
+
+
+        );
+
+
+
+
+
+
+
+
+
+
+
+        RAISE NOTICE 'Préstamo % APROBADO. Folio: %. Válido hasta % días.',
+
+
+
+
+
+            p_prestamo_id, p_folio_asignado, p_dias_vencimiento;
+
+
+
+
+
+
+
+
+
+
+
+    ELSE
+
+
+
+
+
+        -- 2b. RECHAZAR
+
+
+
+
+
+        IF p_motivo IS NULL OR length(trim(p_motivo)) = 0 THEN
+
+
+
+
+
+            RAISE EXCEPTION 'Debe indicar el motivo del rechazo.';
+
+
+
+
+
+        END IF;
+
+
+
+
+
+
+
+
+
+
+
+        p_folio_asignado := NULL;
+
+
+
+
+
+
+
+
+
+
+
+        UPDATE public.prestamo_numero_oficio
+
+
+
+
+
+        SET
+
+
+
+
+
+            estado              = 'RECHAZADO',
+
+
+
+
+
+            usuario_resuelve_id = p_usuario_resuelve_id,
+
+
+
+
+
+            fecha_resolucion    = CURRENT_TIMESTAMP,
+
+
+
+
+
+            motivo_rechazo      = p_motivo
+
+
+
+
+
+        WHERE id = p_prestamo_id;
+
+
+
+
+
+
+
+
+
+
+
+        INSERT INTO public.auditoria_sistema (accion, descripcion, usuario_id, area_id, detalles)
+
+
+
+
+
+        VALUES (
+
+
+
+
+
+            'PRESTAMO_RECHAZADO',
+
+
+
+
+
+            FORMAT('Préstamo %s rechazado por usuario %s en área %s.',
+
+
+
+
+
+                   p_prestamo_id, p_usuario_resuelve_id, v_area_prest_id),
+
+
+
+
+
+            p_usuario_resuelve_id, v_area_prest_id,
+
+
+
+
+
+            p_motivo
+
+
+
+
+
+        );
+
+
+
+
+
+
+
+
+
+
+
+        RAISE NOTICE 'Préstamo % RECHAZADO. Motivo: %', p_prestamo_id, p_motivo;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -4576,336 +8238,666 @@ COMMENT ON FUNCTION public.sp_resolver_prestamo_numero(p_prestamo_id integer, p_
 
 CREATE FUNCTION public.sp_revisar_prestamo_posterior(p_prestamo_id integer, p_usuario_resuelve_id integer, p_aprobar boolean, p_motivo text DEFAULT NULL::text) RETURNS TABLE(prestamo_id integer, documento_id integer, folio character varying, estado_nuevo public.estado_prestamo_enum, documento_invalidado boolean)
     LANGUAGE plpgsql
-    AS $$
-
-DECLARE
-
-    v_documento_id INTEGER;
-
-    v_folio VARCHAR(80);
-
-    v_area_emisora_id INTEGER;
-
-    v_area_prestamista_id INTEGER;
-
-    v_estado_actual estado_prestamo_enum;
-
-    v_nodo_activo_id INTEGER;
-
-BEGIN
-
-    -- Obtener informacion del prestamo
-
-    SELECT 
-
-        p.documento_id, 
-
-        p.folio_asignado,
-
-        p.area_solicitante_id,
-
-        p.area_prestamista_id,
-
-        p.estado
-
-    INTO 
-
-        v_documento_id, 
-
-        v_folio,
-
-        v_area_emisora_id,
-
-        v_area_prestamista_id,
-
-        v_estado_actual
-
-    FROM prestamo_numero_oficio p
-
-    WHERE p.id = p_prestamo_id;
-
-
-
-    IF NOT FOUND THEN
-
-        RAISE EXCEPTION 'El prestamo con ID % no existe', p_prestamo_id;
-
-    END IF;
-
-
-
-    -- Validar que el prestamo este en estado EN_REVISION
-
-    IF v_estado_actual <> 'EN_REVISION' THEN
-
-        RAISE EXCEPTION 'El prestamo % debe estar en estado EN_REVISION para ser revisado. Estado actual: %',
-
-            p_prestamo_id, v_estado_actual;
-
-    END IF;
-
-
-
-    -- Validar que exista un documento asociado
-
-    IF v_documento_id IS NULL THEN
-
-        RAISE EXCEPTION 'El prestamo % no tiene un documento asociado', p_prestamo_id;
-
-    END IF;
-
-
-
-    -- CASO 1: APROBACION
-
-    IF p_aprobar THEN
-
-        -- Actualizar prestamo a APROBADO_POSTERIOR
-
-        UPDATE prestamo_numero_oficio
-
-        SET estado = 'APROBADO_POSTERIOR',
-
-            usuario_resuelve_id = p_usuario_resuelve_id,
-
-            fecha_resolucion = CURRENT_TIMESTAMP
-
-        WHERE id = p_prestamo_id;
-
-
-
-        -- Registrar en historial del documento
-
-        INSERT INTO historial_documento (
-
-            documento_id,
-
-            accion,
-
-            usuario_id,
-
-            area_id,
-
-            observaciones
-
-        ) VALUES (
-
-            v_documento_id,
-
-            'APROBACION_POSTERIOR',
-
-            p_usuario_resuelve_id,
-
-            v_area_prestamista_id,
-
-            'Prestamo aprobado posteriormente. Documento validado retroactivamente.'
-
-        );
-
-
-
-        RAISE NOTICE 'Prestamo % aprobado posteriormente. Documento % validado.', 
-
-            p_prestamo_id, v_documento_id;
-
-
-
-        RETURN QUERY
-
-        SELECT 
-
-            p_prestamo_id,
-
-            v_documento_id,
-
-            v_folio,
-
-            'APROBADO_POSTERIOR'::estado_prestamo_enum,
-
-            FALSE;
-
-
-
-    -- CASO 2: RECHAZO
-
-    ELSE
-
-        -- Validar que se proporcione motivo del rechazo
-
-        IF p_motivo IS NULL OR length(trim(p_motivo)) = 0 THEN
-
-            RAISE EXCEPTION 'El rechazo de un prestamo requiere un motivo valido';
-
-        END IF;
-
-
-
-        -- Actualizar prestamo a RECHAZADO_POSTERIOR
-
-        UPDATE prestamo_numero_oficio
-
-        SET estado = 'RECHAZADO_POSTERIOR',
-
-            usuario_resuelve_id = p_usuario_resuelve_id,
-
-            fecha_resolucion = CURRENT_TIMESTAMP,
-
-            motivo_rechazo = p_motivo,
-
-            documento_invalidado = TRUE,
-
-            fecha_invalidacion = CURRENT_TIMESTAMP,
-
-            motivo_invalidacion = p_motivo
-
-        WHERE id = p_prestamo_id;
-
-
-
-        -- Marcar documento como invalidado
-
-        UPDATE documento
-
-        SET documento_invalidado = TRUE,
-
-            estado = 'CANCELADO',
-
-            fecha_invalidacion = CURRENT_TIMESTAMP,
-
-            motivo_invalidacion = p_motivo
-
-        WHERE id = v_documento_id;
-
-
-
-        -- Registrar en tabla de invalidacion para auditoria
-
-        INSERT INTO invalidacion_documento (
-
-            documento_id,
-
-            prestamo_numero_id,
-
-            usuario_invalida_id,
-
-            fecha_invalidacion,
-
-            motivo,
-
-            folio_original,
-
-            area_emisora_id,
-
-            area_prestamista_id
-
-        ) VALUES (
-
-            v_documento_id,
-
-            p_prestamo_id,
-
-            p_usuario_resuelve_id,
-
-            CURRENT_TIMESTAMP,
-
-            p_motivo,
-
-            v_folio,
-
-            v_area_emisora_id,
-
-            v_area_prestamista_id
-
-        );
-
-
-
-        -- Cerrar nodo activo del documento
-
-        SELECT id INTO v_nodo_activo_id
-
-        FROM nodo_documental
-
-        WHERE documento_id = v_documento_id 
-
-        AND estado_nodo = 'ACTIVO'
-
-        ORDER BY fecha_creacion DESC
-
-        LIMIT 1;
-
-
-
-        IF v_nodo_activo_id IS NOT NULL THEN
-
-            UPDATE nodo_documental
-
-            SET estado_nodo = 'CERRADO',
-
-                observaciones = COALESCE(observaciones, '') || 
-
-                    ' | INVALIDADO: ' || p_motivo
-
-            WHERE id = v_nodo_activo_id;
-
-        END IF;
-
-
-
-        -- Registrar en historial del documento
-
-        INSERT INTO historial_documento (
-
-            documento_id,
-
-            accion,
-
-            usuario_id,
-
-            area_id,
-
-            observaciones
-
-        ) VALUES (
-
-            v_documento_id,
-
-            'RECHAZO_POSTERIOR',
-
-            p_usuario_resuelve_id,
-
-            v_area_prestamista_id,
-
-            'Prestamo rechazado posteriormente. Documento invalidado. Motivo: ' || p_motivo
-
-        );
-
-
-
-        RAISE NOTICE 'Prestamo % rechazado. Documento % invalidado. Motivo: %', 
-
-            p_prestamo_id, v_documento_id, p_motivo;
-
-
-
-        RETURN QUERY
-
-        SELECT 
-
-            p_prestamo_id,
-
-            v_documento_id,
-
-            v_folio,
-
-            'RECHAZADO_POSTERIOR'::estado_prestamo_enum,
-
-            TRUE;
-
-    END IF;
-
-END;
-
+    AS $$
+
+
+
+DECLARE
+
+
+
+    v_documento_id INTEGER;
+
+
+
+    v_folio VARCHAR(80);
+
+
+
+    v_area_emisora_id INTEGER;
+
+
+
+    v_area_prestamista_id INTEGER;
+
+
+
+    v_estado_actual estado_prestamo_enum;
+
+
+
+    v_nodo_activo_id INTEGER;
+
+
+
+BEGIN
+
+
+
+    -- Obtener informacion del prestamo
+
+
+
+    SELECT 
+
+
+
+        p.documento_id, 
+
+
+
+        p.folio_asignado,
+
+
+
+        p.area_solicitante_id,
+
+
+
+        p.area_prestamista_id,
+
+
+
+        p.estado
+
+
+
+    INTO 
+
+
+
+        v_documento_id, 
+
+
+
+        v_folio,
+
+
+
+        v_area_emisora_id,
+
+
+
+        v_area_prestamista_id,
+
+
+
+        v_estado_actual
+
+
+
+    FROM prestamo_numero_oficio p
+
+
+
+    WHERE p.id = p_prestamo_id;
+
+
+
+
+
+
+
+    IF NOT FOUND THEN
+
+
+
+        RAISE EXCEPTION 'El prestamo con ID % no existe', p_prestamo_id;
+
+
+
+    END IF;
+
+
+
+
+
+
+
+    -- Validar que el prestamo este en estado EN_REVISION
+
+
+
+    IF v_estado_actual <> 'EN_REVISION' THEN
+
+
+
+        RAISE EXCEPTION 'El prestamo % debe estar en estado EN_REVISION para ser revisado. Estado actual: %',
+
+
+
+            p_prestamo_id, v_estado_actual;
+
+
+
+    END IF;
+
+
+
+
+
+
+
+    -- Validar que exista un documento asociado
+
+
+
+    IF v_documento_id IS NULL THEN
+
+
+
+        RAISE EXCEPTION 'El prestamo % no tiene un documento asociado', p_prestamo_id;
+
+
+
+    END IF;
+
+
+
+
+
+
+
+    -- CASO 1: APROBACION
+
+
+
+    IF p_aprobar THEN
+
+
+
+        -- Actualizar prestamo a APROBADO_POSTERIOR
+
+
+
+        UPDATE prestamo_numero_oficio
+
+
+
+        SET estado = 'APROBADO_POSTERIOR',
+
+
+
+            usuario_resuelve_id = p_usuario_resuelve_id,
+
+
+
+            fecha_resolucion = CURRENT_TIMESTAMP
+
+
+
+        WHERE id = p_prestamo_id;
+
+
+
+
+
+
+
+        -- Registrar en historial del documento
+
+
+
+        INSERT INTO historial_documento (
+
+
+
+            documento_id,
+
+
+
+            accion,
+
+
+
+            usuario_id,
+
+
+
+            area_id,
+
+
+
+            observaciones
+
+
+
+        ) VALUES (
+
+
+
+            v_documento_id,
+
+
+
+            'APROBACION_POSTERIOR',
+
+
+
+            p_usuario_resuelve_id,
+
+
+
+            v_area_prestamista_id,
+
+
+
+            'Prestamo aprobado posteriormente. Documento validado retroactivamente.'
+
+
+
+        );
+
+
+
+
+
+
+
+        RAISE NOTICE 'Prestamo % aprobado posteriormente. Documento % validado.', 
+
+
+
+            p_prestamo_id, v_documento_id;
+
+
+
+
+
+
+
+        RETURN QUERY
+
+
+
+        SELECT 
+
+
+
+            p_prestamo_id,
+
+
+
+            v_documento_id,
+
+
+
+            v_folio,
+
+
+
+            'APROBADO_POSTERIOR'::estado_prestamo_enum,
+
+
+
+            FALSE;
+
+
+
+
+
+
+
+    -- CASO 2: RECHAZO
+
+
+
+    ELSE
+
+
+
+        -- Validar que se proporcione motivo del rechazo
+
+
+
+        IF p_motivo IS NULL OR length(trim(p_motivo)) = 0 THEN
+
+
+
+            RAISE EXCEPTION 'El rechazo de un prestamo requiere un motivo valido';
+
+
+
+        END IF;
+
+
+
+
+
+
+
+        -- Actualizar prestamo a RECHAZADO_POSTERIOR
+
+
+
+        UPDATE prestamo_numero_oficio
+
+
+
+        SET estado = 'RECHAZADO_POSTERIOR',
+
+
+
+            usuario_resuelve_id = p_usuario_resuelve_id,
+
+
+
+            fecha_resolucion = CURRENT_TIMESTAMP,
+
+
+
+            motivo_rechazo = p_motivo,
+
+
+
+            documento_invalidado = TRUE,
+
+
+
+            fecha_invalidacion = CURRENT_TIMESTAMP,
+
+
+
+            motivo_invalidacion = p_motivo
+
+
+
+        WHERE id = p_prestamo_id;
+
+
+
+
+
+
+
+        -- Marcar documento como invalidado
+
+
+
+        UPDATE documento
+
+
+
+        SET documento_invalidado = TRUE,
+
+
+
+            estado = 'CANCELADO',
+
+
+
+            fecha_invalidacion = CURRENT_TIMESTAMP,
+
+
+
+            motivo_invalidacion = p_motivo
+
+
+
+        WHERE id = v_documento_id;
+
+
+
+
+
+
+
+        -- Registrar en tabla de invalidacion para auditoria
+
+
+
+        INSERT INTO invalidacion_documento (
+
+
+
+            documento_id,
+
+
+
+            prestamo_numero_id,
+
+
+
+            usuario_invalida_id,
+
+
+
+            fecha_invalidacion,
+
+
+
+            motivo,
+
+
+
+            folio_original,
+
+
+
+            area_emisora_id,
+
+
+
+            area_prestamista_id
+
+
+
+        ) VALUES (
+
+
+
+            v_documento_id,
+
+
+
+            p_prestamo_id,
+
+
+
+            p_usuario_resuelve_id,
+
+
+
+            CURRENT_TIMESTAMP,
+
+
+
+            p_motivo,
+
+
+
+            v_folio,
+
+
+
+            v_area_emisora_id,
+
+
+
+            v_area_prestamista_id
+
+
+
+        );
+
+
+
+
+
+
+
+        -- Cerrar nodo activo del documento
+
+
+
+        SELECT id INTO v_nodo_activo_id
+
+
+
+        FROM nodo_documental
+
+
+
+        WHERE documento_id = v_documento_id 
+
+
+
+        AND estado_nodo = 'ACTIVO'
+
+
+
+        ORDER BY fecha_creacion DESC
+
+
+
+        LIMIT 1;
+
+
+
+
+
+
+
+        IF v_nodo_activo_id IS NOT NULL THEN
+
+
+
+            UPDATE nodo_documental
+
+
+
+            SET estado_nodo = 'CERRADO',
+
+
+
+                observaciones = COALESCE(observaciones, '') || 
+
+
+
+                    ' | INVALIDADO: ' || p_motivo
+
+
+
+            WHERE id = v_nodo_activo_id;
+
+
+
+        END IF;
+
+
+
+
+
+
+
+        -- Registrar en historial del documento
+
+
+
+        INSERT INTO historial_documento (
+
+
+
+            documento_id,
+
+
+
+            accion,
+
+
+
+            usuario_id,
+
+
+
+            area_id,
+
+
+
+            observaciones
+
+
+
+        ) VALUES (
+
+
+
+            v_documento_id,
+
+
+
+            'RECHAZO_POSTERIOR',
+
+
+
+            p_usuario_resuelve_id,
+
+
+
+            v_area_prestamista_id,
+
+
+
+            'Prestamo rechazado posteriormente. Documento invalidado. Motivo: ' || p_motivo
+
+
+
+        );
+
+
+
+
+
+
+
+        RAISE NOTICE 'Prestamo % rechazado. Documento % invalidado. Motivo: %', 
+
+
+
+            p_prestamo_id, v_documento_id, p_motivo;
+
+
+
+
+
+
+
+        RETURN QUERY
+
+
+
+        SELECT 
+
+
+
+            p_prestamo_id,
+
+
+
+            v_documento_id,
+
+
+
+            v_folio,
+
+
+
+            'RECHAZADO_POSTERIOR'::estado_prestamo_enum,
+
+
+
+            TRUE;
+
+
+
+    END IF;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -4915,40 +8907,74 @@ ALTER FUNCTION public.sp_revisar_prestamo_posterior(p_prestamo_id integer, p_usu
 -- Name: FUNCTION sp_revisar_prestamo_posterior(p_prestamo_id integer, p_usuario_resuelve_id integer, p_aprobar boolean, p_motivo text); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.sp_revisar_prestamo_posterior(p_prestamo_id integer, p_usuario_resuelve_id integer, p_aprobar boolean, p_motivo text) IS 'Permite al area prestamista aprobar o rechazar un prestamo despues de que
-
-el documento ya fue emitido con revision diferida.
-
-
-
-APROBACION:
-
-- Cambia estado a APROBADO_POSTERIOR
-
-- Valida el documento retroactivamente
-
-- Registra en historial
-
-
-
-RECHAZO:
-
-- Cambia estado a RECHAZADO_POSTERIOR
-
-- Marca documento como invalidado
-
-- Cambia estado documento a CANCELADO
-
-- Registra en tabla invalidacion_documento para auditoria
-
-- Cierra el nodo activo del documento
-
-- Requiere motivo obligatorio
-
-
-
-El documento invalidado NO se elimina, permanece en el sistema 
-
+COMMENT ON FUNCTION public.sp_revisar_prestamo_posterior(p_prestamo_id integer, p_usuario_resuelve_id integer, p_aprobar boolean, p_motivo text) IS 'Permite al area prestamista aprobar o rechazar un prestamo despues de que
+
+
+
+el documento ya fue emitido con revision diferida.
+
+
+
+
+
+
+
+APROBACION:
+
+
+
+- Cambia estado a APROBADO_POSTERIOR
+
+
+
+- Valida el documento retroactivamente
+
+
+
+- Registra en historial
+
+
+
+
+
+
+
+RECHAZO:
+
+
+
+- Cambia estado a RECHAZADO_POSTERIOR
+
+
+
+- Marca documento como invalidado
+
+
+
+- Cambia estado documento a CANCELADO
+
+
+
+- Registra en tabla invalidacion_documento para auditoria
+
+
+
+- Cierra el nodo activo del documento
+
+
+
+- Requiere motivo obligatorio
+
+
+
+
+
+
+
+El documento invalidado NO se elimina, permanece en el sistema 
+
+
+
 para trazabilidad completa y auditorias.';
 
 
@@ -4958,156 +8984,306 @@ para trazabilidad completa y auditorias.';
 
 CREATE FUNCTION public.sp_solicitar_prestamo_numero(p_area_solicitante_id integer, p_area_prestamista_id integer, p_usuario_solicita_id integer, p_motivacion text, OUT p_prestamo_id integer) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_error TEXT;
-
-
-BEGIN
-
-
-    -- 1. Validar la combinación solicitante/prestamista
-
-
-    v_error := public.fn_puede_solicitar_prestamo(p_area_solicitante_id, p_area_prestamista_id);
-
-
-    IF v_error IS NOT NULL THEN
-
-
-        RAISE EXCEPTION '%', v_error;
-
-
-    END IF;
-
-
-
-
-
-    -- 2. Verificar que no haya ya un préstamo SOLICITADO o APROBADO pendiente
-
-
-    --    para la misma combinación (evitar duplicados activos)
-
-
-    IF EXISTS (
-
-
-        SELECT 1 FROM public.prestamo_numero_oficio
-
-
-        WHERE area_solicitante_id = p_area_solicitante_id
-
-
-          AND area_prestamista_id = p_area_prestamista_id
-
-
-          AND estado IN ('SOLICITADO', 'APROBADO')
-
-
-    ) THEN
-
-
-        RAISE EXCEPTION
-
-
-            'Ya existe una solicitud de préstamo activa (SOLICITADO o APROBADO) '
-
-
-            'para esta combinación de áreas. Espere a que se resuelva o use el folio ya aprobado.';
-
-
-    END IF;
-
-
-
-
-
-    -- 3. Crear la solicitud
-
-
-    INSERT INTO public.prestamo_numero_oficio (
-
-
-        area_solicitante_id, area_prestamista_id,
-
-
-        usuario_solicita_id,
-
-
-        estado, motivacion
-
-
-    )
-
-
-    VALUES (
-
-
-        p_area_solicitante_id, p_area_prestamista_id,
-
-
-        p_usuario_solicita_id,
-
-
-        'SOLICITADO', p_motivacion
-
-
-    )
-
-
-    RETURNING id INTO p_prestamo_id;
-
-
-
-
-
-    -- 4. Historial (reutiliza auditoria_sistema como canal)
-
-
-    INSERT INTO public.auditoria_sistema (accion, descripcion, usuario_id, area_id, detalles)
-
-
-    VALUES (
-
-
-        'PRESTAMO_SOLICITADO',
-
-
-        FORMAT('Solicitud de préstamo de número. Solicitante: área %s → Prestamista: área %s',
-
-
-               p_area_solicitante_id, p_area_prestamista_id),
-
-
-        p_usuario_solicita_id,
-
-
-        p_area_prestamista_id,  -- el "afectado" es el prestamista (quien debe revisar)
-
-
-        p_motivacion
-
-
-    );
-
-
-
-
-
-    RAISE NOTICE 'Préstamo % creado. Área prestamista % debe aprobar.',
-
-
-        p_prestamo_id, p_area_prestamista_id;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_error TEXT;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- 1. Validar la combinación solicitante/prestamista
+
+
+
+
+
+    v_error := public.fn_puede_solicitar_prestamo(p_area_solicitante_id, p_area_prestamista_id);
+
+
+
+
+
+    IF v_error IS NOT NULL THEN
+
+
+
+
+
+        RAISE EXCEPTION '%', v_error;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- 2. Verificar que no haya ya un préstamo SOLICITADO o APROBADO pendiente
+
+
+
+
+
+    --    para la misma combinación (evitar duplicados activos)
+
+
+
+
+
+    IF EXISTS (
+
+
+
+
+
+        SELECT 1 FROM public.prestamo_numero_oficio
+
+
+
+
+
+        WHERE area_solicitante_id = p_area_solicitante_id
+
+
+
+
+
+          AND area_prestamista_id = p_area_prestamista_id
+
+
+
+
+
+          AND estado IN ('SOLICITADO', 'APROBADO')
+
+
+
+
+
+    ) THEN
+
+
+
+
+
+        RAISE EXCEPTION
+
+
+
+
+
+            'Ya existe una solicitud de préstamo activa (SOLICITADO o APROBADO) '
+
+
+
+
+
+            'para esta combinación de áreas. Espere a que se resuelva o use el folio ya aprobado.';
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- 3. Crear la solicitud
+
+
+
+
+
+    INSERT INTO public.prestamo_numero_oficio (
+
+
+
+
+
+        area_solicitante_id, area_prestamista_id,
+
+
+
+
+
+        usuario_solicita_id,
+
+
+
+
+
+        estado, motivacion
+
+
+
+
+
+    )
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        p_area_solicitante_id, p_area_prestamista_id,
+
+
+
+
+
+        p_usuario_solicita_id,
+
+
+
+
+
+        'SOLICITADO', p_motivacion
+
+
+
+
+
+    )
+
+
+
+
+
+    RETURNING id INTO p_prestamo_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 4. Historial (reutiliza auditoria_sistema como canal)
+
+
+
+
+
+    INSERT INTO public.auditoria_sistema (accion, descripcion, usuario_id, area_id, detalles)
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        'PRESTAMO_SOLICITADO',
+
+
+
+
+
+        FORMAT('Solicitud de préstamo de número. Solicitante: área %s → Prestamista: área %s',
+
+
+
+
+
+               p_area_solicitante_id, p_area_prestamista_id),
+
+
+
+
+
+        p_usuario_solicita_id,
+
+
+
+
+
+        p_area_prestamista_id,  -- el "afectado" es el prestamista (quien debe revisar)
+
+
+
+
+
+        p_motivacion
+
+
+
+
+
+    );
+
+
+
+
+
+
+
+
+
+
+
+    RAISE NOTICE 'Préstamo % creado. Área prestamista % debe aprobar.',
+
+
+
+
+
+        p_prestamo_id, p_area_prestamista_id;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -5126,264 +9302,522 @@ COMMENT ON FUNCTION public.sp_solicitar_prestamo_numero(p_area_solicitante_id in
 
 CREATE FUNCTION public.sp_turnar_documento(p_documento_id integer, p_area_destino_id integer, p_usuario_turna_id integer, p_observaciones character varying DEFAULT NULL::character varying, p_instrucciones text DEFAULT NULL::text, OUT p_nodo_nuevo_id integer) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_nodo_activo_id        INTEGER;
-
-
-    v_folio_propio_actual   VARCHAR(80);
-
-
-    v_folio_original        VARCHAR(80);
-
-
-    v_estado_doc            public.estado_documento_enum;
-
-
-    v_area_origen_id        INTEGER;   -- área del nodo activo actual
-
-
-    v_error_validacion      TEXT;
-
-
-BEGIN
-
-
-    -- 1. Obtener nodo activo del documento
-
-
-    SELECT id, folio_propio, folio_original, area_id
-
-
-    INTO v_nodo_activo_id, v_folio_propio_actual, v_folio_original, v_area_origen_id
-
-
-    FROM public.nodo_documental
-
-
-    WHERE documento_id = p_documento_id AND es_nodo_activo = TRUE;
-
-
-
-
-
-    IF v_nodo_activo_id IS NULL THEN
-
-
-        RAISE EXCEPTION
-
-
-            'El documento % no tiene nodo activo. '
-
-
-            'Use sp_emitir_documento para iniciar la cadena.', p_documento_id;
-
-
-    END IF;
-
-
-
-
-
-    -- 2. Validar estado del documento
-
-
-    SELECT estado INTO v_estado_doc FROM public.documento WHERE id = p_documento_id;
-
-
-    IF v_estado_doc IN ('CANCELADO', 'CERRADO') THEN
-
-
-        RAISE EXCEPTION
-
-
-            'No se puede turnar: el documento % está en estado %.',
-
-
-            p_documento_id, v_estado_doc;
-
-
-    END IF;
-
-
-
-
-
-    -- 3. *** VALIDACIÓN DE RUTA DE TURNO ***
-
-
-    v_error_validacion := public.fn_validar_turno(v_area_origen_id, p_area_destino_id);
-
-
-    IF v_error_validacion IS NOT NULL THEN
-
-
-        RAISE EXCEPTION '%', v_error_validacion;
-
-
-    END IF;
-
-
-
-
-
-    -- 4. Cerrar el nodo activo actual
-
-
-    UPDATE public.nodo_documental
-
-
-    SET
-
-
-        estado         = 'CERRADO',
-
-
-        es_nodo_activo = FALSE,
-
-
-        fecha_cierre   = CURRENT_TIMESTAMP,
-
-
-        observaciones  = COALESCE(observaciones || ' | ', '')
-
-
-                         || 'Turnado por usuario ' || p_usuario_turna_id::TEXT
-
-
-    WHERE id = v_nodo_activo_id;
-
-
-
-
-
-    -- 5. Crear nodo PENDIENTE en el área destino
-
-
-    INSERT INTO public.nodo_documental (
-
-
-        documento_id, tipo_nodo, estado,
-
-
-        nodo_padre_id,
-
-
-        folio_original, folio_padre, folio_propio,
-
-
-        area_id, usuario_responsable_id,
-
-
-        instrucciones, observaciones,
-
-
-        es_nodo_activo
-
-
-    )
-
-
-    VALUES (
-
-
-        p_documento_id, 'RECEPCION', 'PENDIENTE',
-
-
-        v_nodo_activo_id,
-
-
-        v_folio_original,
-
-
-        v_folio_propio_actual,
-
-
-        '',                        -- asignado al confirmar recepción
-
-
-        p_area_destino_id,
-
-
-        p_usuario_turna_id,
-
-
-        p_instrucciones,
-
-
-        p_observaciones,
-
-
-        TRUE
-
-
-    )
-
-
-    RETURNING id INTO p_nodo_nuevo_id;
-
-
-
-
-
-    -- 6. Actualizar estado documento
-
-
-    UPDATE public.documento
-
-
-    SET estado = 'TURNADO', fecha_modificacion = CURRENT_TIMESTAMP
-
-
-    WHERE id = p_documento_id;
-
-
-
-
-
-    -- 7. Historial
-
-
-    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
-
-
-    VALUES (
-
-
-        p_documento_id, 'TURNADO',
-
-
-        FORMAT('Turnado a "%s" (área %s) por usuario %s',
-
-
-            (SELECT nombre FROM public.area WHERE id = p_area_destino_id),
-
-
-            p_area_destino_id, p_usuario_turna_id),
-
-
-        p_usuario_turna_id, p_area_destino_id
-
-
-    );
-
-
-
-
-
-    RAISE NOTICE 'Documento % turnado a área %. Nodo pendiente: %',
-
-
-        p_documento_id, p_area_destino_id, p_nodo_nuevo_id;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_nodo_activo_id        INTEGER;
+
+
+
+
+
+    v_folio_propio_actual   VARCHAR(80);
+
+
+
+
+
+    v_folio_original        VARCHAR(80);
+
+
+
+
+
+    v_estado_doc            public.estado_documento_enum;
+
+
+
+
+
+    v_area_origen_id        INTEGER;   -- área del nodo activo actual
+
+
+
+
+
+    v_error_validacion      TEXT;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- 1. Obtener nodo activo del documento
+
+
+
+
+
+    SELECT id, folio_propio, folio_original, area_id
+
+
+
+
+
+    INTO v_nodo_activo_id, v_folio_propio_actual, v_folio_original, v_area_origen_id
+
+
+
+
+
+    FROM public.nodo_documental
+
+
+
+
+
+    WHERE documento_id = p_documento_id AND es_nodo_activo = TRUE;
+
+
+
+
+
+
+
+
+
+
+
+    IF v_nodo_activo_id IS NULL THEN
+
+
+
+
+
+        RAISE EXCEPTION
+
+
+
+
+
+            'El documento % no tiene nodo activo. '
+
+
+
+
+
+            'Use sp_emitir_documento para iniciar la cadena.', p_documento_id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- 2. Validar estado del documento
+
+
+
+
+
+    SELECT estado INTO v_estado_doc FROM public.documento WHERE id = p_documento_id;
+
+
+
+
+
+    IF v_estado_doc IN ('CANCELADO', 'CERRADO') THEN
+
+
+
+
+
+        RAISE EXCEPTION
+
+
+
+
+
+            'No se puede turnar: el documento % está en estado %.',
+
+
+
+
+
+            p_documento_id, v_estado_doc;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- 3. *** VALIDACIÓN DE RUTA DE TURNO ***
+
+
+
+
+
+    v_error_validacion := public.fn_validar_turno(v_area_origen_id, p_area_destino_id);
+
+
+
+
+
+    IF v_error_validacion IS NOT NULL THEN
+
+
+
+
+
+        RAISE EXCEPTION '%', v_error_validacion;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+
+
+
+
+
+
+    -- 4. Cerrar el nodo activo actual
+
+
+
+
+
+    UPDATE public.nodo_documental
+
+
+
+
+
+    SET
+
+
+
+
+
+        estado         = 'CERRADO',
+
+
+
+
+
+        es_nodo_activo = FALSE,
+
+
+
+
+
+        fecha_cierre   = CURRENT_TIMESTAMP,
+
+
+
+
+
+        observaciones  = COALESCE(observaciones || ' | ', '')
+
+
+
+
+
+                         || 'Turnado por usuario ' || p_usuario_turna_id::TEXT
+
+
+
+
+
+    WHERE id = v_nodo_activo_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 5. Crear nodo PENDIENTE en el área destino
+
+
+
+
+
+    INSERT INTO public.nodo_documental (
+
+
+
+
+
+        documento_id, tipo_nodo, estado,
+
+
+
+
+
+        nodo_padre_id,
+
+
+
+
+
+        folio_original, folio_padre, folio_propio,
+
+
+
+
+
+        area_id, usuario_responsable_id,
+
+
+
+
+
+        instrucciones, observaciones,
+
+
+
+
+
+        es_nodo_activo
+
+
+
+
+
+    )
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        p_documento_id, 'RECEPCION', 'PENDIENTE',
+
+
+
+
+
+        v_nodo_activo_id,
+
+
+
+
+
+        v_folio_original,
+
+
+
+
+
+        v_folio_propio_actual,
+
+
+
+
+
+        '',                        -- asignado al confirmar recepción
+
+
+
+
+
+        p_area_destino_id,
+
+
+
+
+
+        p_usuario_turna_id,
+
+
+
+
+
+        p_instrucciones,
+
+
+
+
+
+        p_observaciones,
+
+
+
+
+
+        TRUE
+
+
+
+
+
+    )
+
+
+
+
+
+    RETURNING id INTO p_nodo_nuevo_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 6. Actualizar estado documento
+
+
+
+
+
+    UPDATE public.documento
+
+
+
+
+
+    SET estado = 'TURNADO', fecha_modificacion = CURRENT_TIMESTAMP
+
+
+
+
+
+    WHERE id = p_documento_id;
+
+
+
+
+
+
+
+
+
+
+
+    -- 7. Historial
+
+
+
+
+
+    INSERT INTO public.historial_documento (documento_id, accion, descripcion, usuario_id, area_id)
+
+
+
+
+
+    VALUES (
+
+
+
+
+
+        p_documento_id, 'TURNADO',
+
+
+
+
+
+        FORMAT('Turnado a "%s" (área %s) por usuario %s',
+
+
+
+
+
+            (SELECT nombre FROM public.area WHERE id = p_area_destino_id),
+
+
+
+
+
+            p_area_destino_id, p_usuario_turna_id),
+
+
+
+
+
+        p_usuario_turna_id, p_area_destino_id
+
+
+
+
+
+    );
+
+
+
+
+
+
+
+
+
+
+
+    RAISE NOTICE 'Documento % turnado a área %. Nodo pendiente: %',
+
+
+
+
+
+        p_documento_id, p_area_destino_id, p_nodo_nuevo_id;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -5402,51 +9836,96 @@ COMMENT ON FUNCTION public.sp_turnar_documento(p_documento_id integer, p_area_de
 
 CREATE FUNCTION public.trg_limpiar_tokens_al_insertar() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_random FLOAT;
-
-
-BEGIN
-
-
-    -- Ejecutar limpieza solo el 10% de las veces (probabilístico)
-
-
-    -- Esto previene overhead en cada inserción
-
-
-    v_random := random();
-
-
-    
-
-
-    IF v_random < 0.1 THEN
-
-
-        PERFORM fn_limpiar_tokens_expirados();
-
-
-        RAISE DEBUG 'Limpieza automática de tokens ejecutada';
-
-
-    END IF;
-
-
-    
-
-
-    RETURN NEW;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_random FLOAT;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Ejecutar limpieza solo el 10% de las veces (probabilístico)
+
+
+
+
+
+    -- Esto previene overhead en cada inserción
+
+
+
+
+
+    v_random := random();
+
+
+
+
+
+    
+
+
+
+
+
+    IF v_random < 0.1 THEN
+
+
+
+
+
+        PERFORM fn_limpiar_tokens_expirados();
+
+
+
+
+
+        RAISE DEBUG 'Limpieza automática de tokens ejecutada';
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    
+
+
+
+
+
+    RETURN NEW;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -5458,60 +9937,114 @@ ALTER FUNCTION public.trg_limpiar_tokens_al_insertar() OWNER TO postgres;
 
 CREATE FUNCTION public.trg_prevenir_eliminacion_documento() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-
-
-BEGIN
-
-
-    -- Solo permitir eliminación de documentos en estado CANCELADO
-
-
-    IF OLD.estado <> 'CANCELADO' THEN
-
-
-        RAISE EXCEPTION 
-
-
-            'No se puede eliminar el documento % porque no está CANCELADO (estado: %)',
-
-
-            OLD.id, OLD.estado;
-
-
-    END IF;
-
-
-    
-
-
-    -- Verificar si tiene historial
-
-
-    IF EXISTS (SELECT 1 FROM public.historial_documento WHERE documento_id = OLD.id) THEN
-
-
-        RAISE EXCEPTION 
-
-
-            'No se puede eliminar el documento % porque tiene registros en el historial',
-
-
-            OLD.id;
-
-
-    END IF;
-
-
-    
-
-
-    RETURN OLD;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Solo permitir eliminación de documentos en estado CANCELADO
+
+
+
+
+
+    IF OLD.estado <> 'CANCELADO' THEN
+
+
+
+
+
+        RAISE EXCEPTION 
+
+
+
+
+
+            'No se puede eliminar el documento % porque no está CANCELADO (estado: %)',
+
+
+
+
+
+            OLD.id, OLD.estado;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    
+
+
+
+
+
+    -- Verificar si tiene historial
+
+
+
+
+
+    IF EXISTS (SELECT 1 FROM public.historial_documento WHERE documento_id = OLD.id) THEN
+
+
+
+
+
+        RAISE EXCEPTION 
+
+
+
+
+
+            'No se puede eliminar el documento % porque tiene registros en el historial',
+
+
+
+
+
+            OLD.id;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    
+
+
+
+
+
+    RETURN OLD;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -5523,24 +10056,42 @@ ALTER FUNCTION public.trg_prevenir_eliminacion_documento() OWNER TO postgres;
 
 CREATE FUNCTION public.trg_prevenir_insercion_turno_documento() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-
-
-BEGIN
-
-
-    RAISE EXCEPTION 'turno_documento está DEPRECADA. Usar nodo_documental en su lugar.'
-
-
-        USING HINT = 'Consultar documentación de migración a nodo_documental',
-
-
-              ERRCODE = 'P0001';
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    RAISE EXCEPTION 'turno_documento está DEPRECADA. Usar nodo_documental en su lugar.'
+
+
+
+
+
+        USING HINT = 'Consultar documentación de migración a nodo_documental',
+
+
+
+
+
+              ERRCODE = 'P0001';
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -5552,90 +10103,174 @@ ALTER FUNCTION public.trg_prevenir_insercion_turno_documento() OWNER TO postgres
 
 CREATE FUNCTION public.trg_validar_jerarquia_area() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-
-
-DECLARE
-
-
-    v_ciclo_count INTEGER;
-
-
-BEGIN
-
-
-    -- Validar que no se cree ciclo en la jerarquía
-
-
-    IF NEW.area_padre_id IS NOT NULL THEN
-
-
-        -- Verificar si el área padre contiene a esta área como ancestro
-
-
-        WITH RECURSIVE jerarquia AS (
-
-
-            SELECT id, area_padre_id FROM area WHERE id = NEW.area_padre_id
-
-
-            UNION ALL
-
-
-            SELECT a.id, a.area_padre_id FROM area a
-
-
-            INNER JOIN jerarquia j ON a.id = j.area_padre_id
-
-
-        )
-
-
-        SELECT COUNT(*) INTO v_ciclo_count
-
-
-        FROM jerarquia WHERE area_padre_id = NEW.id;
-
-
-        
-
-
-        IF v_ciclo_count > 0 THEN
-
-
-            RAISE EXCEPTION 'No se puede crear un ciclo en la jerarquía de áreas';
-
-
-        END IF;
-
-
-    END IF;
-
-
-    
-
-
-    -- Actualizar fecha de modificación en UPDATE
-
-
-    IF TG_OP = 'UPDATE' THEN
-
-
-        NEW.fecha_modificacion := CURRENT_TIMESTAMP;
-
-
-    END IF;
-
-
-    
-
-
-    RETURN NEW;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+DECLARE
+
+
+
+
+
+    v_ciclo_count INTEGER;
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    -- Validar que no se cree ciclo en la jerarquía
+
+
+
+
+
+    IF NEW.area_padre_id IS NOT NULL THEN
+
+
+
+
+
+        -- Verificar si el área padre contiene a esta área como ancestro
+
+
+
+
+
+        WITH RECURSIVE jerarquia AS (
+
+
+
+
+
+            SELECT id, area_padre_id FROM area WHERE id = NEW.area_padre_id
+
+
+
+
+
+            UNION ALL
+
+
+
+
+
+            SELECT a.id, a.area_padre_id FROM area a
+
+
+
+
+
+            INNER JOIN jerarquia j ON a.id = j.area_padre_id
+
+
+
+
+
+        )
+
+
+
+
+
+        SELECT COUNT(*) INTO v_ciclo_count
+
+
+
+
+
+        FROM jerarquia WHERE area_padre_id = NEW.id;
+
+
+
+
+
+        
+
+
+
+
+
+        IF v_ciclo_count > 0 THEN
+
+
+
+
+
+            RAISE EXCEPTION 'No se puede crear un ciclo en la jerarquía de áreas';
+
+
+
+
+
+        END IF;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    
+
+
+
+
+
+    -- Actualizar fecha de modificación en UPDATE
+
+
+
+
+
+    IF TG_OP = 'UPDATE' THEN
+
+
+
+
+
+        NEW.fecha_modificacion := CURRENT_TIMESTAMP;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    
+
+
+
+
+
+    RETURN NEW;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -5654,60 +10289,114 @@ COMMENT ON FUNCTION public.trg_validar_jerarquia_area() IS 'Valida que no se cre
 
 CREATE FUNCTION public.trg_validar_nodo_activo_unico() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-
-
-BEGIN
-
-
-    IF NEW.es_nodo_activo = TRUE THEN
-
-
-        IF EXISTS (
-
-
-            SELECT 1 FROM public.nodo_documental
-
-
-            WHERE documento_id   = NEW.documento_id
-
-
-              AND es_nodo_activo = TRUE
-
-
-              AND id             <> NEW.id
-
-
-        ) THEN
-
-
-            RAISE EXCEPTION
-
-
-                'Ya existe un nodo activo para el documento %. '
-
-
-                'Cierre el nodo activo antes de activar otro. '
-
-
-                'Use sp_turnar_documento o sp_devolver_documento.',
-
-
-                NEW.documento_id;
-
-
-        END IF;
-
-
-    END IF;
-
-
-    RETURN NEW;
-
-
-END;
-
-
+    AS $$
+
+
+
+
+
+BEGIN
+
+
+
+
+
+    IF NEW.es_nodo_activo = TRUE THEN
+
+
+
+
+
+        IF EXISTS (
+
+
+
+
+
+            SELECT 1 FROM public.nodo_documental
+
+
+
+
+
+            WHERE documento_id   = NEW.documento_id
+
+
+
+
+
+              AND es_nodo_activo = TRUE
+
+
+
+
+
+              AND id             <> NEW.id
+
+
+
+
+
+        ) THEN
+
+
+
+
+
+            RAISE EXCEPTION
+
+
+
+
+
+                'Ya existe un nodo activo para el documento %. '
+
+
+
+
+
+                'Cierre el nodo activo antes de activar otro. '
+
+
+
+
+
+                'Use sp_turnar_documento o sp_devolver_documento.',
+
+
+
+
+
+                NEW.documento_id;
+
+
+
+
+
+        END IF;
+
+
+
+
+
+    END IF;
+
+
+
+
+
+    RETURN NEW;
+
+
+
+
+
+END;
+
+
+
+
+
 $$;
 
 
@@ -6056,15 +10745,24 @@ ALTER TABLE public.despacho_externo OWNER TO postgres;
 -- Name: TABLE despacho_externo; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.despacho_externo IS 'Registra el despacho físico o digital de un documento hacia una entidad externa. 
-
-
-Puede ejecutarse desde CUALQUIER área que tenga el documento activo.
-
-
-NO es obligatorio pasar por Oficialía para documentos salientes.
-
-
+COMMENT ON TABLE public.despacho_externo IS 'Registra el despacho físico o digital de un documento hacia una entidad externa. 
+
+
+
+
+
+Puede ejecutarse desde CUALQUIER área que tenga el documento activo.
+
+
+
+
+
+NO es obligatorio pasar por Oficialía para documentos salientes.
+
+
+
+
+
 La Oficialía solo interviene en documentos ENTRANTES (sp_registrar_entrada_externa).';
 
 
@@ -6072,12 +10770,18 @@ La Oficialía solo interviene en documentos ENTRANTES (sp_registrar_entrada_exte
 -- Name: COLUMN despacho_externo.nodo_id; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.despacho_externo.nodo_id IS 'Nodo documental desde el cual se despacha. 
-
-
-Puede ser de cualquier área (DIRECCION, SUBDIRECCION, etc.), no solo OFICIALÍA.
-
-
+COMMENT ON COLUMN public.despacho_externo.nodo_id IS 'Nodo documental desde el cual se despacha. 
+
+
+
+
+
+Puede ser de cualquier área (DIRECCION, SUBDIRECCION, etc.), no solo OFICIALÍA.
+
+
+
+
+
 Permite vincular el despacho a la etapa exacta de la cadena documental.';
 
 
@@ -6200,8 +10904,10 @@ COMMENT ON COLUMN public.documento.prestamo_numero_id IS 'FK al préstamo de nú
 -- Name: COLUMN documento.documento_invalidado; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.documento.documento_invalidado IS 'TRUE si el documento fue invalidado por rechazo de prestamo despues de su emision. 
-
+COMMENT ON COLUMN public.documento.documento_invalidado IS 'TRUE si el documento fue invalidado por rechazo de prestamo despues de su emision. 
+
+
+
 El documento permanece en el sistema con estado CANCELADO para trazabilidad completa.';
 
 
@@ -6216,8 +10922,10 @@ COMMENT ON COLUMN public.documento.fecha_invalidacion IS 'Fecha y hora en que el
 -- Name: COLUMN documento.motivo_invalidacion; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.documento.motivo_invalidacion IS 'Motivo del rechazo del prestamo que causo la invalidacion del documento. 
-
+COMMENT ON COLUMN public.documento.motivo_invalidacion IS 'Motivo del rechazo del prestamo que causo la invalidacion del documento. 
+
+
+
 Copiado desde la tabla invalidacion_documento para facilitar consultas.';
 
 
@@ -6225,10 +10933,14 @@ Copiado desde la tabla invalidacion_documento para facilitar consultas.';
 -- Name: CONSTRAINT chk_documento_oficio_requiere_prestamo ON documento; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON CONSTRAINT chk_documento_oficio_requiere_prestamo ON public.documento IS 'Un documento con contexto OFICIO debe tener un prestamo_numero_id asociado. 
-
-El prestamo puede estar en cualquier estado (EN_REVISION, APROBADO, APROBADO_POSTERIOR, etc).
-
+COMMENT ON CONSTRAINT chk_documento_oficio_requiere_prestamo ON public.documento IS 'Un documento con contexto OFICIO debe tener un prestamo_numero_id asociado. 
+
+
+
+El prestamo puede estar en cualquier estado (EN_REVISION, APROBADO, APROBADO_POSTERIOR, etc).
+
+
+
 Ya no se requiere que el prestamo este APROBADO antes de emitir el documento.';
 
 
@@ -6443,12 +11155,18 @@ ALTER TABLE public.invalidacion_documento OWNER TO postgres;
 -- Name: TABLE invalidacion_documento; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.invalidacion_documento IS 'Registro historico permanente de documentos invalidados por rechazo de prestamo 
-
-posterior a su emision. Esta tabla mantiene la trazabilidad completa para auditorias, 
-
-cumplimiento normativo y analisis estadistico. Los documentos invalidados NO se eliminan 
-
+COMMENT ON TABLE public.invalidacion_documento IS 'Registro historico permanente de documentos invalidados por rechazo de prestamo 
+
+
+
+posterior a su emision. Esta tabla mantiene la trazabilidad completa para auditorias, 
+
+
+
+cumplimiento normativo y analisis estadistico. Los documentos invalidados NO se eliminan 
+
+
+
 del sistema, solo se marcan como invalidos con estado CANCELADO.';
 
 
@@ -6463,8 +11181,10 @@ COMMENT ON COLUMN public.invalidacion_documento.motivo IS 'Razon detallada del r
 -- Name: COLUMN invalidacion_documento.folio_original; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.invalidacion_documento.folio_original IS 'Folio del documento al momento de invalidarse (inmutable para referencia historica). 
-
+COMMENT ON COLUMN public.invalidacion_documento.folio_original IS 'Folio del documento al momento de invalidarse (inmutable para referencia historica). 
+
+
+
 Este folio ya no es valido pero se conserva para registros y auditorias.';
 
 
@@ -6712,8 +11432,10 @@ COMMENT ON COLUMN public.prestamo_numero_oficio.folio_asignado IS 'Folio generad
 -- Name: COLUMN prestamo_numero_oficio.documento_invalidado; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.prestamo_numero_oficio.documento_invalidado IS 'TRUE si el documento asociado fue invalidado por rechazo posterior del prestamo. 
-
+COMMENT ON COLUMN public.prestamo_numero_oficio.documento_invalidado IS 'TRUE si el documento asociado fue invalidado por rechazo posterior del prestamo. 
+
+
+
 El documento permanece en el sistema con estado CANCELADO para trazabilidad.';
 
 
@@ -6735,8 +11457,10 @@ COMMENT ON COLUMN public.prestamo_numero_oficio.motivo_invalidacion IS 'Razon de
 -- Name: COLUMN prestamo_numero_oficio.dias_revision; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.prestamo_numero_oficio.dias_revision IS 'Dias habiles que tiene el area prestamista para aprobar o rechazar el prestamo 
-
+COMMENT ON COLUMN public.prestamo_numero_oficio.dias_revision IS 'Dias habiles que tiene el area prestamista para aprobar o rechazar el prestamo 
+
+
+
 despues de la emision del documento. Configurable, por defecto: 5 dias.';
 
 
@@ -6744,8 +11468,10 @@ despues de la emision del documento. Configurable, por defecto: 5 dias.';
 -- Name: COLUMN prestamo_numero_oficio.fecha_limite_revision; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.prestamo_numero_oficio.fecha_limite_revision IS 'Fecha limite calculada (fecha_solicitud + dias_revision) para que el area prestamista 
-
+COMMENT ON COLUMN public.prestamo_numero_oficio.fecha_limite_revision IS 'Fecha limite calculada (fecha_solicitud + dias_revision) para que el area prestamista 
+
+
+
 revise el prestamo emitido con revision diferida. Si vence sin respuesta, se aprueba automaticamente.';
 
 
@@ -6753,10 +11479,14 @@ revise el prestamo emitido con revision diferida. Si vence sin respuesta, se apr
 -- Name: CONSTRAINT chk_prestamo_folio_si_aprobado ON prestamo_numero_oficio; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON CONSTRAINT chk_prestamo_folio_si_aprobado ON public.prestamo_numero_oficio IS 'Los prestamos en estado APROBADO, EN_REVISION, APROBADO_POSTERIOR o APROBADO_AUTOMATICO 
-
-deben tener un folio asignado. El folio se genera al momento de la emision (flujo diferido) 
-
+COMMENT ON CONSTRAINT chk_prestamo_folio_si_aprobado ON public.prestamo_numero_oficio IS 'Los prestamos en estado APROBADO, EN_REVISION, APROBADO_POSTERIOR o APROBADO_AUTOMATICO 
+
+
+
+deben tener un folio asignado. El folio se genera al momento de la emision (flujo diferido) 
+
+
+
 o al momento de la aprobacion (flujo tradicional).';
 
 
@@ -7133,15 +11863,24 @@ ALTER TABLE public.turno_documento OWNER TO postgres;
 -- Name: TABLE turno_documento; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.turno_documento IS 'TABLA DEPRECADA: Esta tabla está obsoleta. Usar nodo_documental en su lugar.
-
-
-Sistema antiguo de turnos reemplazado por el patrón de nodos documentales.
-
-
-LEGACY: Se mantiene solo para migración de datos históricos.
-
-
+COMMENT ON TABLE public.turno_documento IS 'TABLA DEPRECADA: Esta tabla está obsoleta. Usar nodo_documental en su lugar.
+
+
+
+
+
+Sistema antiguo de turnos reemplazado por el patrón de nodos documentales.
+
+
+
+
+
+LEGACY: Se mantiene solo para migración de datos históricos.
+
+
+
+
+
 NO USAR EN CÓDIGO NUEVO.';
 
 
@@ -7347,12 +12086,18 @@ ALTER TABLE public.v_documento_estado_actual OWNER TO postgres;
 -- Name: VIEW v_documento_estado_actual; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON VIEW public.v_documento_estado_actual IS 'Vista en tiempo real del estado actual de documentos.
-
-
-    CAMBIO: Convertida de MATERIALIZED VIEW a VIEW normal para simplificar mantenimiento.
-
-
+COMMENT ON VIEW public.v_documento_estado_actual IS 'Vista en tiempo real del estado actual de documentos.
+
+
+
+
+
+    CAMBIO: Convertida de MATERIALIZED VIEW a VIEW normal para simplificar mantenimiento.
+
+
+
+
+
     Performance: Si se detectan problemas de rendimiento, considerar índices adicionales en las tablas base.';
 
 
@@ -7416,12 +12161,18 @@ ALTER TABLE public.v_turnos_legacy OWNER TO postgres;
 -- Name: VIEW v_turnos_legacy; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON VIEW public.v_turnos_legacy IS 'Vista de compatibilidad para codigo que usa turno_documento (deprecado).
-
-
-Mapea nodo_documental al formato antiguo de turno_documento.
-
-
+COMMENT ON VIEW public.v_turnos_legacy IS 'Vista de compatibilidad para codigo que usa turno_documento (deprecado).
+
+
+
+
+
+Mapea nodo_documental al formato antiguo de turno_documento.
+
+
+
+
+
 MIGRAR A: Usar directamente nodo_documental.';
 
 
@@ -7673,46 +12424,86 @@ ALTER TABLE public.vw_documentos_invalidados OWNER TO postgres;
 -- Name: VIEW vw_documentos_invalidados; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON VIEW public.vw_documentos_invalidados IS 'Vista de auditoria mostrando todos los documentos invalidados por rechazo
-
-de prestamo posterior a su emision. Incluye informacion completa para:
-
-- Reportes de control y auditoria
-
-- Analisis de rechazos por area
-
-- Identificacion de problemas operativos
-
-- Cumplimiento normativo
-
-
-
-Consultas tipicas:
-
-  -- Documentos invalidados del mes
-
-  SELECT * FROM vw_documentos_invalidados 
-
-  WHERE fecha_invalidacion >= date_trunc(''month'', CURRENT_DATE);
-
-
-
-  -- Documentos invalidados por area
-
-  SELECT area_emisora, COUNT(*) AS total_invalidados
-
-  FROM vw_documentos_invalidados
-
-  GROUP BY area_emisora
-
-  ORDER BY total_invalidados DESC;
-
-
-
-  -- Documentos invalidados rapidamente (< 24 horas de vida)
-
-  SELECT * FROM vw_documentos_invalidados
-
+COMMENT ON VIEW public.vw_documentos_invalidados IS 'Vista de auditoria mostrando todos los documentos invalidados por rechazo
+
+
+
+de prestamo posterior a su emision. Incluye informacion completa para:
+
+
+
+- Reportes de control y auditoria
+
+
+
+- Analisis de rechazos por area
+
+
+
+- Identificacion de problemas operativos
+
+
+
+- Cumplimiento normativo
+
+
+
+
+
+
+
+Consultas tipicas:
+
+
+
+  -- Documentos invalidados del mes
+
+
+
+  SELECT * FROM vw_documentos_invalidados 
+
+
+
+  WHERE fecha_invalidacion >= date_trunc(''month'', CURRENT_DATE);
+
+
+
+
+
+
+
+  -- Documentos invalidados por area
+
+
+
+  SELECT area_emisora, COUNT(*) AS total_invalidados
+
+
+
+  FROM vw_documentos_invalidados
+
+
+
+  GROUP BY area_emisora
+
+
+
+  ORDER BY total_invalidados DESC;
+
+
+
+
+
+
+
+  -- Documentos invalidados rapidamente (< 24 horas de vida)
+
+
+
+  SELECT * FROM vw_documentos_invalidados
+
+
+
   WHERE horas_vida_documento < 24;';
 
 
@@ -7944,38 +12735,70 @@ ALTER TABLE public.vw_prestamos_pendientes_revision OWNER TO postgres;
 -- Name: VIEW vw_prestamos_pendientes_revision; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON VIEW public.vw_prestamos_pendientes_revision IS 'Vista de dashboard para areas prestamistas mostrando prestamos que requieren
-
-revision y aprobacion/rechazo. Incluye semaforo de urgencia:
-
-- VENCIDO: Plazo vencido, sera aprobado automaticamente
-
-- URGENTE: Menos de 24 horas restantes
-
-- PROXIMO: Menos de 48 horas restantes
-
-- VIGENTE: Mas de 48 horas restantes
-
-
-
-Columnas: usa clave en lugar de siglas (clave_solicitante, clave_prestamista)
-
-
-
-Consultas tipicas:
-
-  -- Dashboard del area prestamista
-
-  SELECT * FROM vw_prestamos_pendientes_revision 
-
-  WHERE area_prestamista_id = :mi_area_id;
-
-
-
-  -- Alertas urgentes
-
-  SELECT * FROM vw_prestamos_pendientes_revision 
-
+COMMENT ON VIEW public.vw_prestamos_pendientes_revision IS 'Vista de dashboard para areas prestamistas mostrando prestamos que requieren
+
+
+
+revision y aprobacion/rechazo. Incluye semaforo de urgencia:
+
+
+
+- VENCIDO: Plazo vencido, sera aprobado automaticamente
+
+
+
+- URGENTE: Menos de 24 horas restantes
+
+
+
+- PROXIMO: Menos de 48 horas restantes
+
+
+
+- VIGENTE: Mas de 48 horas restantes
+
+
+
+
+
+
+
+Columnas: usa clave en lugar de siglas (clave_solicitante, clave_prestamista)
+
+
+
+
+
+
+
+Consultas tipicas:
+
+
+
+  -- Dashboard del area prestamista
+
+
+
+  SELECT * FROM vw_prestamos_pendientes_revision 
+
+
+
+  WHERE area_prestamista_id = :mi_area_id;
+
+
+
+
+
+
+
+  -- Alertas urgentes
+
+
+
+  SELECT * FROM vw_prestamos_pendientes_revision 
+
+
+
   WHERE semaforo IN (''VENCIDO'', ''URGENTE'');';
 
 
@@ -8321,81 +13144,7 @@ COPY public.auditoria_sistema (id, accion, descripcion, usuario_id, area_id, fec
 1	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-08 19:28:25.9672	\N	::1	\N
 2	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-08 19:28:55.994452	\N	::1	\N
 3	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-08 19:30:39.238578	\N	::1	\N
-4	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-08 23:19:23.736762	\N	::1	\N
-5	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-10 07:17:44.107238	\N	::1	\N
-6	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-10 07:17:58.051825	\N	::1	\N
-7	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-10 07:31:35.182052	\N	::1	\N
-8	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-10 07:39:57.868797	\N	::1	\N
-9	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-10 07:44:37.908276	\N	::1	\N
-10	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-10 07:45:55.083863	\N	::1	\N
-11	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 03:35:46.741198	\N	::1	\N
-12	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 03:36:51.252339	\N	::1	\N
-13	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 03:37:57.605634	\N	::1	\N
-14	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 03:47:18.613432	\N	::1	\N
-15	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 03:47:52.466527	\N	::1	\N
-16	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 03:51:03.836622	\N	::1	\N
-17	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 03:53:44.278415	\N	::1	\N
-18	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 03:55:35.871255	\N	::1	\N
-19	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 04:18:38.896957	\N	::1	\N
-20	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 04:34:27.559728	\N	::1	\N
-21	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-11 04:37:22.935764	\N	::1	\N
-22	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 04:41:48.568564	\N	::1	\N
-23	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 05:50:05.833866	\N	::1	\N
-24	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 06:15:01.920101	\N	::1	\N
-25	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 06:33:02.476534	\N	::1	\N
-26	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	65	2026-03-11 07:28:23.962066	\N	::1	\N
-27	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-11 07:29:34.454553	\N	::1	\N
-28	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-11 07:30:13.668213	\N	::1	\N
-29	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-11 07:37:28.082182	\N	::1	\N
-30	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-11 07:40:53.592243	\N	::1	\N
-31	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-11 07:42:55.370362	\N	::1	\N
-32	LOGIN_FALLIDO	Intento de login fallido para usuario: admin	\N	\N	2026-03-11 07:44:27.455898	\N	::1	\N
-33	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-11 07:44:34.435194	\N	::1	\N
-34	ACTUALIZAR_USUARIO	Usuario carcamo08 actualizado	23	65	2026-03-11 07:44:57.836029	{"usuarioModificado":24,"campos":["nombre","apellidos","email","areaId","rolId","telefono","celular","activo"]}	::1	\N
-35	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 07:45:57.575592	\N	::1	\N
-36	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-11 07:46:39.867807	\N	::1	\N
-37	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 07:47:04.729958	\N	::1	\N
-38	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 17:28:18.931391	\N	::1	\N
-39	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 20:07:39.715419	\N	::1	\N
-40	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 20:34:43.536699	\N	::1	\N
-41	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-11 20:42:40.017703	\N	::1	\N
-42	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 20:44:37.915537	\N	::1	\N
-43	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 20:45:28.407681	\N	::1	\N
-44	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 20:46:46.697723	\N	::1	\N
-45	LOGIN_FALLIDO	Intento de login fallido para usuario: carcamo08	\N	\N	2026-03-11 20:49:26.261968	\N	::ffff:127.0.0.1	\N
-46	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 20:49:38.555675	\N	::ffff:127.0.0.1	\N
-47	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-11 20:52:11.792769	\N	::ffff:127.0.0.1	\N
-48	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 20:54:32.811845	\N	::ffff:127.0.0.1	\N
-49	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 20:57:00.517511	\N	::ffff:127.0.0.1	\N
-50	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 21:11:41.756677	\N	::ffff:127.0.0.1	\N
-51	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-11 21:38:33.598497	\N	::ffff:127.0.0.1	\N
-52	LOGIN_FALLIDO	Intento de login fallido para usuario: carcamo08	\N	\N	2026-03-12 00:14:02.801934	\N	::ffff:127.0.0.1	\N
-53	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-12 00:14:11.485769	\N	::ffff:127.0.0.1	\N
-54	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-12 00:17:07.886586	\N	::1	\N
-55	PRESTAMO_SOLICITADO	Solicitud de préstamo de número. Solicitante: área 68 → Prestamista: área 21	24	21	2026-03-12 00:19:18.715545	asaasasasasasas	\N	\N
-56	PRESTAMO_SOLICITADO	Solicitud de préstamo de número. Solicitante: área 68 → Prestamista: área 65	24	65	2026-03-12 00:19:42.728309	asasasasasas	\N	\N
-57	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-12 01:18:45.493964	\N	::ffff:127.0.0.1	\N
-58	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-12 01:20:16.300472	\N	::1	\N
-59	LOGIN_FALLIDO	Intento de login fallido para usuario: admin	\N	\N	2026-03-12 02:26:09.73981	\N	::1	\N
-60	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-12 02:26:13.537138	\N	::1	\N
-61	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-12 02:40:27.014889	\N	::1	\N
-62	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-12 02:41:56.789622	\N	::ffff:127.0.0.1	\N
-63	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-12 02:47:37.007776	\N	::ffff:127.0.0.1	\N
-64	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-12 02:49:10.818819	\N	::1	\N
-65	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-12 03:34:16.88992	\N	::1	\N
-66	LOGIN_EXITOSO	Login exitoso de usuario: carcamo08	24	68	2026-03-12 03:34:40.77764	\N	::1	\N
-67	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-12 03:38:10.335157	\N	::1	\N
-68	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-12 03:39:25.126275	\N	::1	\N
-69	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-12 04:06:05.751606	\N	::1	\N
-70	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-12 04:07:46.385873	\N	::1	\N
-71	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-12 04:25:32.713329	\N	::1	\N
-72	LOGIN_EXITOSO	Login exitoso de usuario: arodriguez	4	39	2026-03-12 04:32:10.626668	\N	::1	\N
-73	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-12 04:35:11.184928	\N	::ffff:127.0.0.1	\N
-74	ACTUALIZAR_USUARIO	Usuario pramirez actualizado	23	37	2026-03-12 04:36:16.649927	{"usuarioModificado":6,"campos":["nombre","apellidos","email","areaId","rolId","telefono","celular","activo"]}	::ffff:127.0.0.1	\N
-75	LOGIN_EXITOSO	Login exitoso de usuario: pramirez	6	61	2026-03-12 04:37:20.477006	\N	::1	\N
-76	LOGIN_EXITOSO	Login exitoso de usuario: pramirez	6	61	2026-03-13 09:02:40.943723	\N	::1	\N
-77	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-13 19:54:59.004043	\N	::1	\N
-78	LOGIN_EXITOSO	Login exitoso de usuario: admin	23	20	2026-03-13 19:55:21.694119	\N	::1	\N
+
 \.
 
 
@@ -8411,30 +13160,6 @@ COPY public.consecutivo_area (id, area_id, tipo_operacion, anio, ultimo_consecut
 8	24	EMISION	2026	22	2026-03-11 03:22:44.808261
 9	25	EMISION	2026	15	2026-03-11 03:22:44.808261
 10	26	EMISION	2026	16	2026-03-11 03:22:44.808261
-11	27	EMISION	2026	24	2026-03-11 03:22:44.808261
-12	28	EMISION	2026	27	2026-03-11 03:22:44.808261
-13	29	EMISION	2026	27	2026-03-11 03:22:44.808261
-14	30	EMISION	2026	14	2026-03-11 03:22:44.808261
-15	31	EMISION	2026	17	2026-03-11 03:22:44.808261
-16	32	EMISION	2026	21	2026-03-11 03:22:44.808261
-17	33	EMISION	2026	17	2026-03-11 03:22:44.808261
-18	34	EMISION	2026	29	2026-03-11 03:22:44.808261
-19	35	EMISION	2026	22	2026-03-11 03:22:44.808261
-20	36	EMISION	2026	15	2026-03-11 03:22:44.808261
-21	37	EMISION	2026	20	2026-03-11 03:22:44.808261
-22	38	EMISION	2026	26	2026-03-11 03:22:44.808261
-24	40	EMISION	2026	30	2026-03-11 03:22:44.808261
-25	41	EMISION	2026	23	2026-03-11 03:22:44.808261
-26	42	EMISION	2026	13	2026-03-11 03:22:44.808261
-27	65	EMISION	2026	23	2026-03-11 06:01:44.816004
-23	39	EMISION	2026	27	2026-03-12 04:33:10.180795
-33	61	EMISION	2026	2	2026-03-13 09:04:44.715903
-38	20	EO	2026	1	2026-03-14 08:06:00.877845
-39	20	EM	2026	1	2026-03-14 08:06:00.920055
-40	20	EC	2026	1	2026-03-14 08:06:00.969421
-41	20	ET	2026	1	2026-03-14 08:06:01.007614
-42	20	MC	2026	1	2026-03-14 08:06:01.046607
-35	20	RECEPCION	2026	4	2026-03-14 08:06:01.092763
 \.
 
 
@@ -8478,502 +13203,6 @@ COPY public.documento (id, folio, tipo_documento_id, asunto, contenido, fecha_cr
 8	EM-SMADSOT.SSGTDU-DDUIA-0001/2026	7	Documento generado automÃ¡ticamente 8 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-14 07:57:00	\N	MEDIA	DESPACHADO	4	39	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
 9	EM-SMADSOT.SSGASE-0001/2026	3	Documento generado automÃ¡ticamente 9 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-28 11:32:00	\N	URGENTE	TURNADO	21	22	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
 10	EM-SMADSOT.SSGTDU-0002/2026	11	Documento generado automÃ¡ticamente 10 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 18:13:00	\N	MEDIA	DESPACHADO	7	36	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-11	EM-SMADSOT.SSGASE-DSH-DIEE-0001/2026	16	Documento generado automÃ¡ticamente 11 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 22:23:00	\N	MEDIA	RESPONDIDO	15	28	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-12	EM-SMADSOT.SSGASE-DGCCITE-0001/2026	5	Documento generado automÃ¡ticamente 12 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 18:42:00	\N	MEDIA	EN_PROCESO	19	24	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-13	EM-SMADSOT.SSGASE-DGCA-DMEE-0001/2026	5	Documento generado automÃ¡ticamente 13 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 06:16:00	\N	ALTA	CANCELADO	11	32	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-14	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0001/2026	3	Documento generado automÃ¡ticamente 14 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-01 14:45:00	\N	BAJA	TURNADO	12	31	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-15	EM-SMADSOT.SSGASE-DGCA-DMEE-0002/2026	3	Documento generado automÃ¡ticamente 15 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-23 17:27:00	\N	MEDIA	DESPACHADO	11	32	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-16	EM-SMADSOT.SSGASE-DSH-DPH-0002/2026	5	Documento generado automÃ¡ticamente 16 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-08 15:59:00	\N	BAJA	DEVUELTO	14	29	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-17	EM-SMADSOT.SSGTDU-DGRNB-0001/2026	16	Documento generado automÃ¡ticamente 17 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 02:44:00	\N	MEDIA	EN_PROCESO	6	37	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-18	EM-SMADSOT.SSGASE-0002/2026	12	Documento generado automÃ¡ticamente 18 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 09:15:00	\N	MEDIA	RESPONDIDO	21	22	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-19	EM-SMADSOT.SSGTDU-0003/2026	11	Documento generado automÃ¡ticamente 19 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 07:37:00	\N	ALTA	RESPONDIDO	7	36	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-20	EM-SMADSOT.SSGASE-DGCCITE-0002/2026	15	Documento generado automÃ¡ticamente 20 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-15 05:54:00	\N	MEDIA	DESPACHADO	19	24	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-21	EM-SMADSOT.SSGASE-DGR-DTRS-0001/2026	15	Documento generado automÃ¡ticamente 21 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 01:44:00	\N	URGENTE	REGISTRADO	9	34	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-22	EM-SMADSOT.SSGASE-DGCCITE-0003/2026	3	Documento generado automÃ¡ticamente 22 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 02:23:00	\N	ALTA	DEVUELTO	19	24	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-23	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0001/2026	2	Documento generado automÃ¡ticamente 23 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-03 05:18:00	\N	MEDIA	REGISTRADO	1	42	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-24	EM-SMADSOT.SSGTDU-DGCV-0001/2026	5	Documento generado automÃ¡ticamente 24 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 04:48:00	\N	ALTA	TURNADO	2	41	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-25	EM-SMADSOT.SSGASE-DGCA-0001/2026	11	Documento generado automÃ¡ticamente 25 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-17 22:09:00	\N	MEDIA	DESPACHADO	18	25	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-26	EM-SMADSOT.SSGTDU-DDUIA-0002/2026	2	Documento generado automÃ¡ticamente 26 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 20:51:00	\N	BAJA	CERRADO	4	39	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-27	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0002/2026	12	Documento generado automÃ¡ticamente 27 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 20:07:00	\N	URGENTE	EN_PROCESO	1	42	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-28	EM-SMADSOT.SEC-0001/2026	11	Documento generado automÃ¡ticamente 28 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 17:53:00	\N	ALTA	REGISTRADO	22	21	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-29	EM-SMADSOT.SSGASE-DGCCITE-0004/2026	16	Documento generado automÃ¡ticamente 29 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-18 02:45:00	\N	MEDIA	DESPACHADO	19	24	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-30	EM-SMADSOT.SSGASE-DGR-0002/2026	2	Documento generado automÃ¡ticamente 30 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-22 08:36:00	\N	MEDIA	DESPACHADO	17	26	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-31	EM-SMADSOT.SSGASE-DGCA-DVRF-0001/2026	11	Documento generado automÃ¡ticamente 31 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-01 20:51:00	\N	ALTA	RESPONDIDO	10	33	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-32	EM-SMADSOT.DPG-0001/2026	16	Documento generado automÃ¡ticamente 32 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-09 12:17:00	\N	ALTA	EN_PROCESO	24	65	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-33	EM-SMADSOT.ADMIN-0001/2026	2	Documento generado automÃ¡ticamente 33 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-20 13:38:00	\N	URGENTE	CERRADO	23	20	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-34	EM-SMADSOT.SSGASE-DGR-DRME-0002/2026	12	Documento generado automÃ¡ticamente 34 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-02 12:32:00	\N	MEDIA	REGISTRADO	8	35	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-35	EM-SMADSOT.SSGTDU-DDUIA-0003/2026	12	Documento generado automÃ¡ticamente 35 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-02 02:12:00	\N	BAJA	CERRADO	4	39	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-36	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0003/2026	3	Documento generado automÃ¡ticamente 36 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-23 17:19:00	\N	BAJA	RECIBIDO	1	42	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-37	EM-SMADSOT.SEC-0002/2026	11	Documento generado automÃ¡ticamente 37 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 05:08:00	\N	BAJA	EN_PROCESO	22	21	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-38	EM-SMADSOT.SSGASE-DGCA-DVRF-0002/2026	16	Documento generado automÃ¡ticamente 38 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-27 19:18:00	\N	ALTA	CERRADO	10	33	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-39	EM-SMADSOT.SEC-0003/2026	5	Documento generado automÃ¡ticamente 39 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-09 09:37:00	\N	BAJA	CANCELADO	22	21	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-40	EM-SMADSOT.SSGASE-DSH-DRC-0001/2026	5	Documento generado automÃ¡ticamente 40 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 02:23:00	\N	MEDIA	CANCELADO	16	27	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-41	EM-SMADSOT.SSGTDU-DGRNB-0002/2026	7	Documento generado automÃ¡ticamente 41 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-01 12:10:00	\N	ALTA	DESPACHADO	6	37	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-42	EM-SMADSOT.SSGTDU-DGRNB-0003/2026	16	Documento generado automÃ¡ticamente 42 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 01:27:00	\N	BAJA	EN_PROCESO	6	37	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-43	EM-SMADSOT.SSGTDU-DGR-0001/2026	5	Documento generado automÃ¡ticamente 43 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-06 11:16:00	\N	URGENTE	TURNADO	3	40	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-44	EM-SMADSOT.SSGTDU-DGCV-0002/2026	11	Documento generado automÃ¡ticamente 44 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-20 18:32:00	\N	URGENTE	EN_PROCESO	2	41	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-45	EM-SMADSOT.SSGASE-DGCA-DMEE-0003/2026	3	Documento generado automÃ¡ticamente 45 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 22:48:00	\N	URGENTE	RECIBIDO	11	32	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-46	EM-SMADSOT.SSGASE-DGR-DTRS-0002/2026	5	Documento generado automÃ¡ticamente 46 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 17:04:00	\N	BAJA	TURNADO	9	34	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-47	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0004/2026	15	Documento generado automÃ¡ticamente 47 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 13:38:00	\N	MEDIA	CERRADO	1	42	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-48	EM-SMADSOT.SSGASE-DGCCITE-DSE-0002/2026	15	Documento generado automÃ¡ticamente 48 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 09:23:00	\N	URGENTE	TURNADO	13	30	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-49	EM-SMADSOT.SSGTDU-DGR-0002/2026	3	Documento generado automÃ¡ticamente 49 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 20:55:00	\N	BAJA	RECIBIDO	3	40	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-50	EM-SMADSOT.SSGTDU-0004/2026	2	Documento generado automÃ¡ticamente 50 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-09 15:49:00	\N	ALTA	CANCELADO	7	36	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-51	EM-SMADSOT.SSGTDU-DDUIA-0004/2026	15	Documento generado automÃ¡ticamente 51 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-15 03:50:00	\N	URGENTE	DESPACHADO	4	39	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-52	EM-SMADSOT.SSGASE-DGCA-DMEE-0004/2026	3	Documento generado automÃ¡ticamente 52 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 05:55:00	\N	BAJA	REGISTRADO	11	32	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-53	EM-SMADSOT.SSGTDU-DGCV-0003/2026	15	Documento generado automÃ¡ticamente 53 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 14:50:00	\N	URGENTE	DEVUELTO	2	41	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-54	EM-SMADSOT.SSGASE-DSH-DRC-0002/2026	12	Documento generado automÃ¡ticamente 54 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 06:11:00	\N	BAJA	EN_PROCESO	16	27	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-55	EM-SMADSOT.SSGTDU-DGR-0003/2026	16	Documento generado automÃ¡ticamente 55 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-26 19:36:00	\N	BAJA	CANCELADO	3	40	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-56	EM-SMADSOT.SSGTDU-DDUIA-0005/2026	11	Documento generado automÃ¡ticamente 56 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 23:07:00	\N	URGENTE	DESPACHADO	4	39	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-57	EM-SMADSOT.SSGTDU-DGCV-0004/2026	11	Documento generado automÃ¡ticamente 57 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 10:38:00	\N	ALTA	EN_PROCESO	2	41	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-58	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0002/2026	7	Documento generado automÃ¡ticamente 58 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 15:05:00	\N	BAJA	EN_PROCESO	12	31	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-59	EM-SMADSOT.SSGASE-DGCA-DMEE-0005/2026	16	Documento generado automÃ¡ticamente 59 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-06 11:21:00	\N	URGENTE	CANCELADO	11	32	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-60	EM-SMADSOT.SSGASE-DGCCITE-DSE-0003/2026	12	Documento generado automÃ¡ticamente 60 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-28 12:46:00	\N	BAJA	DEVUELTO	13	30	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-61	EM-SMADSOT.SSGASE-DGR-DRME-0003/2026	3	Documento generado automÃ¡ticamente 61 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-01 16:34:00	\N	BAJA	CANCELADO	8	35	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-62	EM-SMADSOT.ADMIN-0002/2026	16	Documento generado automÃ¡ticamente 62 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-05 03:16:00	\N	MEDIA	CERRADO	23	20	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-63	EM-SMADSOT.SSGASE-DSH-DRC-0003/2026	16	Documento generado automÃ¡ticamente 63 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 11:14:00	\N	BAJA	REGISTRADO	16	27	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-502	EM-SMADSOT.DPG-0021/2026	2	Primer Memorándum de Prueba desde API	Se solicita validación del nuevo sistema de emisión de documentos SIGA.	2026-03-11 05:54:54.455728	\N	MEDIA	REGISTRADO	24	65	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-64	EM-SMADSOT.SSGASE-DSH-DIEE-0002/2026	11	Documento generado automÃ¡ticamente 64 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 01:39:00	\N	BAJA	EN_PROCESO	15	28	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-65	EM-SMADSOT.SSGASE-DSH-0002/2026	3	Documento generado automÃ¡ticamente 65 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-17 01:22:00	\N	BAJA	REGISTRADO	20	23	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-66	EM-SMADSOT.SEC-0004/2026	16	Documento generado automÃ¡ticamente 66 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-17 13:01:00	\N	ALTA	TURNADO	22	21	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-67	EM-SMADSOT.SSGASE-DSH-0003/2026	7	Documento generado automÃ¡ticamente 67 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 16:10:00	\N	URGENTE	EN_PROCESO	20	23	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-68	EM-SMADSOT.SSGTDU-DDUIA-0006/2026	16	Documento generado automÃ¡ticamente 68 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-28 04:02:00	\N	BAJA	REGISTRADO	4	39	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-69	EM-SMADSOT.SSGASE-DGCA-DVRF-0003/2026	11	Documento generado automÃ¡ticamente 69 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-27 06:55:00	\N	URGENTE	RECIBIDO	10	33	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-70	EM-SMADSOT.SSGTDU-DGCV-0005/2026	11	Documento generado automÃ¡ticamente 70 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 23:33:00	\N	URGENTE	RECIBIDO	2	41	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-71	EM-SMADSOT.DPG-0002/2026	2	Documento generado automÃ¡ticamente 71 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 02:28:00	\N	BAJA	RECIBIDO	24	65	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-72	EM-SMADSOT.SSGASE-DSH-DPH-0003/2026	16	Documento generado automÃ¡ticamente 72 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 09:14:00	\N	ALTA	RESPONDIDO	14	29	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-73	EM-SMADSOT.SSGASE-DSH-DRC-0004/2026	12	Documento generado automÃ¡ticamente 73 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 11:16:00	\N	ALTA	CERRADO	16	27	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-74	EM-SMADSOT.SSGASE-DSH-DIEE-0003/2026	12	Documento generado automÃ¡ticamente 74 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-19 04:35:00	\N	ALTA	TURNADO	15	28	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-75	EM-SMADSOT.SSGASE-DGCA-DMEE-0006/2026	11	Documento generado automÃ¡ticamente 75 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 20:48:00	\N	URGENTE	CERRADO	11	32	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-76	EM-SMADSOT.SSGTDU-DGR-0004/2026	5	Documento generado automÃ¡ticamente 76 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 15:41:00	\N	URGENTE	CANCELADO	3	40	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-77	EM-SMADSOT.ADMIN-0003/2026	12	Documento generado automÃ¡ticamente 77 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 08:32:00	\N	BAJA	CANCELADO	23	20	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-78	EM-SMADSOT.SSGASE-DSH-DRC-0005/2026	16	Documento generado automÃ¡ticamente 78 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-04 03:39:00	\N	MEDIA	CANCELADO	16	27	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-79	EM-SMADSOT.SSGASE-DGR-0003/2026	3	Documento generado automÃ¡ticamente 79 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-04 14:23:00	\N	BAJA	DESPACHADO	17	26	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-80	EM-SMADSOT.ADMIN-0004/2026	2	Documento generado automÃ¡ticamente 80 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 20:25:00	\N	ALTA	DESPACHADO	23	20	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-81	EM-SMADSOT.DPG-0003/2026	3	Documento generado automÃ¡ticamente 81 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-01 19:06:00	\N	MEDIA	REGISTRADO	24	65	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-82	EM-SMADSOT.SSGASE-DGR-DTRS-0003/2026	12	Documento generado automÃ¡ticamente 82 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-09 14:16:00	\N	MEDIA	RESPONDIDO	9	34	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-83	EM-SMADSOT.SSGASE-DGCCITE-DSE-0004/2026	5	Documento generado automÃ¡ticamente 83 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 07:22:00	\N	BAJA	CANCELADO	13	30	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-84	EM-SMADSOT.SSGTDU-DDUIA-0007/2026	11	Documento generado automÃ¡ticamente 84 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 03:34:00	\N	ALTA	DESPACHADO	4	39	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-85	EM-SMADSOT.SSGTDU-DGSSU-0002/2026	3	Documento generado automÃ¡ticamente 85 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 05:17:00	\N	URGENTE	DESPACHADO	5	38	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-86	EM-SMADSOT.SSGTDU-DGSSU-0003/2026	12	Documento generado automÃ¡ticamente 86 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-28 15:40:00	\N	ALTA	CERRADO	5	38	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-87	EM-SMADSOT.SSGASE-DSH-DPH-0004/2026	11	Documento generado automÃ¡ticamente 87 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-03 03:54:00	\N	BAJA	DESPACHADO	14	29	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-88	EM-SMADSOT.SSGASE-DGCA-DMEE-0007/2026	7	Documento generado automÃ¡ticamente 88 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 08:32:00	\N	MEDIA	REGISTRADO	11	32	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-89	EM-SMADSOT.ADMIN-0005/2026	5	Documento generado automÃ¡ticamente 89 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-02 03:40:00	\N	URGENTE	DEVUELTO	23	20	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-90	EM-SMADSOT.ADMIN-0006/2026	5	Documento generado automÃ¡ticamente 90 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 16:36:00	\N	BAJA	EN_PROCESO	23	20	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-91	EM-SMADSOT.SSGASE-DGR-DRME-0004/2026	2	Documento generado automÃ¡ticamente 91 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 07:28:00	\N	BAJA	RESPONDIDO	8	35	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-92	EM-SMADSOT.SSGTDU-DGCV-0006/2026	5	Documento generado automÃ¡ticamente 92 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 17:56:00	\N	ALTA	RECIBIDO	2	41	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-93	EM-SMADSOT.SSGASE-DSH-DIEE-0004/2026	5	Documento generado automÃ¡ticamente 93 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-28 22:54:00	\N	BAJA	CANCELADO	15	28	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-94	EM-SMADSOT.SEC-0005/2026	11	Documento generado automÃ¡ticamente 94 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-29 05:52:00	\N	ALTA	TURNADO	22	21	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-95	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0003/2026	15	Documento generado automÃ¡ticamente 95 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-14 06:28:00	\N	URGENTE	RESPONDIDO	12	31	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-96	EM-SMADSOT.SSGASE-DSH-DIEE-0005/2026	5	Documento generado automÃ¡ticamente 96 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 08:29:00	\N	ALTA	TURNADO	15	28	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-97	EM-SMADSOT.DPG-0004/2026	15	Documento generado automÃ¡ticamente 97 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-23 16:41:00	\N	BAJA	CERRADO	24	65	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-98	EM-SMADSOT.SSGASE-DSH-DRC-0006/2026	3	Documento generado automÃ¡ticamente 98 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 05:34:00	\N	BAJA	RECIBIDO	16	27	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-99	EM-SMADSOT.SSGTDU-DGCV-0007/2026	12	Documento generado automÃ¡ticamente 99 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-26 04:19:00	\N	ALTA	DESPACHADO	2	41	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-100	EM-SMADSOT.SSGASE-0003/2026	12	Documento generado automÃ¡ticamente 100 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 16:15:00	\N	URGENTE	RECIBIDO	21	22	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-101	EM-SMADSOT.SSGTDU-0005/2026	16	Documento generado automÃ¡ticamente 101 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 10:37:00	\N	BAJA	TURNADO	7	36	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-102	EM-SMADSOT.DPG-0005/2026	5	Documento generado automÃ¡ticamente 102 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 00:23:00	\N	URGENTE	CERRADO	24	65	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-103	EM-SMADSOT.SSGASE-DGR-DRME-0005/2026	5	Documento generado automÃ¡ticamente 103 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 14:34:00	\N	URGENTE	RESPONDIDO	8	35	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-104	EM-SMADSOT.SSGTDU-DGSSU-0004/2026	16	Documento generado automÃ¡ticamente 104 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 15:05:00	\N	BAJA	CANCELADO	5	38	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-105	EM-SMADSOT.SSGASE-DGR-0004/2026	7	Documento generado automÃ¡ticamente 105 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-03 13:44:00	\N	URGENTE	TURNADO	17	26	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-106	EM-SMADSOT.SSGTDU-DDUIA-0008/2026	2	Documento generado automÃ¡ticamente 106 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 18:11:00	\N	ALTA	RECIBIDO	4	39	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-107	EM-SMADSOT.SSGASE-DGCA-DVRF-0004/2026	2	Documento generado automÃ¡ticamente 107 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-08 23:02:00	\N	ALTA	CERRADO	10	33	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-108	EM-SMADSOT.SSGASE-0004/2026	11	Documento generado automÃ¡ticamente 108 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-17 03:37:00	\N	ALTA	RECIBIDO	21	22	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-109	EM-SMADSOT.SSGASE-DSH-DRC-0007/2026	16	Documento generado automÃ¡ticamente 109 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-07 13:30:00	\N	URGENTE	EN_PROCESO	16	27	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-110	EM-SMADSOT.SSGASE-0005/2026	3	Documento generado automÃ¡ticamente 110 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-14 09:47:00	\N	URGENTE	EN_PROCESO	21	22	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-111	EM-SMADSOT.SSGASE-DGR-DTRS-0004/2026	5	Documento generado automÃ¡ticamente 111 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-14 21:01:00	\N	BAJA	CANCELADO	9	34	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-112	EM-SMADSOT.SSGASE-DGCA-DMEE-0008/2026	11	Documento generado automÃ¡ticamente 112 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-29 14:35:00	\N	BAJA	CERRADO	11	32	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-113	EM-SMADSOT.SSGASE-DSH-DPH-0005/2026	16	Documento generado automÃ¡ticamente 113 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-23 03:27:00	\N	BAJA	REGISTRADO	14	29	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-114	EM-SMADSOT.SSGTDU-DGSSU-0005/2026	15	Documento generado automÃ¡ticamente 114 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 06:09:00	\N	BAJA	RESPONDIDO	5	38	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-115	EM-SMADSOT.SSGASE-DSH-DIEE-0006/2026	5	Documento generado automÃ¡ticamente 115 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-01 06:13:00	\N	URGENTE	DESPACHADO	15	28	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-116	EM-SMADSOT.SSGASE-DSH-DRC-0008/2026	12	Documento generado automÃ¡ticamente 116 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-26 01:08:00	\N	MEDIA	EN_PROCESO	16	27	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-117	EM-SMADSOT.SSGASE-DSH-DIEE-0007/2026	3	Documento generado automÃ¡ticamente 117 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-09 16:34:00	\N	ALTA	DESPACHADO	15	28	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-118	EM-SMADSOT.SSGASE-DGCCITE-DSE-0005/2026	3	Documento generado automÃ¡ticamente 118 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 02:47:00	\N	MEDIA	CERRADO	13	30	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-119	EM-SMADSOT.SSGTDU-DGSSU-0006/2026	7	Documento generado automÃ¡ticamente 119 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-28 04:12:00	\N	BAJA	RECIBIDO	5	38	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-120	EM-SMADSOT.SSGASE-DGCA-0002/2026	12	Documento generado automÃ¡ticamente 120 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-07 00:26:00	\N	BAJA	CERRADO	18	25	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-121	EM-SMADSOT.ADMIN-0007/2026	3	Documento generado automÃ¡ticamente 121 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-23 07:53:00	\N	URGENTE	DEVUELTO	23	20	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-122	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0005/2026	2	Documento generado automÃ¡ticamente 122 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 22:05:00	\N	URGENTE	RESPONDIDO	1	42	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-183	EM-SMADSOT.SEC-0008/2026	11	Documento generado automÃ¡ticamente 183 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 10:48:00	\N	URGENTE	EN_PROCESO	22	21	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-123	EM-SMADSOT.SSGASE-DGCA-DVRF-0005/2026	15	Documento generado automÃ¡ticamente 123 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-15 12:02:00	\N	ALTA	DESPACHADO	10	33	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-124	EM-SMADSOT.SSGASE-DGCA-DVRF-0006/2026	5	Documento generado automÃ¡ticamente 124 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-02 07:48:00	\N	URGENTE	TURNADO	10	33	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-125	EM-SMADSOT.SSGTDU-DGSSU-0007/2026	7	Documento generado automÃ¡ticamente 125 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-15 01:06:00	\N	URGENTE	DESPACHADO	5	38	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-126	EM-SMADSOT.SSGTDU-DDUIA-0009/2026	15	Documento generado automÃ¡ticamente 126 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-26 21:09:00	\N	MEDIA	EN_PROCESO	4	39	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-127	EM-SMADSOT.SSGASE-DGR-DTRS-0005/2026	3	Documento generado automÃ¡ticamente 127 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-15 08:37:00	\N	ALTA	REGISTRADO	9	34	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-128	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0006/2026	16	Documento generado automÃ¡ticamente 128 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 18:05:00	\N	MEDIA	DESPACHADO	1	42	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-129	EM-SMADSOT.SEC-0006/2026	3	Documento generado automÃ¡ticamente 129 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 16:19:00	\N	ALTA	DEVUELTO	22	21	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-130	EM-SMADSOT.SSGASE-DGR-0005/2026	7	Documento generado automÃ¡ticamente 130 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-07 05:23:00	\N	MEDIA	REGISTRADO	17	26	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-131	EM-SMADSOT.SSGTDU-DGR-0005/2026	3	Documento generado automÃ¡ticamente 131 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-10 23:01:00	\N	ALTA	REGISTRADO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-132	EM-SMADSOT.SSGASE-DSH-DIEE-0008/2026	2	Documento generado automÃ¡ticamente 132 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-03 11:50:00	\N	URGENTE	REGISTRADO	15	28	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-133	EM-SMADSOT.SSGASE-DGR-0006/2026	7	Documento generado automÃ¡ticamente 133 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 01:02:00	\N	MEDIA	EN_PROCESO	17	26	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-134	EM-SMADSOT.SSGTDU-DGR-0006/2026	2	Documento generado automÃ¡ticamente 134 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 12:20:00	\N	BAJA	CANCELADO	3	40	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-135	EM-SMADSOT.SSGASE-DSH-0004/2026	3	Documento generado automÃ¡ticamente 135 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 20:46:00	\N	URGENTE	CANCELADO	20	23	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-136	EM-SMADSOT.SSGTDU-DGCV-0008/2026	2	Documento generado automÃ¡ticamente 136 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-28 00:34:00	\N	MEDIA	RESPONDIDO	2	41	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-137	EM-SMADSOT.SSGASE-DGR-DRME-0006/2026	16	Documento generado automÃ¡ticamente 137 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-23 23:42:00	\N	MEDIA	DEVUELTO	8	35	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-138	EM-SMADSOT.SSGTDU-DGRNB-0004/2026	7	Documento generado automÃ¡ticamente 138 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-03 00:36:00	\N	ALTA	RECIBIDO	6	37	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-139	EM-SMADSOT.SSGASE-DGR-DRME-0007/2026	12	Documento generado automÃ¡ticamente 139 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-22 07:45:00	\N	BAJA	DESPACHADO	8	35	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-140	EM-SMADSOT.SSGASE-0006/2026	11	Documento generado automÃ¡ticamente 140 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-05 18:32:00	\N	MEDIA	RESPONDIDO	21	22	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-141	EM-SMADSOT.SSGASE-DGCA-DVRF-0007/2026	2	Documento generado automÃ¡ticamente 141 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 13:00:00	\N	MEDIA	EN_PROCESO	10	33	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-142	EM-SMADSOT.SSGASE-DGR-DRME-0008/2026	16	Documento generado automÃ¡ticamente 142 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 06:01:00	\N	ALTA	RESPONDIDO	8	35	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-143	EM-SMADSOT.SSGASE-DGCCITE-DSE-0006/2026	12	Documento generado automÃ¡ticamente 143 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-14 10:26:00	\N	BAJA	RESPONDIDO	13	30	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-144	EM-SMADSOT.SSGASE-DSH-DPH-0006/2026	16	Documento generado automÃ¡ticamente 144 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-07 18:40:00	\N	MEDIA	TURNADO	14	29	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-145	EM-SMADSOT.SSGASE-DSH-DRC-0009/2026	11	Documento generado automÃ¡ticamente 145 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 19:27:00	\N	ALTA	DESPACHADO	16	27	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-146	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0004/2026	7	Documento generado automÃ¡ticamente 146 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 08:41:00	\N	URGENTE	REGISTRADO	12	31	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-147	EM-SMADSOT.SSGASE-DSH-DIEE-0009/2026	5	Documento generado automÃ¡ticamente 147 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-08 16:48:00	\N	ALTA	CERRADO	15	28	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-148	EM-SMADSOT.ADMIN-0008/2026	11	Documento generado automÃ¡ticamente 148 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 00:52:00	\N	ALTA	EN_PROCESO	23	20	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-149	EM-SMADSOT.SSGTDU-DGSSU-0008/2026	5	Documento generado automÃ¡ticamente 149 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-26 01:10:00	\N	URGENTE	CANCELADO	5	38	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-150	EM-SMADSOT.SSGASE-DGCCITE-0005/2026	12	Documento generado automÃ¡ticamente 150 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-09 07:25:00	\N	URGENTE	EN_PROCESO	19	24	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-151	EM-SMADSOT.SSGTDU-DDUIA-0010/2026	12	Documento generado automÃ¡ticamente 151 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 20:25:00	\N	ALTA	DESPACHADO	4	39	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-152	EM-SMADSOT.SSGASE-DSH-DPH-0007/2026	3	Documento generado automÃ¡ticamente 152 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-17 21:27:00	\N	URGENTE	CERRADO	14	29	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-153	EM-SMADSOT.SSGASE-DGR-DRME-0009/2026	5	Documento generado automÃ¡ticamente 153 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 13:24:00	\N	MEDIA	RECIBIDO	8	35	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-154	EM-SMADSOT.SSGTDU-DGCV-0009/2026	12	Documento generado automÃ¡ticamente 154 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-23 18:42:00	\N	URGENTE	REGISTRADO	2	41	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-155	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0007/2026	5	Documento generado automÃ¡ticamente 155 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-14 15:30:00	\N	BAJA	TURNADO	1	42	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-156	EM-SMADSOT.SEC-0007/2026	15	Documento generado automÃ¡ticamente 156 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 23:12:00	\N	URGENTE	CANCELADO	22	21	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-157	EM-SMADSOT.SSGASE-DSH-DIEE-0010/2026	16	Documento generado automÃ¡ticamente 157 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 03:12:00	\N	BAJA	REGISTRADO	15	28	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-158	EM-SMADSOT.SSGASE-DGCA-0003/2026	15	Documento generado automÃ¡ticamente 158 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-05 10:30:00	\N	ALTA	RESPONDIDO	18	25	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-159	EM-SMADSOT.SSGTDU-DGR-0007/2026	11	Documento generado automÃ¡ticamente 159 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 18:31:00	\N	URGENTE	CANCELADO	3	40	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-160	EM-SMADSOT.SSGASE-DSH-0005/2026	7	Documento generado automÃ¡ticamente 160 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 23:06:00	\N	MEDIA	RECIBIDO	20	23	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-161	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0005/2026	12	Documento generado automÃ¡ticamente 161 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-09 23:22:00	\N	BAJA	EN_PROCESO	12	31	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-162	EM-SMADSOT.SSGTDU-DGR-0008/2026	12	Documento generado automÃ¡ticamente 162 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 07:31:00	\N	URGENTE	TURNADO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-163	EM-SMADSOT.SSGTDU-DGR-0009/2026	5	Documento generado automÃ¡ticamente 163 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-01 01:35:00	\N	BAJA	DEVUELTO	3	40	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-164	EM-SMADSOT.SSGASE-DGCCITE-0006/2026	16	Documento generado automÃ¡ticamente 164 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-19 17:41:00	\N	ALTA	REGISTRADO	19	24	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-165	EM-SMADSOT.SSGTDU-DGR-0010/2026	16	Documento generado automÃ¡ticamente 165 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-23 00:48:00	\N	URGENTE	RESPONDIDO	3	40	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-166	EM-SMADSOT.SSGASE-DGCA-DMEE-0009/2026	2	Documento generado automÃ¡ticamente 166 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 04:46:00	\N	ALTA	RESPONDIDO	11	32	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-167	EM-SMADSOT.SSGASE-DGR-DTRS-0006/2026	5	Documento generado automÃ¡ticamente 167 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-03 03:44:00	\N	ALTA	RESPONDIDO	9	34	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-168	EM-SMADSOT.SSGTDU-DGRNB-0005/2026	11	Documento generado automÃ¡ticamente 168 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 11:18:00	\N	MEDIA	DESPACHADO	6	37	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-169	EM-SMADSOT.SSGASE-DGR-DRME-0010/2026	5	Documento generado automÃ¡ticamente 169 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-16 20:45:00	\N	ALTA	RECIBIDO	8	35	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-170	EM-SMADSOT.SSGASE-DGR-0007/2026	16	Documento generado automÃ¡ticamente 170 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 06:59:00	\N	URGENTE	CERRADO	17	26	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-171	EM-SMADSOT.SSGASE-DGR-DRME-0011/2026	12	Documento generado automÃ¡ticamente 171 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-02 22:57:00	\N	URGENTE	EN_PROCESO	8	35	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-172	EM-SMADSOT.DPG-0006/2026	16	Documento generado automÃ¡ticamente 172 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 15:18:00	\N	URGENTE	CANCELADO	24	65	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-173	EM-SMADSOT.SSGASE-DGCA-0004/2026	11	Documento generado automÃ¡ticamente 173 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-27 17:17:00	\N	BAJA	CANCELADO	18	25	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-174	EM-SMADSOT.SSGTDU-DGSSU-0009/2026	2	Documento generado automÃ¡ticamente 174 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-17 18:01:00	\N	BAJA	EN_PROCESO	5	38	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-175	EM-SMADSOT.SSGASE-DGR-DTRS-0007/2026	7	Documento generado automÃ¡ticamente 175 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-01 05:13:00	\N	MEDIA	CANCELADO	9	34	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-176	EM-SMADSOT.SSGASE-DSH-DRC-0010/2026	2	Documento generado automÃ¡ticamente 176 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-26 08:54:00	\N	ALTA	DEVUELTO	16	27	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-177	EM-SMADSOT.SSGASE-0007/2026	3	Documento generado automÃ¡ticamente 177 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-09 16:07:00	\N	MEDIA	DESPACHADO	21	22	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-178	EM-SMADSOT.SSGASE-DSH-DIEE-0011/2026	2	Documento generado automÃ¡ticamente 178 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-19 15:00:00	\N	BAJA	DESPACHADO	15	28	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-179	EM-SMADSOT.SSGASE-DGCCITE-DSE-0007/2026	7	Documento generado automÃ¡ticamente 179 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-06 12:41:00	\N	MEDIA	TURNADO	13	30	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-180	EM-SMADSOT.SSGASE-DSH-DIEE-0012/2026	15	Documento generado automÃ¡ticamente 180 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-05 07:05:00	\N	BAJA	RECIBIDO	15	28	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-181	EM-SMADSOT.SSGASE-DSH-DIEE-0013/2026	3	Documento generado automÃ¡ticamente 181 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 12:31:00	\N	URGENTE	DESPACHADO	15	28	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-182	EM-SMADSOT.SSGASE-DSH-DIEE-0014/2026	5	Documento generado automÃ¡ticamente 182 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 13:13:00	\N	MEDIA	RECIBIDO	15	28	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-184	EM-SMADSOT.SSGASE-DSH-DPH-0008/2026	11	Documento generado automÃ¡ticamente 184 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 00:53:00	\N	ALTA	EN_PROCESO	14	29	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-185	EM-SMADSOT.DPG-0007/2026	16	Documento generado automÃ¡ticamente 185 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-18 17:50:00	\N	MEDIA	CANCELADO	24	65	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-186	EM-SMADSOT.SSGTDU-DGSSU-0010/2026	2	Documento generado automÃ¡ticamente 186 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-07 21:12:00	\N	URGENTE	CERRADO	5	38	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-187	EM-SMADSOT.DPG-0008/2026	5	Documento generado automÃ¡ticamente 187 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 17:15:00	\N	URGENTE	RESPONDIDO	24	65	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-188	EM-SMADSOT.SSGASE-DSH-DRC-0011/2026	15	Documento generado automÃ¡ticamente 188 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 23:02:00	\N	MEDIA	DEVUELTO	16	27	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-503	EM-SMADSOT.DPG-0022/2026	2	Primer Memorándum de Prueba desde API	Se solicita validación del nuevo sistema de emisión de documentos SIGA.	2026-03-11 06:00:12.859108	\N	MEDIA	REGISTRADO	24	65	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-189	EM-SMADSOT.SSGTDU-DGSSU-0011/2026	11	Documento generado automÃ¡ticamente 189 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 09:32:00	\N	BAJA	RESPONDIDO	5	38	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-190	EM-SMADSOT.SSGTDU-0006/2026	15	Documento generado automÃ¡ticamente 190 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 19:56:00	\N	ALTA	RECIBIDO	7	36	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-191	EM-SMADSOT.SSGTDU-DGR-0011/2026	11	Documento generado automÃ¡ticamente 191 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-27 04:46:00	\N	MEDIA	CANCELADO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-192	EM-SMADSOT.SSGASE-DGR-DRME-0012/2026	15	Documento generado automÃ¡ticamente 192 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 14:21:00	\N	URGENTE	RECIBIDO	8	35	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-193	EM-SMADSOT.SSGASE-DGR-DRME-0013/2026	16	Documento generado automÃ¡ticamente 193 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 00:12:00	\N	URGENTE	REGISTRADO	8	35	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-194	EM-SMADSOT.SSGASE-DGR-DRME-0014/2026	12	Documento generado automÃ¡ticamente 194 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 14:32:00	\N	MEDIA	REGISTRADO	8	35	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-195	EM-SMADSOT.SSGTDU-DGR-0012/2026	16	Documento generado automÃ¡ticamente 195 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-23 22:31:00	\N	ALTA	EN_PROCESO	3	40	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-196	EM-SMADSOT.SSGASE-DSH-0006/2026	5	Documento generado automÃ¡ticamente 196 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 16:38:00	\N	ALTA	DESPACHADO	20	23	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-197	EM-SMADSOT.SSGASE-DGCCITE-0007/2026	3	Documento generado automÃ¡ticamente 197 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 22:28:00	\N	ALTA	REGISTRADO	19	24	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-198	EM-SMADSOT.SSGASE-DGCCITE-0008/2026	12	Documento generado automÃ¡ticamente 198 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-09 12:13:00	\N	BAJA	CANCELADO	19	24	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-199	EM-SMADSOT.SSGTDU-DDUIA-0011/2026	7	Documento generado automÃ¡ticamente 199 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 01:21:00	\N	BAJA	DEVUELTO	4	39	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-200	EM-SMADSOT.SSGASE-DGR-DTRS-0008/2026	11	Documento generado automÃ¡ticamente 200 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 18:21:00	\N	URGENTE	RESPONDIDO	9	34	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-201	EM-SMADSOT.SSGASE-DSH-DIEE-0015/2026	2	Documento generado automÃ¡ticamente 201 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 08:50:00	\N	ALTA	RECIBIDO	15	28	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-202	EM-SMADSOT.SSGTDU-DGR-0013/2026	5	Documento generado automÃ¡ticamente 202 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-14 09:19:00	\N	MEDIA	EN_PROCESO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-203	EM-SMADSOT.DPG-0009/2026	2	Documento generado automÃ¡ticamente 203 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 09:53:00	\N	BAJA	RECIBIDO	24	65	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-204	EM-SMADSOT.SSGTDU-DGRNB-0006/2026	5	Documento generado automÃ¡ticamente 204 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-04 09:48:00	\N	ALTA	TURNADO	6	37	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-205	EM-SMADSOT.DPG-0010/2026	2	Documento generado automÃ¡ticamente 205 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-27 00:49:00	\N	BAJA	EN_PROCESO	24	65	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-206	EM-SMADSOT.SSGASE-DGCA-DVRF-0008/2026	15	Documento generado automÃ¡ticamente 206 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 03:59:00	\N	URGENTE	DESPACHADO	10	33	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-207	EM-SMADSOT.SSGASE-DGCA-DMEE-0010/2026	12	Documento generado automÃ¡ticamente 207 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-23 01:41:00	\N	URGENTE	DESPACHADO	11	32	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-208	EM-SMADSOT.SSGASE-DSH-DPH-0009/2026	15	Documento generado automÃ¡ticamente 208 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-26 11:03:00	\N	BAJA	RECIBIDO	14	29	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-209	EM-SMADSOT.SSGTDU-DGR-0014/2026	3	Documento generado automÃ¡ticamente 209 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 20:06:00	\N	BAJA	RECIBIDO	3	40	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-210	EM-SMADSOT.DPG-0011/2026	5	Documento generado automÃ¡ticamente 210 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-05 04:39:00	\N	URGENTE	DESPACHADO	24	65	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-211	EM-SMADSOT.SSGASE-DGCCITE-0009/2026	12	Documento generado automÃ¡ticamente 211 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 11:32:00	\N	MEDIA	CERRADO	19	24	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-212	EM-SMADSOT.SSGASE-DGR-DTRS-0009/2026	16	Documento generado automÃ¡ticamente 212 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-23 06:34:00	\N	MEDIA	RESPONDIDO	9	34	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-213	EM-SMADSOT.SSGASE-DSH-0007/2026	3	Documento generado automÃ¡ticamente 213 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 07:14:00	\N	ALTA	REGISTRADO	20	23	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-214	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0008/2026	7	Documento generado automÃ¡ticamente 214 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 20:14:00	\N	BAJA	TURNADO	1	42	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-215	EM-SMADSOT.SSGASE-DGCA-DVRF-0009/2026	12	Documento generado automÃ¡ticamente 215 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-20 07:50:00	\N	URGENTE	REGISTRADO	10	33	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-216	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0006/2026	16	Documento generado automÃ¡ticamente 216 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-04 04:33:00	\N	URGENTE	RESPONDIDO	12	31	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-217	EM-SMADSOT.SSGASE-DGR-DRME-0015/2026	2	Documento generado automÃ¡ticamente 217 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-02 03:00:00	\N	MEDIA	DEVUELTO	8	35	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-218	EM-SMADSOT.SSGASE-DGCCITE-DSE-0008/2026	2	Documento generado automÃ¡ticamente 218 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 09:01:00	\N	BAJA	CERRADO	13	30	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-219	EM-SMADSOT.SSGASE-DGR-DTRS-0010/2026	16	Documento generado automÃ¡ticamente 219 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 06:41:00	\N	BAJA	RESPONDIDO	9	34	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-220	EM-SMADSOT.SSGTDU-DGCV-0010/2026	3	Documento generado automÃ¡ticamente 220 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 06:34:00	\N	BAJA	RESPONDIDO	2	41	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-221	EM-SMADSOT.SSGASE-DGCA-DVRF-0010/2026	15	Documento generado automÃ¡ticamente 221 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-22 11:55:00	\N	URGENTE	REGISTRADO	10	33	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-222	EM-SMADSOT.SSGASE-DGCA-0005/2026	5	Documento generado automÃ¡ticamente 222 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 15:33:00	\N	MEDIA	RESPONDIDO	18	25	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-223	EM-SMADSOT.SSGASE-DGCA-DVRF-0011/2026	7	Documento generado automÃ¡ticamente 223 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-07 07:43:00	\N	URGENTE	DESPACHADO	10	33	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-224	EM-SMADSOT.SSGASE-DGCA-DMEE-0011/2026	16	Documento generado automÃ¡ticamente 224 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-16 16:44:00	\N	BAJA	DEVUELTO	11	32	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-225	EM-SMADSOT.SSGASE-DSH-DIEE-0016/2026	5	Documento generado automÃ¡ticamente 225 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-29 05:55:00	\N	MEDIA	DEVUELTO	15	28	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-226	EM-SMADSOT.SSGTDU-DGRNB-0007/2026	11	Documento generado automÃ¡ticamente 226 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 03:07:00	\N	ALTA	CERRADO	6	37	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-227	EM-SMADSOT.SSGTDU-DGSSU-0012/2026	7	Documento generado automÃ¡ticamente 227 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-03 13:05:00	\N	BAJA	CANCELADO	5	38	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-228	EM-SMADSOT.SSGTDU-DGRNB-0008/2026	15	Documento generado automÃ¡ticamente 228 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 01:12:00	\N	BAJA	RECIBIDO	6	37	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-229	EM-SMADSOT.SSGTDU-DDUIA-0012/2026	16	Documento generado automÃ¡ticamente 229 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-02 20:05:00	\N	URGENTE	RECIBIDO	4	39	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-230	EM-SMADSOT.SSGASE-DGCCITE-0010/2026	16	Documento generado automÃ¡ticamente 230 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-29 11:02:00	\N	BAJA	RESPONDIDO	19	24	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-231	EM-SMADSOT.SSGASE-DGCCITE-0011/2026	5	Documento generado automÃ¡ticamente 231 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 19:35:00	\N	BAJA	TURNADO	19	24	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-232	EM-SMADSOT.SSGASE-0008/2026	12	Documento generado automÃ¡ticamente 232 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-20 06:53:00	\N	MEDIA	RESPONDIDO	21	22	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-233	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0007/2026	11	Documento generado automÃ¡ticamente 233 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 09:54:00	\N	MEDIA	DESPACHADO	12	31	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-234	EM-SMADSOT.SSGASE-DSH-0008/2026	16	Documento generado automÃ¡ticamente 234 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 04:08:00	\N	ALTA	DEVUELTO	20	23	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-235	EM-SMADSOT.SSGTDU-DDUIA-0013/2026	16	Documento generado automÃ¡ticamente 235 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-20 19:50:00	\N	MEDIA	CERRADO	4	39	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-236	EM-SMADSOT.DPG-0012/2026	3	Documento generado automÃ¡ticamente 236 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 10:10:00	\N	URGENTE	CERRADO	24	65	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-237	EM-SMADSOT.SSGTDU-0007/2026	12	Documento generado automÃ¡ticamente 237 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-03 11:00:00	\N	URGENTE	TURNADO	7	36	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-238	EM-SMADSOT.SSGTDU-DGSSU-0013/2026	3	Documento generado automÃ¡ticamente 238 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 23:12:00	\N	URGENTE	DESPACHADO	5	38	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-239	EM-SMADSOT.SSGTDU-DGSSU-0014/2026	7	Documento generado automÃ¡ticamente 239 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-16 19:50:00	\N	BAJA	EN_PROCESO	5	38	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-240	EM-SMADSOT.SSGASE-DSH-DPH-0010/2026	3	Documento generado automÃ¡ticamente 240 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 03:03:00	\N	BAJA	DEVUELTO	14	29	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-241	EM-SMADSOT.SSGASE-DSH-0009/2026	2	Documento generado automÃ¡ticamente 241 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-19 06:46:00	\N	ALTA	TURNADO	20	23	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-242	EM-SMADSOT.ADMIN-0009/2026	5	Documento generado automÃ¡ticamente 242 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 18:34:00	\N	URGENTE	TURNADO	23	20	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-243	EM-SMADSOT.SSGASE-DGR-0008/2026	2	Documento generado automÃ¡ticamente 243 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-08 06:20:00	\N	ALTA	EN_PROCESO	17	26	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-244	EM-SMADSOT.SSGTDU-DDUIA-0014/2026	3	Documento generado automÃ¡ticamente 244 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 12:13:00	\N	URGENTE	DESPACHADO	4	39	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-245	EM-SMADSOT.SSGTDU-DGRNB-0009/2026	15	Documento generado automÃ¡ticamente 245 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 15:10:00	\N	BAJA	TURNADO	6	37	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-246	EM-SMADSOT.SSGTDU-DGR-0015/2026	15	Documento generado automÃ¡ticamente 246 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-02 04:57:00	\N	MEDIA	RECIBIDO	3	40	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-247	EM-SMADSOT.SSGTDU-DGCV-0011/2026	12	Documento generado automÃ¡ticamente 247 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 03:32:00	\N	BAJA	EN_PROCESO	2	41	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-248	EM-SMADSOT.SSGASE-0009/2026	15	Documento generado automÃ¡ticamente 248 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-26 01:17:00	\N	ALTA	CERRADO	21	22	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-249	EM-SMADSOT.SSGASE-DGR-0009/2026	3	Documento generado automÃ¡ticamente 249 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-16 09:26:00	\N	MEDIA	REGISTRADO	17	26	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-250	EM-SMADSOT.SSGASE-DSH-DIEE-0017/2026	11	Documento generado automÃ¡ticamente 250 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 02:40:00	\N	BAJA	REGISTRADO	15	28	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-251	EM-SMADSOT.SSGASE-DGCCITE-0012/2026	3	Documento generado automÃ¡ticamente 251 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 22:30:00	\N	BAJA	RECIBIDO	19	24	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-252	EM-SMADSOT.SSGTDU-0008/2026	3	Documento generado automÃ¡ticamente 252 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-27 19:01:00	\N	ALTA	RECIBIDO	7	36	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-253	EM-SMADSOT.SSGASE-DGCCITE-DSE-0009/2026	5	Documento generado automÃ¡ticamente 253 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 06:31:00	\N	BAJA	EN_PROCESO	13	30	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-254	EM-SMADSOT.SSGTDU-DGR-0016/2026	12	Documento generado automÃ¡ticamente 254 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 05:48:00	\N	ALTA	EN_PROCESO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-255	EM-SMADSOT.SSGASE-DGCCITE-0013/2026	7	Documento generado automÃ¡ticamente 255 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 03:56:00	\N	ALTA	TURNADO	19	24	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-256	EM-SMADSOT.SSGASE-0010/2026	12	Documento generado automÃ¡ticamente 256 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 16:05:00	\N	ALTA	CERRADO	21	22	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-257	EM-SMADSOT.SSGASE-DGCA-0006/2026	16	Documento generado automÃ¡ticamente 257 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-01 10:20:00	\N	BAJA	RECIBIDO	18	25	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-258	EM-SMADSOT.SSGASE-DGR-0010/2026	5	Documento generado automÃ¡ticamente 258 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-05 07:33:00	\N	ALTA	TURNADO	17	26	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-259	EM-SMADSOT.SSGASE-DGR-DRME-0016/2026	12	Documento generado automÃ¡ticamente 259 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 18:28:00	\N	BAJA	DEVUELTO	8	35	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-260	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0008/2026	12	Documento generado automÃ¡ticamente 260 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-29 16:02:00	\N	MEDIA	EN_PROCESO	12	31	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-261	EM-SMADSOT.SSGTDU-DDUIA-0015/2026	7	Documento generado automÃ¡ticamente 261 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 04:33:00	\N	BAJA	RESPONDIDO	4	39	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-262	EM-SMADSOT.SSGTDU-DGR-0017/2026	12	Documento generado automÃ¡ticamente 262 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-05 12:25:00	\N	ALTA	DEVUELTO	3	40	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-263	EM-SMADSOT.SEC-0009/2026	15	Documento generado automÃ¡ticamente 263 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-16 08:53:00	\N	MEDIA	TURNADO	22	21	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-264	EM-SMADSOT.SSGASE-DGCCITE-0014/2026	7	Documento generado automÃ¡ticamente 264 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-06 17:35:00	\N	URGENTE	TURNADO	19	24	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-265	EM-SMADSOT.SSGASE-DSH-DRC-0012/2026	12	Documento generado automÃ¡ticamente 265 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 11:54:00	\N	ALTA	EN_PROCESO	16	27	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-266	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0009/2026	15	Documento generado automÃ¡ticamente 266 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 15:49:00	\N	ALTA	EN_PROCESO	1	42	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-267	EM-SMADSOT.SSGTDU-DGCV-0012/2026	3	Documento generado automÃ¡ticamente 267 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 05:22:00	\N	URGENTE	CANCELADO	2	41	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-268	EM-SMADSOT.SSGASE-DSH-DPH-0011/2026	7	Documento generado automÃ¡ticamente 268 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-20 11:34:00	\N	MEDIA	DEVUELTO	14	29	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-269	EM-SMADSOT.SSGTDU-DGR-0018/2026	15	Documento generado automÃ¡ticamente 269 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-04 17:36:00	\N	BAJA	RESPONDIDO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-270	EM-SMADSOT.SEC-0010/2026	7	Documento generado automÃ¡ticamente 270 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 05:02:00	\N	MEDIA	CANCELADO	22	21	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-271	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0009/2026	7	Documento generado automÃ¡ticamente 271 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 09:55:00	\N	URGENTE	RECIBIDO	12	31	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-272	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0010/2026	12	Documento generado automÃ¡ticamente 272 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-02 06:46:00	\N	MEDIA	RESPONDIDO	12	31	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-273	EM-SMADSOT.SSGASE-DGCA-0007/2026	11	Documento generado automÃ¡ticamente 273 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-17 19:13:00	\N	MEDIA	RESPONDIDO	18	25	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-274	EM-SMADSOT.SSGTDU-DGR-0019/2026	7	Documento generado automÃ¡ticamente 274 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 21:22:00	\N	MEDIA	DEVUELTO	3	40	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-275	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0010/2026	7	Documento generado automÃ¡ticamente 275 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 12:10:00	\N	ALTA	CANCELADO	1	42	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-276	EM-SMADSOT.SSGASE-DSH-DRC-0013/2026	2	Documento generado automÃ¡ticamente 276 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 10:03:00	\N	BAJA	DEVUELTO	16	27	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-277	EM-SMADSOT.SSGASE-DSH-DRC-0014/2026	15	Documento generado automÃ¡ticamente 277 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 21:39:00	\N	ALTA	REGISTRADO	16	27	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-278	EM-SMADSOT.SSGASE-DGCA-DVRF-0012/2026	3	Documento generado automÃ¡ticamente 278 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 23:47:00	\N	MEDIA	RESPONDIDO	10	33	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-279	EM-SMADSOT.SSGASE-DSH-DIEE-0018/2026	7	Documento generado automÃ¡ticamente 279 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 20:04:00	\N	ALTA	RESPONDIDO	15	28	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-280	EM-SMADSOT.SSGASE-DSH-DPH-0012/2026	5	Documento generado automÃ¡ticamente 280 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 12:46:00	\N	MEDIA	CANCELADO	14	29	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-281	EM-SMADSOT.SEC-0011/2026	3	Documento generado automÃ¡ticamente 281 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-28 05:00:00	\N	URGENTE	RECIBIDO	22	21	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-282	EM-SMADSOT.ADMIN-0010/2026	12	Documento generado automÃ¡ticamente 282 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-08 21:07:00	\N	MEDIA	TURNADO	23	20	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-283	EM-SMADSOT.SSGASE-DGCA-0008/2026	5	Documento generado automÃ¡ticamente 283 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-22 01:28:00	\N	URGENTE	EN_PROCESO	18	25	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-284	EM-SMADSOT.SSGASE-DGCCITE-0015/2026	16	Documento generado automÃ¡ticamente 284 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-01 04:14:00	\N	BAJA	CERRADO	19	24	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-285	EM-SMADSOT.SSGASE-DSH-DPH-0013/2026	5	Documento generado automÃ¡ticamente 285 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-01 20:37:00	\N	BAJA	RESPONDIDO	14	29	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-286	EM-SMADSOT.SSGTDU-DGCV-0013/2026	11	Documento generado automÃ¡ticamente 286 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 02:15:00	\N	MEDIA	DEVUELTO	2	41	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-287	EM-SMADSOT.SSGASE-0011/2026	2	Documento generado automÃ¡ticamente 287 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 17:22:00	\N	BAJA	DESPACHADO	21	22	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-288	EM-SMADSOT.ADMIN-0011/2026	12	Documento generado automÃ¡ticamente 288 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 11:24:00	\N	URGENTE	RECIBIDO	23	20	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-289	EM-SMADSOT.SSGTDU-DGR-0020/2026	7	Documento generado automÃ¡ticamente 289 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 20:48:00	\N	MEDIA	EN_PROCESO	3	40	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-290	EM-SMADSOT.SSGASE-DGR-0011/2026	11	Documento generado automÃ¡ticamente 290 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 23:55:00	\N	URGENTE	DEVUELTO	17	26	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-291	EM-SMADSOT.SSGTDU-DGRNB-0010/2026	15	Documento generado automÃ¡ticamente 291 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-10 02:59:00	\N	MEDIA	EN_PROCESO	6	37	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-292	EM-SMADSOT.SSGASE-DGR-DTRS-0011/2026	11	Documento generado automÃ¡ticamente 292 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 23:59:00	\N	URGENTE	RECIBIDO	9	34	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-293	EM-SMADSOT.ADMIN-0012/2026	16	Documento generado automÃ¡ticamente 293 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-14 16:58:00	\N	ALTA	RECIBIDO	23	20	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-294	EM-SMADSOT.SSGTDU-DGSSU-0015/2026	15	Documento generado automÃ¡ticamente 294 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-04 23:32:00	\N	BAJA	REGISTRADO	5	38	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-295	EM-SMADSOT.SSGASE-DGR-DTRS-0012/2026	15	Documento generado automÃ¡ticamente 295 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 09:00:00	\N	MEDIA	RECIBIDO	9	34	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-296	EM-SMADSOT.ADMIN-0013/2026	3	Documento generado automÃ¡ticamente 296 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-03 11:21:00	\N	MEDIA	CANCELADO	23	20	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-297	EM-SMADSOT.SSGASE-DSH-DPH-0014/2026	16	Documento generado automÃ¡ticamente 297 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-18 18:46:00	\N	URGENTE	EN_PROCESO	14	29	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-298	EM-SMADSOT.SSGASE-DSH-DPH-0015/2026	3	Documento generado automÃ¡ticamente 298 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 07:29:00	\N	URGENTE	CERRADO	14	29	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-299	EM-SMADSOT.SSGASE-DGR-0012/2026	3	Documento generado automÃ¡ticamente 299 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 10:15:00	\N	MEDIA	RESPONDIDO	17	26	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-300	EM-SMADSOT.SSGASE-DSH-DIEE-0019/2026	11	Documento generado automÃ¡ticamente 300 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 13:03:00	\N	BAJA	DESPACHADO	15	28	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-301	EM-SMADSOT.SSGTDU-DDUIA-0016/2026	15	Documento generado automÃ¡ticamente 301 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-22 05:05:00	\N	MEDIA	CERRADO	4	39	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-302	EM-SMADSOT.SSGASE-DSH-DRC-0015/2026	15	Documento generado automÃ¡ticamente 302 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 21:23:00	\N	BAJA	RECIBIDO	16	27	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-303	EM-SMADSOT.ADMIN-0014/2026	7	Documento generado automÃ¡ticamente 303 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-28 02:10:00	\N	ALTA	CANCELADO	23	20	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-304	EM-SMADSOT.SSGASE-DSH-DRC-0016/2026	15	Documento generado automÃ¡ticamente 304 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 00:22:00	\N	URGENTE	DESPACHADO	16	27	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-305	EM-SMADSOT.SSGASE-DSH-DPH-0016/2026	5	Documento generado automÃ¡ticamente 305 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 02:44:00	\N	URGENTE	REGISTRADO	14	29	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-306	EM-SMADSOT.SSGTDU-DGCV-0014/2026	7	Documento generado automÃ¡ticamente 306 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 10:02:00	\N	BAJA	CANCELADO	2	41	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-307	EM-SMADSOT.SSGTDU-DGSSU-0016/2026	7	Documento generado automÃ¡ticamente 307 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 13:15:00	\N	BAJA	CANCELADO	5	38	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-308	EM-SMADSOT.SSGTDU-0009/2026	11	Documento generado automÃ¡ticamente 308 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 21:26:00	\N	MEDIA	CANCELADO	7	36	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-309	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0011/2026	11	Documento generado automÃ¡ticamente 309 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-04 16:48:00	\N	BAJA	REGISTRADO	12	31	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-310	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0012/2026	15	Documento generado automÃ¡ticamente 310 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 00:31:00	\N	BAJA	RECIBIDO	12	31	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-311	EM-SMADSOT.SSGTDU-DGRNB-0011/2026	7	Documento generado automÃ¡ticamente 311 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 14:23:00	\N	URGENTE	RECIBIDO	6	37	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-312	EM-SMADSOT.SSGASE-0012/2026	2	Documento generado automÃ¡ticamente 312 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 07:15:00	\N	URGENTE	DEVUELTO	21	22	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-313	EM-SMADSOT.ADMIN-0015/2026	11	Documento generado automÃ¡ticamente 313 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 18:59:00	\N	ALTA	CANCELADO	23	20	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-314	EM-SMADSOT.SSGASE-0013/2026	15	Documento generado automÃ¡ticamente 314 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-05 11:03:00	\N	ALTA	REGISTRADO	21	22	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-315	EM-SMADSOT.SSGTDU-DGCV-0015/2026	7	Documento generado automÃ¡ticamente 315 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-04 13:11:00	\N	BAJA	EN_PROCESO	2	41	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-316	EM-SMADSOT.SSGASE-DSH-DPH-0017/2026	15	Documento generado automÃ¡ticamente 316 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 07:55:00	\N	ALTA	DESPACHADO	14	29	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-317	EM-SMADSOT.SSGASE-DSH-DRC-0017/2026	5	Documento generado automÃ¡ticamente 317 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-28 07:29:00	\N	ALTA	REGISTRADO	16	27	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-318	EM-SMADSOT.SSGTDU-DGSSU-0017/2026	12	Documento generado automÃ¡ticamente 318 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 11:41:00	\N	ALTA	CANCELADO	5	38	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-319	EM-SMADSOT.SSGASE-DGCCITE-0016/2026	11	Documento generado automÃ¡ticamente 319 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 11:24:00	\N	ALTA	RESPONDIDO	19	24	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-320	EM-SMADSOT.SSGASE-DGCA-DVRF-0013/2026	16	Documento generado automÃ¡ticamente 320 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-09 09:00:00	\N	URGENTE	RESPONDIDO	10	33	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-321	EM-SMADSOT.SSGASE-DGCCITE-DSE-0010/2026	7	Documento generado automÃ¡ticamente 321 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-28 16:48:00	\N	ALTA	RESPONDIDO	13	30	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-322	EM-SMADSOT.SSGASE-DGCA-DMEE-0012/2026	7	Documento generado automÃ¡ticamente 322 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 14:54:00	\N	BAJA	EN_PROCESO	11	32	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-323	EM-SMADSOT.SSGTDU-DGR-0021/2026	5	Documento generado automÃ¡ticamente 323 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-28 01:54:00	\N	BAJA	RECIBIDO	3	40	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-324	EM-SMADSOT.SEC-0012/2026	15	Documento generado automÃ¡ticamente 324 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-23 09:40:00	\N	ALTA	EN_PROCESO	22	21	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-325	EM-SMADSOT.SSGTDU-DGRNB-0012/2026	16	Documento generado automÃ¡ticamente 325 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 08:23:00	\N	URGENTE	RECIBIDO	6	37	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-326	EM-SMADSOT.SSGASE-DGCCITE-0017/2026	3	Documento generado automÃ¡ticamente 326 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-02 09:35:00	\N	MEDIA	CERRADO	19	24	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-327	EM-SMADSOT.SSGTDU-DDUIA-0017/2026	12	Documento generado automÃ¡ticamente 327 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 03:02:00	\N	MEDIA	CERRADO	4	39	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-328	EM-SMADSOT.SSGASE-DGCA-0009/2026	5	Documento generado automÃ¡ticamente 328 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 04:58:00	\N	ALTA	TURNADO	18	25	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-329	EM-SMADSOT.SSGTDU-DDUIA-0018/2026	7	Documento generado automÃ¡ticamente 329 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-07 15:43:00	\N	ALTA	DEVUELTO	4	39	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-330	EM-SMADSOT.ADMIN-0016/2026	2	Documento generado automÃ¡ticamente 330 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 12:16:00	\N	MEDIA	EN_PROCESO	23	20	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-331	EM-SMADSOT.SSGASE-DSH-DPH-0018/2026	12	Documento generado automÃ¡ticamente 331 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-10 13:55:00	\N	URGENTE	DEVUELTO	14	29	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-332	EM-SMADSOT.SSGASE-DGCA-DVRF-0014/2026	11	Documento generado automÃ¡ticamente 332 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-16 22:58:00	\N	ALTA	TURNADO	10	33	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-333	EM-SMADSOT.SSGTDU-DGSSU-0018/2026	12	Documento generado automÃ¡ticamente 333 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-02 23:11:00	\N	MEDIA	DEVUELTO	5	38	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-334	EM-SMADSOT.SSGASE-DSH-DRC-0018/2026	3	Documento generado automÃ¡ticamente 334 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-18 13:48:00	\N	URGENTE	CANCELADO	16	27	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-335	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0011/2026	12	Documento generado automÃ¡ticamente 335 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-25 08:57:00	\N	ALTA	TURNADO	1	42	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-336	EM-SMADSOT.SSGTDU-DDUIA-0019/2026	12	Documento generado automÃ¡ticamente 336 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 18:22:00	\N	URGENTE	REGISTRADO	4	39	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-337	EM-SMADSOT.SSGASE-DSH-DPH-0019/2026	16	Documento generado automÃ¡ticamente 337 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 21:29:00	\N	ALTA	REGISTRADO	14	29	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-338	EM-SMADSOT.SEC-0013/2026	16	Documento generado automÃ¡ticamente 338 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 17:57:00	\N	ALTA	RECIBIDO	22	21	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-339	EM-SMADSOT.SSGASE-DSH-DPH-0020/2026	11	Documento generado automÃ¡ticamente 339 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 10:42:00	\N	ALTA	CERRADO	14	29	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-340	EM-SMADSOT.SSGASE-DSH-0010/2026	12	Documento generado automÃ¡ticamente 340 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-01 15:10:00	\N	ALTA	DEVUELTO	20	23	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-341	EM-SMADSOT.SSGASE-DGR-DRME-0017/2026	12	Documento generado automÃ¡ticamente 341 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 20:35:00	\N	ALTA	EN_PROCESO	8	35	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-342	EM-SMADSOT.SSGTDU-DGSSU-0019/2026	15	Documento generado automÃ¡ticamente 342 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-09 00:33:00	\N	MEDIA	EN_PROCESO	5	38	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-343	EM-SMADSOT.SSGASE-DGCA-DMEE-0013/2026	15	Documento generado automÃ¡ticamente 343 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 05:05:00	\N	MEDIA	RESPONDIDO	11	32	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-344	EM-SMADSOT.SSGASE-DSH-DPH-0021/2026	16	Documento generado automÃ¡ticamente 344 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-22 08:56:00	\N	ALTA	DESPACHADO	14	29	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-345	EM-SMADSOT.SSGASE-DGR-DRME-0018/2026	16	Documento generado automÃ¡ticamente 345 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-04 02:17:00	\N	MEDIA	TURNADO	8	35	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-346	EM-SMADSOT.SSGASE-0014/2026	2	Documento generado automÃ¡ticamente 346 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-19 10:03:00	\N	URGENTE	RECIBIDO	21	22	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-347	EM-SMADSOT.SSGASE-DSH-DRC-0019/2026	16	Documento generado automÃ¡ticamente 347 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-26 15:05:00	\N	MEDIA	CANCELADO	16	27	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-348	EM-SMADSOT.SSGASE-DGCA-DMEE-0014/2026	2	Documento generado automÃ¡ticamente 348 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-06 07:54:00	\N	BAJA	CANCELADO	11	32	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-349	EM-SMADSOT.SEC-0014/2026	11	Documento generado automÃ¡ticamente 349 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 09:42:00	\N	ALTA	RECIBIDO	22	21	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-350	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0013/2026	16	Documento generado automÃ¡ticamente 350 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-04 05:38:00	\N	MEDIA	REGISTRADO	12	31	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-351	EM-SMADSOT.SSGASE-DGR-DTRS-0013/2026	11	Documento generado automÃ¡ticamente 351 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-26 22:05:00	\N	MEDIA	CANCELADO	9	34	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-352	EM-SMADSOT.SSGASE-DGCA-0010/2026	5	Documento generado automÃ¡ticamente 352 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-20 22:58:00	\N	BAJA	RECIBIDO	18	25	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-353	EM-SMADSOT.SSGASE-DGCA-0011/2026	12	Documento generado automÃ¡ticamente 353 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-02 15:08:00	\N	MEDIA	DESPACHADO	18	25	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-354	EM-SMADSOT.SSGASE-DGR-DTRS-0014/2026	12	Documento generado automÃ¡ticamente 354 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 14:32:00	\N	ALTA	DEVUELTO	9	34	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-355	EM-SMADSOT.SSGASE-DGR-DTRS-0015/2026	5	Documento generado automÃ¡ticamente 355 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-07 09:36:00	\N	ALTA	CERRADO	9	34	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-356	EM-SMADSOT.SSGASE-DSH-DIEE-0020/2026	16	Documento generado automÃ¡ticamente 356 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 16:10:00	\N	MEDIA	REGISTRADO	15	28	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-357	EM-SMADSOT.SSGASE-DSH-0011/2026	16	Documento generado automÃ¡ticamente 357 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 22:34:00	\N	ALTA	EN_PROCESO	20	23	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-358	EM-SMADSOT.SSGTDU-0010/2026	12	Documento generado automÃ¡ticamente 358 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-20 15:41:00	\N	BAJA	TURNADO	7	36	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-359	EM-SMADSOT.SSGTDU-DGRNB-0013/2026	16	Documento generado automÃ¡ticamente 359 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 20:06:00	\N	BAJA	REGISTRADO	6	37	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-360	EM-SMADSOT.SSGTDU-DGR-0022/2026	12	Documento generado automÃ¡ticamente 360 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-26 13:14:00	\N	BAJA	CANCELADO	3	40	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-361	EM-SMADSOT.DPG-0013/2026	16	Documento generado automÃ¡ticamente 361 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-14 14:44:00	\N	MEDIA	TURNADO	24	65	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-362	EM-SMADSOT.SSGTDU-DGR-0023/2026	7	Documento generado automÃ¡ticamente 362 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-01 22:35:00	\N	ALTA	CANCELADO	3	40	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-363	EM-SMADSOT.SSGASE-DGR-DTRS-0016/2026	7	Documento generado automÃ¡ticamente 363 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 10:40:00	\N	BAJA	CANCELADO	9	34	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-364	EM-SMADSOT.SSGASE-DGR-DRME-0019/2026	11	Documento generado automÃ¡ticamente 364 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 04:29:00	\N	BAJA	RESPONDIDO	8	35	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-365	EM-SMADSOT.SSGASE-0015/2026	16	Documento generado automÃ¡ticamente 365 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 03:13:00	\N	BAJA	DEVUELTO	21	22	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-366	EM-SMADSOT.SSGASE-0016/2026	5	Documento generado automÃ¡ticamente 366 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-01 22:59:00	\N	BAJA	TURNADO	21	22	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-367	EM-SMADSOT.SSGASE-DGCA-DMEE-0015/2026	3	Documento generado automÃ¡ticamente 367 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 04:44:00	\N	MEDIA	TURNADO	11	32	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-368	EM-SMADSOT.SSGTDU-0011/2026	15	Documento generado automÃ¡ticamente 368 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-22 12:50:00	\N	BAJA	CANCELADO	7	36	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-369	EM-SMADSOT.SSGTDU-DGCV-0016/2026	15	Documento generado automÃ¡ticamente 369 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-25 23:53:00	\N	BAJA	RECIBIDO	2	41	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-370	EM-SMADSOT.SSGASE-DGCA-0012/2026	12	Documento generado automÃ¡ticamente 370 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-29 00:32:00	\N	ALTA	REGISTRADO	18	25	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-371	EM-SMADSOT.SSGASE-DSH-DIEE-0021/2026	12	Documento generado automÃ¡ticamente 371 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 00:00:00	\N	MEDIA	CERRADO	15	28	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-372	EM-SMADSOT.SSGASE-DGR-DTRS-0017/2026	3	Documento generado automÃ¡ticamente 372 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 05:43:00	\N	URGENTE	TURNADO	9	34	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-373	EM-SMADSOT.SSGASE-DGCA-DMEE-0016/2026	16	Documento generado automÃ¡ticamente 373 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-07 01:20:00	\N	ALTA	REGISTRADO	11	32	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-374	EM-SMADSOT.SSGASE-DGCCITE-0018/2026	3	Documento generado automÃ¡ticamente 374 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 00:05:00	\N	MEDIA	RECIBIDO	19	24	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-375	EM-SMADSOT.SEC-0015/2026	11	Documento generado automÃ¡ticamente 375 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-28 14:45:00	\N	URGENTE	REGISTRADO	22	21	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-376	EM-SMADSOT.DPG-0014/2026	3	Documento generado automÃ¡ticamente 376 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-25 13:45:00	\N	BAJA	DEVUELTO	24	65	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-377	EM-SMADSOT.SSGASE-0017/2026	12	Documento generado automÃ¡ticamente 377 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 06:24:00	\N	MEDIA	DESPACHADO	21	22	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-378	EM-SMADSOT.SSGASE-DGR-DTRS-0018/2026	15	Documento generado automÃ¡ticamente 378 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-12 05:32:00	\N	URGENTE	DESPACHADO	9	34	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-379	EM-SMADSOT.SSGTDU-DDUIA-0020/2026	16	Documento generado automÃ¡ticamente 379 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 04:13:00	\N	ALTA	REGISTRADO	4	39	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-380	EM-SMADSOT.SSGTDU-DGSSU-0020/2026	15	Documento generado automÃ¡ticamente 380 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-27 02:35:00	\N	BAJA	TURNADO	5	38	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-381	EM-SMADSOT.SSGASE-DGR-DRME-0020/2026	11	Documento generado automÃ¡ticamente 381 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-01 00:33:00	\N	BAJA	DEVUELTO	8	35	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-382	EM-SMADSOT.SSGTDU-DDUIA-0021/2026	12	Documento generado automÃ¡ticamente 382 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-03 18:45:00	\N	BAJA	CERRADO	4	39	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-383	EM-SMADSOT.SSGASE-DSH-0012/2026	5	Documento generado automÃ¡ticamente 383 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 19:02:00	\N	ALTA	RECIBIDO	20	23	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-384	EM-SMADSOT.SSGASE-DGR-DTRS-0019/2026	11	Documento generado automÃ¡ticamente 384 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 00:18:00	\N	BAJA	TURNADO	9	34	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-385	EM-SMADSOT.SSGASE-DSH-DPH-0022/2026	5	Documento generado automÃ¡ticamente 385 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-23 15:08:00	\N	URGENTE	REGISTRADO	14	29	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-386	EM-SMADSOT.SSGASE-DSH-0013/2026	3	Documento generado automÃ¡ticamente 386 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-18 12:38:00	\N	URGENTE	CANCELADO	20	23	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-387	EM-SMADSOT.SSGTDU-DGR-0024/2026	15	Documento generado automÃ¡ticamente 387 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 05:34:00	\N	MEDIA	DEVUELTO	3	40	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-388	EM-SMADSOT.SSGTDU-DGCV-0017/2026	5	Documento generado automÃ¡ticamente 388 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-14 16:22:00	\N	BAJA	DEVUELTO	2	41	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-389	EM-SMADSOT.DPG-0015/2026	7	Documento generado automÃ¡ticamente 389 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-06 00:54:00	\N	URGENTE	RESPONDIDO	24	65	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-390	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0014/2026	12	Documento generado automÃ¡ticamente 390 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-04 12:02:00	\N	ALTA	REGISTRADO	12	31	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-391	EM-SMADSOT.SSGTDU-0012/2026	3	Documento generado automÃ¡ticamente 391 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 10:46:00	\N	BAJA	DESPACHADO	7	36	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-392	EM-SMADSOT.SEC-0016/2026	16	Documento generado automÃ¡ticamente 392 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 10:50:00	\N	MEDIA	RECIBIDO	22	21	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-393	EM-SMADSOT.SSGASE-DSH-DIEE-0022/2026	2	Documento generado automÃ¡ticamente 393 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-28 20:49:00	\N	MEDIA	TURNADO	15	28	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-394	EM-SMADSOT.SSGTDU-DGSSU-0021/2026	5	Documento generado automÃ¡ticamente 394 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-25 04:39:00	\N	BAJA	DESPACHADO	5	38	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-395	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0015/2026	2	Documento generado automÃ¡ticamente 395 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 02:10:00	\N	MEDIA	DEVUELTO	12	31	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-396	EM-SMADSOT.SSGTDU-DGSSU-0022/2026	3	Documento generado automÃ¡ticamente 396 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 11:30:00	\N	MEDIA	REGISTRADO	5	38	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-397	EM-SMADSOT.SSGTDU-DDUIA-0022/2026	2	Documento generado automÃ¡ticamente 397 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-26 08:56:00	\N	BAJA	CERRADO	4	39	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-398	EM-SMADSOT.DPG-0016/2026	2	Documento generado automÃ¡ticamente 398 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 22:02:00	\N	MEDIA	REGISTRADO	24	65	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-399	EM-SMADSOT.SSGASE-DGR-DTRS-0020/2026	7	Documento generado automÃ¡ticamente 399 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 14:05:00	\N	BAJA	TURNADO	9	34	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-400	EM-SMADSOT.SSGASE-DGR-DTRS-0021/2026	16	Documento generado automÃ¡ticamente 400 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 14:39:00	\N	URGENTE	EN_PROCESO	9	34	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-401	EM-SMADSOT.SSGASE-DGR-DRME-0021/2026	2	Documento generado automÃ¡ticamente 401 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-13 22:52:00	\N	MEDIA	DEVUELTO	8	35	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-402	EM-SMADSOT.SSGASE-DSH-DPH-0023/2026	12	Documento generado automÃ¡ticamente 402 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 16:15:00	\N	BAJA	CERRADO	14	29	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-403	EM-SMADSOT.SSGTDU-DGR-0025/2026	11	Documento generado automÃ¡ticamente 403 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-16 22:39:00	\N	MEDIA	RESPONDIDO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-404	EM-SMADSOT.SSGASE-DSH-DPH-0024/2026	12	Documento generado automÃ¡ticamente 404 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-03 23:38:00	\N	ALTA	CERRADO	14	29	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-405	EM-SMADSOT.SSGASE-DGR-DTRS-0022/2026	12	Documento generado automÃ¡ticamente 405 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-15 14:16:00	\N	URGENTE	DESPACHADO	9	34	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-406	EM-SMADSOT.SSGASE-DGR-DTRS-0023/2026	5	Documento generado automÃ¡ticamente 406 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 09:26:00	\N	BAJA	CANCELADO	9	34	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-407	EM-SMADSOT.SEC-0017/2026	7	Documento generado automÃ¡ticamente 407 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 18:21:00	\N	MEDIA	REGISTRADO	22	21	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-504	EM-SMADSOT.DPG-0023/2026	1	Solicitud de apoyo técnico	Se solicita el apoyo del área de sistemas...	2026-03-11 06:01:44.816004	2026-03-20 23:59:59	ALTA	REGISTRADO	24	65	f	\N	Caso prioritario	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-408	EM-SMADSOT.SSGTDU-DGR-0026/2026	11	Documento generado automÃ¡ticamente 408 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-04 02:51:00	\N	BAJA	RECIBIDO	3	40	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-409	EM-SMADSOT.SSGTDU-DGCV-0018/2026	11	Documento generado automÃ¡ticamente 409 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-05 05:54:00	\N	BAJA	EN_PROCESO	2	41	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-410	EM-SMADSOT.SSGTDU-DGRNB-0014/2026	16	Documento generado automÃ¡ticamente 410 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 04:33:00	\N	BAJA	EN_PROCESO	6	37	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-411	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0016/2026	11	Documento generado automÃ¡ticamente 411 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 11:11:00	\N	MEDIA	EN_PROCESO	12	31	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-412	EM-SMADSOT.SSGTDU-DGR-0027/2026	16	Documento generado automÃ¡ticamente 412 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 15:19:00	\N	URGENTE	EN_PROCESO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-413	EM-SMADSOT.SSGTDU-DDUIA-0023/2026	16	Documento generado automÃ¡ticamente 413 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 11:12:00	\N	MEDIA	DEVUELTO	4	39	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-414	EM-SMADSOT.SSGASE-DSH-0014/2026	5	Documento generado automÃ¡ticamente 414 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 01:28:00	\N	URGENTE	RESPONDIDO	20	23	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-415	EM-SMADSOT.SSGASE-DGCCITE-DSE-0011/2026	3	Documento generado automÃ¡ticamente 415 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-03 07:46:00	\N	MEDIA	DEVUELTO	13	30	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-416	EM-SMADSOT.SSGTDU-DGR-0028/2026	11	Documento generado automÃ¡ticamente 416 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 15:25:00	\N	MEDIA	CERRADO	3	40	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-417	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0017/2026	16	Documento generado automÃ¡ticamente 417 para SSGASE-DGCCITE-DCCCI	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 23:37:00	\N	ALTA	DESPACHADO	12	31	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-418	EM-SMADSOT.SSGASE-DSH-DRC-0020/2026	7	Documento generado automÃ¡ticamente 418 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 08:47:00	\N	MEDIA	RESPONDIDO	16	27	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-419	EM-SMADSOT.SSGASE-0018/2026	7	Documento generado automÃ¡ticamente 419 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-04 10:41:00	\N	ALTA	RECIBIDO	21	22	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-420	EM-SMADSOT.DPG-0017/2026	12	Documento generado automÃ¡ticamente 420 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-24 00:22:00	\N	BAJA	DEVUELTO	24	65	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-421	EM-SMADSOT.SSGTDU-DGSSU-0023/2026	3	Documento generado automÃ¡ticamente 421 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-15 05:39:00	\N	ALTA	EN_PROCESO	5	38	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-422	EM-SMADSOT.SSGASE-DGR-DTRS-0024/2026	15	Documento generado automÃ¡ticamente 422 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-05 19:15:00	\N	URGENTE	REGISTRADO	9	34	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-423	EM-SMADSOT.SSGASE-DGCA-0013/2026	11	Documento generado automÃ¡ticamente 423 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-21 20:20:00	\N	ALTA	EN_PROCESO	18	25	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-424	EM-SMADSOT.SSGASE-DSH-DIEE-0023/2026	2	Documento generado automÃ¡ticamente 424 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-20 01:04:00	\N	ALTA	RESPONDIDO	15	28	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-425	EM-SMADSOT.SSGASE-DSH-DPH-0025/2026	3	Documento generado automÃ¡ticamente 425 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-19 22:00:00	\N	BAJA	CERRADO	14	29	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-426	EM-SMADSOT.SSGTDU-DGCV-0019/2026	12	Documento generado automÃ¡ticamente 426 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 06:35:00	\N	MEDIA	TURNADO	2	41	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-427	EM-SMADSOT.SSGASE-DSH-DIEE-0024/2026	7	Documento generado automÃ¡ticamente 427 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 05:48:00	\N	URGENTE	DEVUELTO	15	28	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-428	EM-SMADSOT.SSGASE-DGR-0013/2026	5	Documento generado automÃ¡ticamente 428 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-11 02:21:00	\N	ALTA	RESPONDIDO	17	26	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-429	EM-SMADSOT.SSGTDU-DGSSU-0024/2026	2	Documento generado automÃ¡ticamente 429 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 18:09:00	\N	ALTA	TURNADO	5	38	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-430	EM-SMADSOT.DPG-0018/2026	16	Documento generado automÃ¡ticamente 430 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-10 14:36:00	\N	ALTA	RESPONDIDO	24	65	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-431	EM-SMADSOT.SSGASE-DGCCITE-DSE-0012/2026	12	Documento generado automÃ¡ticamente 431 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-01 08:29:00	\N	ALTA	CANCELADO	13	30	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-432	EM-SMADSOT.SSGASE-DGCA-DMEE-0017/2026	5	Documento generado automÃ¡ticamente 432 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 17:41:00	\N	ALTA	CERRADO	11	32	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-433	EM-SMADSOT.SSGTDU-DGRNB-0015/2026	11	Documento generado automÃ¡ticamente 433 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 22:32:00	\N	MEDIA	REGISTRADO	6	37	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-434	EM-SMADSOT.SSGASE-DGCA-0014/2026	15	Documento generado automÃ¡ticamente 434 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-31 22:46:00	\N	ALTA	RECIBIDO	18	25	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-435	EM-SMADSOT.SSGASE-DSH-DRC-0021/2026	11	Documento generado automÃ¡ticamente 435 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 07:23:00	\N	MEDIA	CANCELADO	16	27	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-436	EM-SMADSOT.SSGTDU-DDUIA-0024/2026	16	Documento generado automÃ¡ticamente 436 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-27 16:54:00	\N	BAJA	REGISTRADO	4	39	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-437	EM-SMADSOT.DPG-0019/2026	12	Documento generado automÃ¡ticamente 437 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 21:41:00	\N	MEDIA	RESPONDIDO	24	65	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-438	EM-SMADSOT.SSGASE-DGR-DTRS-0025/2026	15	Documento generado automÃ¡ticamente 438 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 21:27:00	\N	MEDIA	RECIBIDO	9	34	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-439	EM-SMADSOT.SSGASE-DGR-DTRS-0026/2026	15	Documento generado automÃ¡ticamente 439 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-20 05:05:00	\N	ALTA	TURNADO	9	34	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-440	EM-SMADSOT.SSGASE-DSH-DRC-0022/2026	5	Documento generado automÃ¡ticamente 440 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 00:25:00	\N	BAJA	CERRADO	16	27	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-441	EM-SMADSOT.SSGTDU-DGSSU-0025/2026	12	Documento generado automÃ¡ticamente 441 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 19:02:00	\N	URGENTE	DESPACHADO	5	38	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-442	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0012/2026	16	Documento generado automÃ¡ticamente 442 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-17 23:09:00	\N	BAJA	CERRADO	1	42	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-443	EM-SMADSOT.SSGASE-0019/2026	11	Documento generado automÃ¡ticamente 443 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 11:02:00	\N	URGENTE	DESPACHADO	21	22	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-444	EM-SMADSOT.SSGASE-DGR-DTRS-0027/2026	3	Documento generado automÃ¡ticamente 444 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-07 17:25:00	\N	MEDIA	CERRADO	9	34	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-445	EM-SMADSOT.SSGASE-DGCA-DMEE-0018/2026	15	Documento generado automÃ¡ticamente 445 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 14:59:00	\N	MEDIA	REGISTRADO	11	32	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-446	EM-SMADSOT.SSGASE-DGR-0014/2026	3	Documento generado automÃ¡ticamente 446 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-07 07:36:00	\N	ALTA	CANCELADO	17	26	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-447	EM-SMADSOT.SSGTDU-0013/2026	11	Documento generado automÃ¡ticamente 447 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-23 13:07:00	\N	MEDIA	REGISTRADO	7	36	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-448	EM-SMADSOT.SSGTDU-DGCV-0020/2026	3	Documento generado automÃ¡ticamente 448 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-15 13:54:00	\N	BAJA	EN_PROCESO	2	41	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-449	EM-SMADSOT.SSGTDU-DGRNB-0016/2026	7	Documento generado automÃ¡ticamente 449 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-22 07:42:00	\N	BAJA	CERRADO	6	37	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-450	EM-SMADSOT.SSGTDU-DDUIA-0025/2026	2	Documento generado automÃ¡ticamente 450 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 01:54:00	\N	MEDIA	RESPONDIDO	4	39	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-451	EM-SMADSOT.ADMIN-0017/2026	3	Documento generado automÃ¡ticamente 451 para ADMIN	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 22:18:00	\N	BAJA	RECIBIDO	23	20	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-452	EM-SMADSOT.SSGASE-DGCA-DVRF-0015/2026	12	Documento generado automÃ¡ticamente 452 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-03 19:31:00	\N	ALTA	CERRADO	10	33	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-453	EM-SMADSOT.SSGASE-0020/2026	11	Documento generado automÃ¡ticamente 453 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-12 19:15:00	\N	BAJA	CANCELADO	21	22	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-454	EM-SMADSOT.SSGTDU-DGRNB-0017/2026	7	Documento generado automÃ¡ticamente 454 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-14 05:43:00	\N	ALTA	DEVUELTO	6	37	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-455	EM-SMADSOT.SSGASE-DGR-DTRS-0028/2026	15	Documento generado automÃ¡ticamente 455 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-04 11:17:00	\N	BAJA	DEVUELTO	9	34	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-456	EM-SMADSOT.SSGASE-DGCCITE-0019/2026	7	Documento generado automÃ¡ticamente 456 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-18 08:05:00	\N	MEDIA	REGISTRADO	19	24	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-457	EM-SMADSOT.SSGTDU-DGCV-0021/2026	16	Documento generado automÃ¡ticamente 457 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-20 22:58:00	\N	ALTA	DESPACHADO	2	41	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-458	EM-SMADSOT.SSGASE-DGCA-DVRF-0016/2026	12	Documento generado automÃ¡ticamente 458 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-13 08:45:00	\N	URGENTE	REGISTRADO	10	33	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-459	EM-SMADSOT.SSGTDU-0014/2026	7	Documento generado automÃ¡ticamente 459 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 08:36:00	\N	BAJA	TURNADO	7	36	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-460	EM-SMADSOT.SSGASE-DSH-0015/2026	3	Documento generado automÃ¡ticamente 460 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 05:07:00	\N	ALTA	EN_PROCESO	20	23	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-461	EM-SMADSOT.SSGASE-DGCA-DMEE-0019/2026	5	Documento generado automÃ¡ticamente 461 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 10:45:00	\N	BAJA	RECIBIDO	11	32	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-462	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0013/2026	16	Documento generado automÃ¡ticamente 462 para SSGTDU-DGRNB-DRRE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-26 12:28:00	\N	BAJA	DEVUELTO	1	42	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-463	EM-SMADSOT.SSGASE-DGCA-DMEE-0020/2026	3	Documento generado automÃ¡ticamente 463 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 16:47:00	\N	MEDIA	DEVUELTO	11	32	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-464	EM-SMADSOT.SEC-0018/2026	2	Documento generado automÃ¡ticamente 464 para SEC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-01 10:00:00	\N	MEDIA	TURNADO	22	21	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-465	EM-SMADSOT.SSGASE-DSH-DIEE-0025/2026	12	Documento generado automÃ¡ticamente 465 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-26 23:02:00	\N	ALTA	EN_PROCESO	15	28	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-466	EM-SMADSOT.SSGTDU-DDUIA-0026/2026	3	Documento generado automÃ¡ticamente 466 para SSGTDU-DDUIA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 17:04:00	\N	URGENTE	RECIBIDO	4	39	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-467	EM-SMADSOT.SSGASE-DGR-0015/2026	16	Documento generado automÃ¡ticamente 467 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-17 11:50:00	\N	BAJA	RESPONDIDO	17	26	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-468	EM-SMADSOT.SSGTDU-DGRNB-0018/2026	11	Documento generado automÃ¡ticamente 468 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-02 12:32:00	\N	BAJA	REGISTRADO	6	37	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-469	EM-SMADSOT.SSGASE-DGR-DRME-0022/2026	11	Documento generado automÃ¡ticamente 469 para SSGASE-DGR-DRME	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-19 19:21:00	\N	MEDIA	DEVUELTO	8	35	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-470	EM-SMADSOT.SSGASE-DSH-0016/2026	12	Documento generado automÃ¡ticamente 470 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-09 01:50:00	\N	ALTA	TURNADO	20	23	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-471	EM-SMADSOT.SSGASE-DSH-DRC-0023/2026	11	Documento generado automÃ¡ticamente 471 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-07 04:24:00	\N	MEDIA	RECIBIDO	16	27	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-472	EM-SMADSOT.SSGASE-DSH-DRC-0024/2026	11	Documento generado automÃ¡ticamente 472 para SSGASE-DSH-DRC	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-30 14:12:00	\N	BAJA	RESPONDIDO	16	27	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-473	EM-SMADSOT.SSGTDU-DGSSU-0026/2026	16	Documento generado automÃ¡ticamente 473 para SSGTDU-DGSSU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 08:55:00	\N	MEDIA	TURNADO	5	38	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-474	EM-SMADSOT.SSGASE-0021/2026	7	Documento generado automÃ¡ticamente 474 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-04 23:15:00	\N	MEDIA	DESPACHADO	21	22	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-475	EM-SMADSOT.SSGASE-0022/2026	5	Documento generado automÃ¡ticamente 475 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-25 06:25:00	\N	ALTA	TURNADO	21	22	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-476	EM-SMADSOT.SSGASE-DGCCITE-DSE-0013/2026	11	Documento generado automÃ¡ticamente 476 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-10 07:41:00	\N	MEDIA	DEVUELTO	13	30	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-477	EM-SMADSOT.SSGASE-DGCA-DMEE-0021/2026	15	Documento generado automÃ¡ticamente 477 para SSGASE-DGCA-DMEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-07 08:22:00	\N	URGENTE	DESPACHADO	11	32	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-478	EM-SMADSOT.SSGASE-DGCA-DVRF-0017/2026	5	Documento generado automÃ¡ticamente 478 para SSGASE-DGCA-DVRF	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 12:37:00	\N	MEDIA	REGISTRADO	10	33	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-479	EM-SMADSOT.SSGTDU-DGR-0029/2026	12	Documento generado automÃ¡ticamente 479 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-27 15:06:00	\N	ALTA	DESPACHADO	3	40	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-480	EM-SMADSOT.SSGTDU-DGRNB-0019/2026	5	Documento generado automÃ¡ticamente 480 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-25 05:08:00	\N	BAJA	DEVUELTO	6	37	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-481	EM-SMADSOT.SSGASE-0023/2026	16	Documento generado automÃ¡ticamente 481 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-05 20:36:00	\N	BAJA	DEVUELTO	21	22	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-482	EM-SMADSOT.DPG-0020/2026	2	Documento generado automÃ¡ticamente 482 para DPG	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-21 13:34:00	\N	ALTA	DEVUELTO	24	65	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-483	EM-SMADSOT.SSGASE-DGR-0016/2026	15	Documento generado automÃ¡ticamente 483 para SSGASE-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-03-01 21:22:00	\N	URGENTE	CERRADO	17	26	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-484	EM-SMADSOT.SSGASE-DGCCITE-DSE-0014/2026	3	Documento generado automÃ¡ticamente 484 para SSGASE-DGCCITE-DSE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 18:00:00	\N	BAJA	TURNADO	13	30	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-485	EM-SMADSOT.SSGASE-DSH-DPH-0026/2026	11	Documento generado automÃ¡ticamente 485 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-20 19:12:00	\N	MEDIA	RECIBIDO	14	29	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-486	EM-SMADSOT.SSGTDU-DGRNB-0020/2026	11	Documento generado automÃ¡ticamente 486 para SSGTDU-DGRNB	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 18:01:00	\N	ALTA	RESPONDIDO	6	37	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-487	EM-SMADSOT.SSGASE-DGCCITE-0020/2026	7	Documento generado automÃ¡ticamente 487 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-06 19:04:00	\N	ALTA	REGISTRADO	19	24	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-488	EM-SMADSOT.SSGASE-DGCA-0015/2026	16	Documento generado automÃ¡ticamente 488 para SSGASE-DGCA	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-11 20:22:00	\N	MEDIA	EN_PROCESO	18	25	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-489	EM-SMADSOT.SSGASE-DSH-0017/2026	15	Documento generado automÃ¡ticamente 489 para SSGASE-DSH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-15 09:36:00	\N	BAJA	RESPONDIDO	20	23	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-490	EM-SMADSOT.SSGASE-DGR-DTRS-0029/2026	2	Documento generado automÃ¡ticamente 490 para SSGASE-DGR-DTRS	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-05 01:37:00	\N	BAJA	DESPACHADO	9	34	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-491	EM-SMADSOT.SSGASE-0024/2026	12	Documento generado automÃ¡ticamente 491 para SSGASE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-24 01:16:00	\N	MEDIA	EN_PROCESO	21	22	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-492	EM-SMADSOT.SSGASE-DSH-DIEE-0026/2026	5	Documento generado automÃ¡ticamente 492 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-19 10:00:00	\N	MEDIA	EN_PROCESO	15	28	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-493	EM-SMADSOT.SSGASE-DSH-DIEE-0027/2026	12	Documento generado automÃ¡ticamente 493 para SSGASE-DSH-DIEE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-20 21:27:00	\N	BAJA	EN_PROCESO	15	28	f	\N	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-494	EM-SMADSOT.SSGTDU-DGCV-0022/2026	7	Documento generado automÃ¡ticamente 494 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-20 03:50:00	\N	MEDIA	CERRADO	2	41	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-495	EM-SMADSOT.SSGTDU-DGR-0030/2026	15	Documento generado automÃ¡ticamente 495 para SSGTDU-DGR	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-08 03:09:00	\N	MEDIA	TURNADO	3	40	f	\N	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
-496	EM-SMADSOT.SSGASE-DGCCITE-0021/2026	16	Documento generado automÃ¡ticamente 496 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-18 01:03:00	\N	MEDIA	DEVUELTO	19	24	f	\N	\N	\N	\N	\N	f	INFORME	\N	f	\N	\N
-497	EM-SMADSOT.SSGASE-DGCCITE-0022/2026	7	Documento generado automÃ¡ticamente 497 para SSGASE-DGCCITE	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-10 13:16:00	\N	ALTA	DESPACHADO	19	24	f	\N	\N	\N	\N	\N	f	OTRO	\N	f	\N	\N
-498	EM-SMADSOT.SSGASE-DSH-DPH-0027/2026	5	Documento generado automÃ¡ticamente 498 para SSGASE-DSH-DPH	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-14 20:23:00	\N	MEDIA	DEVUELTO	14	29	f	\N	\N	\N	\N	\N	f	COMUNICADO_INT	\N	f	\N	\N
-499	EM-SMADSOT.SSGTDU-DGCV-0023/2026	11	Documento generado automÃ¡ticamente 499 para SSGTDU-DGCV	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-02-14 16:03:00	\N	URGENTE	RECIBIDO	2	41	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-500	EM-SMADSOT.SSGTDU-0015/2026	3	Documento generado automÃ¡ticamente 500 para SSGTDU	Cuerpo de prueba para validaciÃ³n de interfaces y paginaciÃ³n en el sistema.	2026-01-18 08:26:00	\N	BAJA	DESPACHADO	7	36	f	\N	\N	\N	\N	\N	f	EXPEDIENTE	\N	f	\N	\N
-505	EM-SMADSOT.SMADSOT.SGTDU.DDUIA-0027/2026	2	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	2026-03-12 04:33:10.180795	2026-03-20 00:00:00	MEDIA	TURNADO	4	39	f	2026-03-12 04:33:10.274891	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-506	EM-SMADSOT.SMADSOT.DGAJ-0001/2026	1	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	2026-03-13 09:03:57.313472	2026-03-20 00:00:00	MEDIA	TURNADO	6	61	f	2026-03-13 09:03:57.420834	\N	\N	\N	\N	f	MEMORANDUM	\N	f	\N	\N
-507	EM-SMADSOT.SMADSOT.DGAJ-0002/2026	3	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	2026-03-13 09:04:44.715903	2026-03-20 00:00:00	MEDIA	TURNADO	6	61	f	2026-03-13 09:04:44.811063	\N	\N	\N	\N	f	CIRCULAR	\N	f	\N	\N
 \.
 
 
@@ -9011,520 +13240,6 @@ COPY public.historial_documento (id, documento_id, accion, descripcion, usuario_
 8	8	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0001/2026	4	39	2026-02-14 07:57:00	\N	\N
 9	9	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0001/2026	21	22	2026-02-28 11:32:00	\N	\N
 10	10	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0002/2026	7	36	2026-02-27 18:13:00	\N	\N
-11	11	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0001/2026	15	28	2026-01-21 22:23:00	\N	\N
-12	12	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0001/2026	19	24	2026-01-06 18:42:00	\N	\N
-13	13	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0001/2026	11	32	2026-01-24 06:16:00	\N	\N
-14	14	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0001/2026	12	31	2026-01-01 14:45:00	\N	\N
-15	15	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0002/2026	11	32	2026-01-23 17:27:00	\N	\N
-16	16	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0002/2026	14	29	2026-01-08 15:59:00	\N	\N
-17	17	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0001/2026	6	37	2026-01-13 02:44:00	\N	\N
-18	18	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0002/2026	21	22	2026-01-18 09:15:00	\N	\N
-19	19	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0003/2026	7	36	2026-01-18 07:37:00	\N	\N
-20	20	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0002/2026	19	24	2026-01-15 05:54:00	\N	\N
-21	21	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0001/2026	9	34	2026-02-16 01:44:00	\N	\N
-22	22	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0003/2026	19	24	2026-01-18 02:23:00	\N	\N
-23	23	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0001/2026	1	42	2026-02-03 05:18:00	\N	\N
-24	24	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0001/2026	2	41	2026-01-24 04:48:00	\N	\N
-25	25	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0001/2026	18	25	2026-01-17 22:09:00	\N	\N
-26	26	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0002/2026	4	39	2026-02-08 20:51:00	\N	\N
-27	27	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0002/2026	1	42	2026-02-17 20:07:00	\N	\N
-28	28	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0001/2026	22	21	2026-02-21 17:53:00	\N	\N
-29	29	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0004/2026	19	24	2026-02-18 02:45:00	\N	\N
-30	30	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0002/2026	17	26	2026-01-22 08:36:00	\N	\N
-31	31	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0001/2026	10	33	2026-03-01 20:51:00	\N	\N
-32	32	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0001/2026	24	65	2026-01-09 12:17:00	\N	\N
-33	33	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0001/2026	23	20	2026-02-20 13:38:00	\N	\N
-34	34	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0002/2026	8	35	2026-02-02 12:32:00	\N	\N
-35	35	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0003/2026	4	39	2026-02-02 02:12:00	\N	\N
-36	36	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0003/2026	1	42	2026-02-23 17:19:00	\N	\N
-37	37	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0002/2026	22	21	2026-02-24 05:08:00	\N	\N
-38	38	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0002/2026	10	33	2026-01-27 19:18:00	\N	\N
-39	39	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0003/2026	22	21	2026-01-09 09:37:00	\N	\N
-40	40	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0001/2026	16	27	2026-02-19 02:23:00	\N	\N
-41	41	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0002/2026	6	37	2026-03-01 12:10:00	\N	\N
-42	42	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0003/2026	6	37	2026-02-13 01:27:00	\N	\N
-43	43	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0001/2026	3	40	2026-02-06 11:16:00	\N	\N
-44	44	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0002/2026	2	41	2026-02-20 18:32:00	\N	\N
-45	45	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0003/2026	11	32	2026-01-06 22:48:00	\N	\N
-46	46	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0002/2026	9	34	2026-02-15 17:04:00	\N	\N
-47	47	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0004/2026	1	42	2026-02-19 13:38:00	\N	\N
-48	48	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0002/2026	13	30	2026-01-02 09:23:00	\N	\N
-49	49	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0002/2026	3	40	2026-01-31 20:55:00	\N	\N
-50	50	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0004/2026	7	36	2026-02-09 15:49:00	\N	\N
-51	51	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0004/2026	4	39	2026-01-15 03:50:00	\N	\N
-52	52	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0004/2026	11	32	2026-02-21 05:55:00	\N	\N
-53	53	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0003/2026	2	41	2026-02-08 14:50:00	\N	\N
-54	54	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0002/2026	16	27	2026-02-21 06:11:00	\N	\N
-55	55	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0003/2026	3	40	2026-02-26 19:36:00	\N	\N
-56	56	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0005/2026	4	39	2026-02-19 23:07:00	\N	\N
-57	57	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0004/2026	2	41	2026-02-22 10:38:00	\N	\N
-58	58	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0002/2026	12	31	2026-02-13 15:05:00	\N	\N
-59	59	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0005/2026	11	32	2026-02-06 11:21:00	\N	\N
-60	60	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0003/2026	13	30	2026-01-28 12:46:00	\N	\N
-61	61	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0003/2026	8	35	2026-01-01 16:34:00	\N	\N
-62	62	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0002/2026	23	20	2026-01-05 03:16:00	\N	\N
-63	63	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0003/2026	16	27	2026-01-02 11:14:00	\N	\N
-64	64	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0002/2026	15	28	2026-01-11 01:39:00	\N	\N
-65	65	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0002/2026	20	23	2026-01-17 01:22:00	\N	\N
-66	66	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0004/2026	22	21	2026-01-17 13:01:00	\N	\N
-67	67	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0003/2026	20	23	2026-01-13 16:10:00	\N	\N
-68	68	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0006/2026	4	39	2026-01-28 04:02:00	\N	\N
-69	69	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0003/2026	10	33	2026-01-27 06:55:00	\N	\N
-70	70	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0005/2026	2	41	2026-01-13 23:33:00	\N	\N
-71	71	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0002/2026	24	65	2026-02-11 02:28:00	\N	\N
-72	72	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0003/2026	14	29	2026-01-12 09:14:00	\N	\N
-73	73	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0004/2026	16	27	2026-02-17 11:16:00	\N	\N
-74	74	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0003/2026	15	28	2026-01-19 04:35:00	\N	\N
-75	75	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0006/2026	11	32	2026-01-13 20:48:00	\N	\N
-76	76	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0004/2026	3	40	2026-01-11 15:41:00	\N	\N
-77	77	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0003/2026	23	20	2026-02-27 08:32:00	\N	\N
-78	78	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0005/2026	16	27	2026-01-04 03:39:00	\N	\N
-79	79	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0003/2026	17	26	2026-01-04 14:23:00	\N	\N
-80	80	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0004/2026	23	20	2026-02-17 20:25:00	\N	\N
-81	81	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0003/2026	24	65	2026-02-01 19:06:00	\N	\N
-82	82	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0003/2026	9	34	2026-01-09 14:16:00	\N	\N
-83	83	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0004/2026	13	30	2026-02-19 07:22:00	\N	\N
-84	84	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0007/2026	4	39	2026-01-25 03:34:00	\N	\N
-85	85	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0002/2026	5	38	2026-02-15 05:17:00	\N	\N
-86	86	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0003/2026	5	38	2026-01-28 15:40:00	\N	\N
-87	87	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0004/2026	14	29	2026-02-03 03:54:00	\N	\N
-88	88	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0007/2026	11	32	2026-02-13 08:32:00	\N	\N
-89	89	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0005/2026	23	20	2026-03-02 03:40:00	\N	\N
-90	90	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0006/2026	23	20	2026-01-13 16:36:00	\N	\N
-91	91	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0004/2026	8	35	2026-02-22 07:28:00	\N	\N
-92	92	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0006/2026	2	41	2026-01-10 17:56:00	\N	\N
-93	93	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0004/2026	15	28	2026-02-28 22:54:00	\N	\N
-94	94	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0005/2026	22	21	2026-01-29 05:52:00	\N	\N
-95	95	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0003/2026	12	31	2026-01-14 06:28:00	\N	\N
-96	96	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0005/2026	15	28	2026-01-18 08:29:00	\N	\N
-97	97	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0004/2026	24	65	2026-02-23 16:41:00	\N	\N
-98	98	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0006/2026	16	27	2026-02-17 05:34:00	\N	\N
-99	99	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0007/2026	2	41	2026-02-26 04:19:00	\N	\N
-100	100	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0003/2026	21	22	2026-02-24 16:15:00	\N	\N
-101	101	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0005/2026	7	36	2026-02-22 10:37:00	\N	\N
-102	102	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0005/2026	24	65	2026-01-30 00:23:00	\N	\N
-103	103	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0005/2026	8	35	2026-02-16 14:34:00	\N	\N
-104	104	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0004/2026	5	38	2026-02-08 15:05:00	\N	\N
-105	105	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0004/2026	17	26	2026-02-03 13:44:00	\N	\N
-106	106	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0008/2026	4	39	2026-02-21 18:11:00	\N	\N
-107	107	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0004/2026	10	33	2026-01-08 23:02:00	\N	\N
-108	108	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0004/2026	21	22	2026-01-17 03:37:00	\N	\N
-109	109	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0007/2026	16	27	2026-01-07 13:30:00	\N	\N
-110	110	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0005/2026	21	22	2026-02-14 09:47:00	\N	\N
-111	111	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0004/2026	9	34	2026-01-14 21:01:00	\N	\N
-112	112	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0008/2026	11	32	2026-01-29 14:35:00	\N	\N
-113	113	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0005/2026	14	29	2026-01-23 03:27:00	\N	\N
-114	114	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0005/2026	5	38	2026-01-06 06:09:00	\N	\N
-115	115	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0006/2026	15	28	2026-01-01 06:13:00	\N	\N
-116	116	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0008/2026	16	27	2026-02-26 01:08:00	\N	\N
-117	117	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0007/2026	15	28	2026-01-09 16:34:00	\N	\N
-118	118	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0005/2026	13	30	2026-01-18 02:47:00	\N	\N
-119	119	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0006/2026	5	38	2026-01-28 04:12:00	\N	\N
-120	120	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0002/2026	18	25	2026-02-07 00:26:00	\N	\N
-121	121	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0007/2026	23	20	2026-01-23 07:53:00	\N	\N
-122	122	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0005/2026	1	42	2026-01-18 22:05:00	\N	\N
-123	123	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0005/2026	10	33	2026-01-15 12:02:00	\N	\N
-124	124	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0006/2026	10	33	2026-02-02 07:48:00	\N	\N
-125	125	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0007/2026	5	38	2026-01-15 01:06:00	\N	\N
-126	126	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0009/2026	4	39	2026-01-26 21:09:00	\N	\N
-127	127	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0005/2026	9	34	2026-01-15 08:37:00	\N	\N
-128	128	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0006/2026	1	42	2026-01-31 18:05:00	\N	\N
-129	129	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0006/2026	22	21	2026-02-21 16:19:00	\N	\N
-130	130	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0005/2026	17	26	2026-01-07 05:23:00	\N	\N
-131	131	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0005/2026	3	40	2026-02-10 23:01:00	\N	\N
-132	132	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0008/2026	15	28	2026-01-03 11:50:00	\N	\N
-133	133	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0006/2026	17	26	2026-01-21 01:02:00	\N	\N
-134	134	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0006/2026	3	40	2026-02-11 12:20:00	\N	\N
-135	135	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0004/2026	20	23	2026-01-06 20:46:00	\N	\N
-136	136	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0008/2026	2	41	2026-01-28 00:34:00	\N	\N
-137	137	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0006/2026	8	35	2026-01-23 23:42:00	\N	\N
-138	138	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0004/2026	6	37	2026-02-03 00:36:00	\N	\N
-139	139	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0007/2026	8	35	2026-01-22 07:45:00	\N	\N
-140	140	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0006/2026	21	22	2026-02-05 18:32:00	\N	\N
-141	141	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0007/2026	10	33	2026-01-10 13:00:00	\N	\N
-142	142	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0008/2026	8	35	2026-02-15 06:01:00	\N	\N
-143	143	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0006/2026	13	30	2026-01-14 10:26:00	\N	\N
-144	144	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0006/2026	14	29	2026-02-07 18:40:00	\N	\N
-145	145	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0009/2026	16	27	2026-01-25 19:27:00	\N	\N
-146	146	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0004/2026	12	31	2026-02-19 08:41:00	\N	\N
-147	147	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0009/2026	15	28	2026-01-08 16:48:00	\N	\N
-148	148	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0008/2026	23	20	2026-02-17 00:52:00	\N	\N
-149	149	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0008/2026	5	38	2026-01-26 01:10:00	\N	\N
-150	150	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0005/2026	19	24	2026-01-09 07:25:00	\N	\N
-151	151	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0010/2026	4	39	2026-01-12 20:25:00	\N	\N
-152	152	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0007/2026	14	29	2026-01-17 21:27:00	\N	\N
-153	153	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0009/2026	8	35	2026-01-10 13:24:00	\N	\N
-154	154	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0009/2026	2	41	2026-01-23 18:42:00	\N	\N
-155	155	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0007/2026	1	42	2026-02-14 15:30:00	\N	\N
-156	156	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0007/2026	22	21	2026-02-16 23:12:00	\N	\N
-157	157	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0010/2026	15	28	2026-01-21 03:12:00	\N	\N
-158	158	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0003/2026	18	25	2026-02-05 10:30:00	\N	\N
-159	159	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0007/2026	3	40	2026-02-22 18:31:00	\N	\N
-160	160	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0005/2026	20	23	2026-01-12 23:06:00	\N	\N
-161	161	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0005/2026	12	31	2026-02-09 23:22:00	\N	\N
-162	162	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0008/2026	3	40	2026-02-12 07:31:00	\N	\N
-163	163	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0009/2026	3	40	2026-03-01 01:35:00	\N	\N
-164	164	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0006/2026	19	24	2026-01-19 17:41:00	\N	\N
-165	165	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0010/2026	3	40	2026-01-23 00:48:00	\N	\N
-166	166	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0009/2026	11	32	2026-02-21 04:46:00	\N	\N
-167	167	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0006/2026	9	34	2026-01-03 03:44:00	\N	\N
-168	168	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0005/2026	6	37	2026-02-11 11:18:00	\N	\N
-169	169	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0010/2026	8	35	2026-01-16 20:45:00	\N	\N
-170	170	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0007/2026	17	26	2026-02-27 06:59:00	\N	\N
-171	171	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0011/2026	8	35	2026-03-02 22:57:00	\N	\N
-172	172	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0006/2026	24	65	2026-02-13 15:18:00	\N	\N
-173	173	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0004/2026	18	25	2026-01-27 17:17:00	\N	\N
-174	174	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0009/2026	5	38	2026-01-17 18:01:00	\N	\N
-175	175	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0007/2026	9	34	2026-01-01 05:13:00	\N	\N
-176	176	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0010/2026	16	27	2026-02-26 08:54:00	\N	\N
-177	177	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0007/2026	21	22	2026-01-09 16:07:00	\N	\N
-178	178	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0011/2026	15	28	2026-01-19 15:00:00	\N	\N
-179	179	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0007/2026	13	30	2026-02-06 12:41:00	\N	\N
-180	180	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0012/2026	15	28	2026-01-05 07:05:00	\N	\N
-181	181	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0013/2026	15	28	2026-01-21 12:31:00	\N	\N
-182	182	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0014/2026	15	28	2026-01-06 13:13:00	\N	\N
-183	183	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0008/2026	22	21	2026-01-21 10:48:00	\N	\N
-184	184	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0008/2026	14	29	2026-01-31 00:53:00	\N	\N
-185	185	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0007/2026	24	65	2026-02-18 17:50:00	\N	\N
-186	186	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0010/2026	5	38	2026-01-07 21:12:00	\N	\N
-187	187	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0008/2026	24	65	2026-01-13 17:15:00	\N	\N
-188	188	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0011/2026	16	27	2026-02-19 23:02:00	\N	\N
-189	189	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0011/2026	5	38	2026-02-12 09:32:00	\N	\N
-190	190	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0006/2026	7	36	2026-02-19 19:56:00	\N	\N
-191	191	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0011/2026	3	40	2026-01-27 04:46:00	\N	\N
-192	192	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0012/2026	8	35	2026-02-21 14:21:00	\N	\N
-193	193	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0013/2026	8	35	2026-01-31 00:12:00	\N	\N
-194	194	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0014/2026	8	35	2026-01-21 14:32:00	\N	\N
-195	195	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0012/2026	3	40	2026-02-23 22:31:00	\N	\N
-196	196	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0006/2026	20	23	2026-02-22 16:38:00	\N	\N
-197	197	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0007/2026	19	24	2026-02-19 22:28:00	\N	\N
-198	198	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0008/2026	19	24	2026-01-09 12:13:00	\N	\N
-199	199	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0011/2026	4	39	2026-02-17 01:21:00	\N	\N
-200	200	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0008/2026	9	34	2026-02-16 18:21:00	\N	\N
-201	201	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0015/2026	15	28	2026-01-06 08:50:00	\N	\N
-202	202	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0013/2026	3	40	2026-02-14 09:19:00	\N	\N
-203	203	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0009/2026	24	65	2026-01-24 09:53:00	\N	\N
-204	204	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0006/2026	6	37	2026-01-04 09:48:00	\N	\N
-205	205	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0010/2026	24	65	2026-01-27 00:49:00	\N	\N
-206	206	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0008/2026	10	33	2026-01-02 03:59:00	\N	\N
-207	207	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0010/2026	11	32	2026-02-23 01:41:00	\N	\N
-208	208	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0009/2026	14	29	2026-02-26 11:03:00	\N	\N
-209	209	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0014/2026	3	40	2026-02-11 20:06:00	\N	\N
-210	210	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0011/2026	24	65	2026-02-05 04:39:00	\N	\N
-211	211	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0009/2026	19	24	2026-02-15 11:32:00	\N	\N
-212	212	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0009/2026	9	34	2026-02-23 06:34:00	\N	\N
-213	213	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0007/2026	20	23	2026-01-25 07:14:00	\N	\N
-214	214	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0008/2026	1	42	2026-01-06 20:14:00	\N	\N
-215	215	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0009/2026	10	33	2026-01-20 07:50:00	\N	\N
-216	216	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0006/2026	12	31	2026-02-04 04:33:00	\N	\N
-217	217	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0015/2026	8	35	2026-03-02 03:00:00	\N	\N
-218	218	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0008/2026	13	30	2026-02-27 09:01:00	\N	\N
-219	219	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0010/2026	9	34	2026-01-21 06:41:00	\N	\N
-220	220	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0010/2026	2	41	2026-02-19 06:34:00	\N	\N
-221	221	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0010/2026	10	33	2026-01-22 11:55:00	\N	\N
-222	222	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0005/2026	18	25	2026-01-10 15:33:00	\N	\N
-223	223	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0011/2026	10	33	2026-01-07 07:43:00	\N	\N
-224	224	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0011/2026	11	32	2026-01-16 16:44:00	\N	\N
-225	225	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0016/2026	15	28	2026-01-29 05:55:00	\N	\N
-226	226	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0007/2026	6	37	2026-02-17 03:07:00	\N	\N
-227	227	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0012/2026	5	38	2026-02-03 13:05:00	\N	\N
-228	228	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0008/2026	6	37	2026-01-18 01:12:00	\N	\N
-229	229	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0012/2026	4	39	2026-02-02 20:05:00	\N	\N
-230	230	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0010/2026	19	24	2026-01-29 11:02:00	\N	\N
-231	231	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0011/2026	19	24	2026-01-18 19:35:00	\N	\N
-232	232	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0008/2026	21	22	2026-01-20 06:53:00	\N	\N
-233	233	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0007/2026	12	31	2026-02-13 09:54:00	\N	\N
-234	234	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0008/2026	20	23	2026-02-12 04:08:00	\N	\N
-235	235	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0013/2026	4	39	2026-01-20 19:50:00	\N	\N
-236	236	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0012/2026	24	65	2026-02-21 10:10:00	\N	\N
-237	237	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0007/2026	7	36	2026-01-03 11:00:00	\N	\N
-238	238	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0013/2026	5	38	2026-01-11 23:12:00	\N	\N
-239	239	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0014/2026	5	38	2026-01-16 19:50:00	\N	\N
-240	240	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0010/2026	14	29	2026-02-12 03:03:00	\N	\N
-241	241	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0009/2026	20	23	2026-01-19 06:46:00	\N	\N
-242	242	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0009/2026	23	20	2026-02-13 18:34:00	\N	\N
-243	243	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0008/2026	17	26	2026-01-08 06:20:00	\N	\N
-244	244	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0014/2026	4	39	2026-02-17 12:13:00	\N	\N
-245	245	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0009/2026	6	37	2026-02-11 15:10:00	\N	\N
-246	246	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0015/2026	3	40	2026-03-02 04:57:00	\N	\N
-247	247	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0011/2026	2	41	2026-02-13 03:32:00	\N	\N
-248	248	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0009/2026	21	22	2026-02-26 01:17:00	\N	\N
-249	249	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0009/2026	17	26	2026-01-16 09:26:00	\N	\N
-250	250	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0017/2026	15	28	2026-01-30 02:40:00	\N	\N
-251	251	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0012/2026	19	24	2026-01-21 22:30:00	\N	\N
-252	252	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0008/2026	7	36	2026-01-27 19:01:00	\N	\N
-253	253	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0009/2026	13	30	2026-01-12 06:31:00	\N	\N
-254	254	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0016/2026	3	40	2026-02-27 05:48:00	\N	\N
-255	255	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0013/2026	19	24	2026-01-06 03:56:00	\N	\N
-256	256	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0010/2026	21	22	2026-01-24 16:05:00	\N	\N
-257	257	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0006/2026	18	25	2026-02-01 10:20:00	\N	\N
-258	258	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0010/2026	17	26	2026-01-05 07:33:00	\N	\N
-259	259	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0016/2026	8	35	2026-01-25 18:28:00	\N	\N
-260	260	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0008/2026	12	31	2026-01-29 16:02:00	\N	\N
-261	261	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0015/2026	4	39	2026-01-13 04:33:00	\N	\N
-262	262	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0017/2026	3	40	2026-01-05 12:25:00	\N	\N
-263	263	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0009/2026	22	21	2026-01-16 08:53:00	\N	\N
-264	264	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0014/2026	19	24	2026-02-06 17:35:00	\N	\N
-265	265	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0012/2026	16	27	2026-02-22 11:54:00	\N	\N
-266	266	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0009/2026	1	42	2026-01-12 15:49:00	\N	\N
-267	267	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0012/2026	2	41	2026-02-24 05:22:00	\N	\N
-268	268	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0011/2026	14	29	2026-01-20 11:34:00	\N	\N
-269	269	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0018/2026	3	40	2026-01-04 17:36:00	\N	\N
-270	270	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0010/2026	22	21	2026-02-16 05:02:00	\N	\N
-271	271	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0009/2026	12	31	2026-01-10 09:55:00	\N	\N
-272	272	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0010/2026	12	31	2026-02-02 06:46:00	\N	\N
-273	273	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0007/2026	18	25	2026-01-17 19:13:00	\N	\N
-274	274	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0019/2026	3	40	2026-02-11 21:22:00	\N	\N
-275	275	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0010/2026	1	42	2026-01-06 12:10:00	\N	\N
-276	276	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0013/2026	16	27	2026-01-10 10:03:00	\N	\N
-277	277	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0014/2026	16	27	2026-01-21 21:39:00	\N	\N
-278	278	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0012/2026	10	33	2026-01-12 23:47:00	\N	\N
-279	279	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0018/2026	15	28	2026-02-11 20:04:00	\N	\N
-280	280	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0012/2026	14	29	2026-01-06 12:46:00	\N	\N
-281	281	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0011/2026	22	21	2026-01-28 05:00:00	\N	\N
-282	282	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0010/2026	23	20	2026-01-08 21:07:00	\N	\N
-283	283	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0008/2026	18	25	2026-01-22 01:28:00	\N	\N
-284	284	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0015/2026	19	24	2026-03-01 04:14:00	\N	\N
-285	285	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0013/2026	14	29	2026-01-01 20:37:00	\N	\N
-286	286	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0013/2026	2	41	2026-01-12 02:15:00	\N	\N
-287	287	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0011/2026	21	22	2026-02-17 17:22:00	\N	\N
-288	288	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0011/2026	23	20	2026-01-13 11:24:00	\N	\N
-289	289	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0020/2026	3	40	2026-02-21 20:48:00	\N	\N
-290	290	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0011/2026	17	26	2026-02-15 23:55:00	\N	\N
-291	291	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0010/2026	6	37	2026-02-10 02:59:00	\N	\N
-292	292	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0011/2026	9	34	2026-02-12 23:59:00	\N	\N
-293	293	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0012/2026	23	20	2026-02-14 16:58:00	\N	\N
-294	294	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0015/2026	5	38	2026-02-04 23:32:00	\N	\N
-295	295	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0012/2026	9	34	2026-01-25 09:00:00	\N	\N
-296	296	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0013/2026	23	20	2026-01-03 11:21:00	\N	\N
-297	297	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0014/2026	14	29	2026-02-18 18:46:00	\N	\N
-298	298	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0015/2026	14	29	2026-01-11 07:29:00	\N	\N
-299	299	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0012/2026	17	26	2026-02-24 10:15:00	\N	\N
-300	300	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0019/2026	15	28	2026-01-13 13:03:00	\N	\N
-301	301	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0016/2026	4	39	2026-01-22 05:05:00	\N	\N
-302	302	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0015/2026	16	27	2026-02-12 21:23:00	\N	\N
-303	303	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0014/2026	23	20	2026-02-28 02:10:00	\N	\N
-304	304	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0016/2026	16	27	2026-02-08 00:22:00	\N	\N
-305	305	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0016/2026	14	29	2026-02-16 02:44:00	\N	\N
-306	306	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0014/2026	2	41	2026-02-24 10:02:00	\N	\N
-307	307	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0016/2026	5	38	2026-02-21 13:15:00	\N	\N
-308	308	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0009/2026	7	36	2026-02-16 21:26:00	\N	\N
-309	309	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0011/2026	12	31	2026-02-04 16:48:00	\N	\N
-310	310	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0012/2026	12	31	2026-01-06 00:31:00	\N	\N
-311	311	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0011/2026	6	37	2026-02-13 14:23:00	\N	\N
-312	312	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0012/2026	21	22	2026-01-06 07:15:00	\N	\N
-313	313	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0015/2026	23	20	2026-02-08 18:59:00	\N	\N
-314	314	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0013/2026	21	22	2026-01-05 11:03:00	\N	\N
-315	315	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0015/2026	2	41	2026-01-04 13:11:00	\N	\N
-316	316	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0017/2026	14	29	2026-02-15 07:55:00	\N	\N
-317	317	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0017/2026	16	27	2026-02-28 07:29:00	\N	\N
-318	318	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0017/2026	5	38	2026-02-17 11:41:00	\N	\N
-319	319	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0016/2026	19	24	2026-01-25 11:24:00	\N	\N
-320	320	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0013/2026	10	33	2026-02-09 09:00:00	\N	\N
-321	321	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0010/2026	13	30	2026-02-28 16:48:00	\N	\N
-322	322	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0012/2026	11	32	2026-01-11 14:54:00	\N	\N
-323	323	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0021/2026	3	40	2026-02-28 01:54:00	\N	\N
-324	324	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0012/2026	22	21	2026-01-23 09:40:00	\N	\N
-325	325	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0012/2026	6	37	2026-01-30 08:23:00	\N	\N
-326	326	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0017/2026	19	24	2026-02-02 09:35:00	\N	\N
-327	327	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0017/2026	4	39	2026-02-22 03:02:00	\N	\N
-328	328	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0009/2026	18	25	2026-01-12 04:58:00	\N	\N
-329	329	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0018/2026	4	39	2026-01-07 15:43:00	\N	\N
-330	330	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0016/2026	23	20	2026-02-16 12:16:00	\N	\N
-331	331	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0018/2026	14	29	2026-02-10 13:55:00	\N	\N
-332	332	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0014/2026	10	33	2026-01-16 22:58:00	\N	\N
-333	333	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0018/2026	5	38	2026-02-02 23:11:00	\N	\N
-334	334	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0018/2026	16	27	2026-02-18 13:48:00	\N	\N
-335	335	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0011/2026	1	42	2026-02-25 08:57:00	\N	\N
-336	336	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0019/2026	4	39	2026-01-30 18:22:00	\N	\N
-337	337	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0019/2026	14	29	2026-01-25 21:29:00	\N	\N
-338	338	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0013/2026	22	21	2026-01-11 17:57:00	\N	\N
-339	339	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0020/2026	14	29	2026-01-10 10:42:00	\N	\N
-340	340	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0010/2026	20	23	2026-01-01 15:10:00	\N	\N
-341	341	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0017/2026	8	35	2026-02-15 20:35:00	\N	\N
-342	342	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0019/2026	5	38	2026-01-09 00:33:00	\N	\N
-343	343	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0013/2026	11	32	2026-02-27 05:05:00	\N	\N
-344	344	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0021/2026	14	29	2026-01-22 08:56:00	\N	\N
-345	345	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0018/2026	8	35	2026-01-04 02:17:00	\N	\N
-346	346	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0014/2026	21	22	2026-01-19 10:03:00	\N	\N
-347	347	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0019/2026	16	27	2026-01-26 15:05:00	\N	\N
-348	348	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0014/2026	11	32	2026-02-06 07:54:00	\N	\N
-349	349	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0014/2026	22	21	2026-01-21 09:42:00	\N	\N
-350	350	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0013/2026	12	31	2026-02-04 05:38:00	\N	\N
-351	351	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0013/2026	9	34	2026-01-26 22:05:00	\N	\N
-352	352	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0010/2026	18	25	2026-01-20 22:58:00	\N	\N
-353	353	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0011/2026	18	25	2026-03-02 15:08:00	\N	\N
-354	354	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0014/2026	9	34	2026-01-31 14:32:00	\N	\N
-355	355	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0015/2026	9	34	2026-01-07 09:36:00	\N	\N
-356	356	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0020/2026	15	28	2026-02-15 16:10:00	\N	\N
-357	357	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0011/2026	20	23	2026-01-25 22:34:00	\N	\N
-358	358	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0010/2026	7	36	2026-02-20 15:41:00	\N	\N
-359	359	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0013/2026	6	37	2026-01-30 20:06:00	\N	\N
-360	360	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0022/2026	3	40	2026-01-26 13:14:00	\N	\N
-361	361	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0013/2026	24	65	2026-01-14 14:44:00	\N	\N
-362	362	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0023/2026	3	40	2026-02-01 22:35:00	\N	\N
-363	363	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0016/2026	9	34	2026-01-24 10:40:00	\N	\N
-364	364	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0019/2026	8	35	2026-01-02 04:29:00	\N	\N
-365	365	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0015/2026	21	22	2026-02-21 03:13:00	\N	\N
-366	366	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0016/2026	21	22	2026-03-01 22:59:00	\N	\N
-367	367	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0015/2026	11	32	2026-01-18 04:44:00	\N	\N
-368	368	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0011/2026	7	36	2026-01-22 12:50:00	\N	\N
-369	369	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0016/2026	2	41	2026-02-25 23:53:00	\N	\N
-370	370	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0012/2026	18	25	2026-01-29 00:32:00	\N	\N
-371	371	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0021/2026	15	28	2026-01-06 00:00:00	\N	\N
-372	372	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0017/2026	9	34	2026-01-10 05:43:00	\N	\N
-373	373	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0016/2026	11	32	2026-02-07 01:20:00	\N	\N
-374	374	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0018/2026	19	24	2026-02-11 00:05:00	\N	\N
-375	375	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0015/2026	22	21	2026-01-28 14:45:00	\N	\N
-376	376	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0014/2026	24	65	2026-02-25 13:45:00	\N	\N
-377	377	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0017/2026	21	22	2026-01-02 06:24:00	\N	\N
-378	378	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0018/2026	9	34	2026-01-12 05:32:00	\N	\N
-379	379	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0020/2026	4	39	2026-01-24 04:13:00	\N	\N
-380	380	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0020/2026	5	38	2026-01-27 02:35:00	\N	\N
-381	381	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0020/2026	8	35	2026-01-01 00:33:00	\N	\N
-382	382	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0021/2026	4	39	2026-01-03 18:45:00	\N	\N
-383	383	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0012/2026	20	23	2026-02-16 19:02:00	\N	\N
-384	384	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0019/2026	9	34	2026-02-24 00:18:00	\N	\N
-385	385	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0022/2026	14	29	2026-02-23 15:08:00	\N	\N
-386	386	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0013/2026	20	23	2026-02-18 12:38:00	\N	\N
-387	387	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0024/2026	3	40	2026-01-24 05:34:00	\N	\N
-388	388	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0017/2026	2	41	2026-02-14 16:22:00	\N	\N
-389	389	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0015/2026	24	65	2026-02-06 00:54:00	\N	\N
-390	390	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0014/2026	12	31	2026-01-04 12:02:00	\N	\N
-391	391	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0012/2026	7	36	2026-01-24 10:46:00	\N	\N
-392	392	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0016/2026	22	21	2026-01-13 10:50:00	\N	\N
-393	393	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0022/2026	15	28	2026-01-28 20:49:00	\N	\N
-394	394	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0021/2026	5	38	2026-02-25 04:39:00	\N	\N
-395	395	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0015/2026	12	31	2026-02-22 02:10:00	\N	\N
-396	396	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0022/2026	5	38	2026-01-13 11:30:00	\N	\N
-397	397	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0022/2026	4	39	2026-02-26 08:56:00	\N	\N
-398	398	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0016/2026	24	65	2026-01-11 22:02:00	\N	\N
-399	399	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0020/2026	9	34	2026-01-06 14:05:00	\N	\N
-400	400	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0021/2026	9	34	2026-01-11 14:39:00	\N	\N
-401	401	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0021/2026	8	35	2026-02-13 22:52:00	\N	\N
-402	402	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0023/2026	14	29	2026-02-11 16:15:00	\N	\N
-403	403	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0025/2026	3	40	2026-02-16 22:39:00	\N	\N
-404	404	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0024/2026	14	29	2026-02-03 23:38:00	\N	\N
-405	405	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0022/2026	9	34	2026-01-15 14:16:00	\N	\N
-406	406	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0023/2026	9	34	2026-02-24 09:26:00	\N	\N
-407	407	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0017/2026	22	21	2026-01-31 18:21:00	\N	\N
-408	408	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0026/2026	3	40	2026-02-04 02:51:00	\N	\N
-409	409	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0018/2026	2	41	2026-01-05 05:54:00	\N	\N
-410	410	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0014/2026	6	37	2026-02-15 04:33:00	\N	\N
-411	411	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0016/2026	12	31	2026-02-27 11:11:00	\N	\N
-412	412	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0027/2026	3	40	2026-01-06 15:19:00	\N	\N
-413	413	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0023/2026	4	39	2026-01-31 11:12:00	\N	\N
-414	414	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0014/2026	20	23	2026-01-31 01:28:00	\N	\N
-415	415	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0011/2026	13	30	2026-02-03 07:46:00	\N	\N
-416	416	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0028/2026	3	40	2026-01-30 15:25:00	\N	\N
-417	417	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0017/2026	12	31	2026-02-24 23:37:00	\N	\N
-418	418	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0020/2026	16	27	2026-01-11 08:47:00	\N	\N
-419	419	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0018/2026	21	22	2026-02-04 10:41:00	\N	\N
-420	420	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0017/2026	24	65	2026-02-24 00:22:00	\N	\N
-421	421	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0023/2026	5	38	2026-01-15 05:39:00	\N	\N
-422	422	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0024/2026	9	34	2026-01-05 19:15:00	\N	\N
-423	423	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0013/2026	18	25	2026-02-21 20:20:00	\N	\N
-424	424	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0023/2026	15	28	2026-01-20 01:04:00	\N	\N
-425	425	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0025/2026	14	29	2026-01-19 22:00:00	\N	\N
-426	426	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0019/2026	2	41	2026-01-21 06:35:00	\N	\N
-427	427	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0024/2026	15	28	2026-02-08 05:48:00	\N	\N
-428	428	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0013/2026	17	26	2026-02-11 02:21:00	\N	\N
-429	429	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0024/2026	5	38	2026-01-21 18:09:00	\N	\N
-430	430	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0018/2026	24	65	2026-02-10 14:36:00	\N	\N
-431	431	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0012/2026	13	30	2026-03-01 08:29:00	\N	\N
-432	432	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0017/2026	11	32	2026-01-02 17:41:00	\N	\N
-433	433	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0015/2026	6	37	2026-01-21 22:32:00	\N	\N
-434	434	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0014/2026	18	25	2026-01-31 22:46:00	\N	\N
-435	435	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0021/2026	16	27	2026-02-12 07:23:00	\N	\N
-436	436	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0024/2026	4	39	2026-01-27 16:54:00	\N	\N
-437	437	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0019/2026	24	65	2026-01-30 21:41:00	\N	\N
-438	438	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0025/2026	9	34	2026-02-27 21:27:00	\N	\N
-439	439	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0026/2026	9	34	2026-02-20 05:05:00	\N	\N
-440	440	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0022/2026	16	27	2026-01-30 00:25:00	\N	\N
-441	441	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0025/2026	5	38	2026-02-15 19:02:00	\N	\N
-442	442	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0012/2026	1	42	2026-02-17 23:09:00	\N	\N
-443	443	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0019/2026	21	22	2026-01-02 11:02:00	\N	\N
-444	444	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0027/2026	9	34	2026-02-07 17:25:00	\N	\N
-445	445	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0018/2026	11	32	2026-02-12 14:59:00	\N	\N
-446	446	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0014/2026	17	26	2026-02-07 07:36:00	\N	\N
-447	447	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0013/2026	7	36	2026-01-23 13:07:00	\N	\N
-448	448	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0020/2026	2	41	2026-02-15 13:54:00	\N	\N
-449	449	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0016/2026	6	37	2026-02-22 07:42:00	\N	\N
-450	450	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0025/2026	4	39	2026-01-10 01:54:00	\N	\N
-451	451	EMITIDO	Documento emitido con folio: EM-SMADSOT.ADMIN-0017/2026	23	20	2026-01-24 22:18:00	\N	\N
-452	452	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0015/2026	10	33	2026-02-03 19:31:00	\N	\N
-453	453	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0020/2026	21	22	2026-02-12 19:15:00	\N	\N
-454	454	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0017/2026	6	37	2026-01-14 05:43:00	\N	\N
-455	455	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0028/2026	9	34	2026-01-04 11:17:00	\N	\N
-456	456	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0019/2026	19	24	2026-02-18 08:05:00	\N	\N
-457	457	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0021/2026	2	41	2026-02-20 22:58:00	\N	\N
-458	458	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0016/2026	10	33	2026-01-13 08:45:00	\N	\N
-459	459	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0014/2026	7	36	2026-01-30 08:36:00	\N	\N
-460	460	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0015/2026	20	23	2026-01-30 05:07:00	\N	\N
-461	461	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0019/2026	11	32	2026-01-24 10:45:00	\N	\N
-462	462	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-DRRE-0013/2026	1	42	2026-01-26 12:28:00	\N	\N
-463	463	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0020/2026	11	32	2026-02-08 16:47:00	\N	\N
-464	464	EMITIDO	Documento emitido con folio: EM-SMADSOT.SEC-0018/2026	22	21	2026-01-01 10:00:00	\N	\N
-465	465	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0025/2026	15	28	2026-02-26 23:02:00	\N	\N
-466	466	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DDUIA-0026/2026	4	39	2026-01-02 17:04:00	\N	\N
-467	467	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0015/2026	17	26	2026-01-17 11:50:00	\N	\N
-468	468	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0018/2026	6	37	2026-01-02 12:32:00	\N	\N
-469	469	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DRME-0022/2026	8	35	2026-02-19 19:21:00	\N	\N
-470	470	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0016/2026	20	23	2026-02-09 01:50:00	\N	\N
-471	471	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0023/2026	16	27	2026-02-07 04:24:00	\N	\N
-472	472	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DRC-0024/2026	16	27	2026-01-30 14:12:00	\N	\N
-473	473	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGSSU-0026/2026	5	38	2026-01-06 08:55:00	\N	\N
-474	474	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0021/2026	21	22	2026-02-04 23:15:00	\N	\N
-475	475	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0022/2026	21	22	2026-02-25 06:25:00	\N	\N
-476	476	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0013/2026	13	30	2026-02-10 07:41:00	\N	\N
-477	477	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DMEE-0021/2026	11	32	2026-02-07 08:22:00	\N	\N
-478	478	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-DVRF-0017/2026	10	33	2026-01-18 12:37:00	\N	\N
-479	479	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0029/2026	3	40	2026-02-27 15:06:00	\N	\N
-480	480	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0019/2026	6	37	2026-01-25 05:08:00	\N	\N
-481	481	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0023/2026	21	22	2026-02-05 20:36:00	\N	\N
-482	482	EMITIDO	Documento emitido con folio: EM-SMADSOT.DPG-0020/2026	24	65	2026-01-21 13:34:00	\N	\N
-483	483	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-0016/2026	17	26	2026-03-01 21:22:00	\N	\N
-484	484	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-DSE-0014/2026	13	30	2026-02-08 18:00:00	\N	\N
-485	485	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0026/2026	14	29	2026-01-20 19:12:00	\N	\N
-486	486	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGRNB-0020/2026	6	37	2026-01-18 18:01:00	\N	\N
-487	487	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0020/2026	19	24	2026-01-06 19:04:00	\N	\N
-488	488	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCA-0015/2026	18	25	2026-01-11 20:22:00	\N	\N
-489	489	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-0017/2026	20	23	2026-01-15 09:36:00	\N	\N
-490	490	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGR-DTRS-0029/2026	9	34	2026-01-05 01:37:00	\N	\N
-491	491	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-0024/2026	21	22	2026-01-24 01:16:00	\N	\N
-492	492	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0026/2026	15	28	2026-01-19 10:00:00	\N	\N
-493	493	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DIEE-0027/2026	15	28	2026-02-20 21:27:00	\N	\N
-494	494	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0022/2026	2	41	2026-01-20 03:50:00	\N	\N
-495	495	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGR-0030/2026	3	40	2026-02-08 03:09:00	\N	\N
-496	496	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0021/2026	19	24	2026-02-18 01:03:00	\N	\N
-497	497	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DGCCITE-0022/2026	19	24	2026-01-10 13:16:00	\N	\N
-498	498	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGASE-DSH-DPH-0027/2026	14	29	2026-01-14 20:23:00	\N	\N
-499	499	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-DGCV-0023/2026	2	41	2026-02-14 16:03:00	\N	\N
-500	500	EMITIDO	Documento emitido con folio: EM-SMADSOT.SSGTDU-0015/2026	7	36	2026-01-18 08:26:00	\N	\N
-501	502	COPIA_CONOCIMIENTO_AUTO	Copia enviada autom ticamente a Secretar¡a (regla institucional)	24	21	2026-03-11 05:54:54.455728	\N	\N
-502	502	EMITIDO	Documento emitido. Folio: EM-SMADSOT.DPG-0021/2026. Contexto: MEMORANDUM	24	65	2026-03-11 05:54:54.455728	\N	\N
-503	503	COPIA_CONOCIMIENTO_AUTO	Copia enviada autom ticamente a Secretar¡a (regla institucional)	24	21	2026-03-11 06:00:12.859108	\N	\N
-504	503	EMITIDO	Documento emitido. Folio: EM-SMADSOT.DPG-0022/2026. Contexto: MEMORANDUM	24	65	2026-03-11 06:00:12.859108	\N	\N
-505	504	COPIA_CONOCIMIENTO_AUTO	Copia enviada autom ticamente a Secretar¡a (regla institucional)	24	21	2026-03-11 06:01:44.816004	\N	\N
-506	504	EMITIDO	Documento emitido. Folio: EM-SMADSOT.DPG-0023/2026. Contexto: MEMORANDUM	24	65	2026-03-11 06:01:44.816004	\N	\N
-507	505	COPIA_CONOCIMIENTO_AUTO	Copia enviada autom ticamente a Secretar¡a (regla institucional)	4	21	2026-03-12 04:33:10.180795	\N	\N
-508	505	EMITIDO	Documento emitido. Folio: EM-SMADSOT.SMADSOT.SGTDU.DDUIA-0027/2026. Contexto: MEMORANDUM	4	39	2026-03-12 04:33:10.180795	\N	\N
-509	505	DOCUMENTO_EMITIDO	Documento emitido con folio EM-SMADSOT.SMADSOT.SGTDU.DDUIA-0027/2026	4	39	2026-03-12 04:33:10.217526	{"tipo_documento_id":2,"contexto":"MEMORANDUM","prioridad":"MEDIA","prestamo_numero_id":null}	::1
-510	505	TURNADO	Turnado a "Direccion General de Asuntos Juridicos" (área 61) por usuario 4	4	61	2026-03-12 04:33:10.274891	\N	\N
-511	505	DOCUMENTO_TURNADO	Documento turnado a área 61	4	39	2026-03-12 04:33:10.291049	{"area_destino_id":61,"nodo_nuevo_id":505,"observaciones":null,"instrucciones":null}	::1
-512	505	COPIA_CONOCIMIENTO_ENVIADA	Copia de conocimiento enviada a área 72	4	39	2026-03-12 04:33:10.340616	{"area_destino_id":72,"copia_id":5}	::1
-513	506	COPIA_CONOCIMIENTO_AUTO	Copia enviada autom ticamente a Secretar¡a (regla institucional)	6	21	2026-03-13 09:03:57.313472	\N	\N
-514	506	EMITIDO	Documento emitido. Folio: EM-SMADSOT.SMADSOT.DGAJ-0001/2026. Contexto: MEMORANDUM	6	61	2026-03-13 09:03:57.313472	\N	\N
-515	506	DOCUMENTO_EMITIDO	Documento emitido con folio EM-SMADSOT.SMADSOT.DGAJ-0001/2026	6	61	2026-03-13 09:03:57.358409	{"tipo_documento_id":1,"contexto":"MEMORANDUM","prioridad":"MEDIA","prestamo_numero_id":null}	::1
-516	506	TURNADO	Turnado a "Direccion de Administracion" (área 72) por usuario 6	6	72	2026-03-13 09:03:57.420834	\N	\N
-517	506	DOCUMENTO_TURNADO	Documento turnado a área 72	6	61	2026-03-13 09:03:57.441623	{"area_destino_id":72,"nodo_nuevo_id":507,"observaciones":null,"instrucciones":"Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?"}	::1
-518	506	COPIA_CONOCIMIENTO_ENVIADA	Copia de conocimiento enviada a área 21	6	61	2026-03-13 09:03:57.502473	{"area_destino_id":21,"copia_id":7}	::1
-519	507	COPIA_CONOCIMIENTO_AUTO	Copia enviada autom ticamente a Secretar¡a (regla institucional)	6	21	2026-03-13 09:04:44.715903	\N	\N
-520	507	EMITIDO	Documento emitido. Folio: EM-SMADSOT.SMADSOT.DGAJ-0002/2026. Contexto: CIRCULAR	6	61	2026-03-13 09:04:44.715903	\N	\N
-521	507	DOCUMENTO_EMITIDO	Documento emitido con folio EM-SMADSOT.SMADSOT.DGAJ-0002/2026	6	61	2026-03-13 09:04:44.739684	{"tipo_documento_id":3,"contexto":"CIRCULAR","prioridad":"MEDIA","prestamo_numero_id":null}	::1
-522	507	TURNADO	Turnado a "Direccion de Administracion" (área 72) por usuario 6	6	72	2026-03-13 09:04:44.811063	\N	\N
-523	507	DOCUMENTO_TURNADO	Documento turnado a área 72	6	61	2026-03-13 09:04:44.826458	{"area_destino_id":72,"nodo_nuevo_id":509,"observaciones":null,"instrucciones":"Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?"}	::1
-524	507	COPIA_CONOCIMIENTO_ENVIADA	Copia de conocimiento enviada a área 65	6	61	2026-03-13 09:04:44.86672	{"area_destino_id":65,"copia_id":9}	::1
 \.
 
 
@@ -9571,505 +13286,6 @@ COPY public.nodo_documental (id, documento_id, tipo_nodo, estado, nodo_padre_id,
 8	8	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0001/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0001/2026	39	4	\N	2026-02-14 07:57:00	\N	\N	\N	\N	t
 9	9	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-0001/2026	\N	EM-SMADSOT.SSGASE-0001/2026	22	21	\N	2026-02-28 11:32:00	\N	\N	\N	\N	t
 10	10	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-0002/2026	\N	EM-SMADSOT.SSGTDU-0002/2026	36	7	\N	2026-02-27 18:13:00	\N	\N	\N	\N	t
-11	11	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0001/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0001/2026	28	15	\N	2026-01-21 22:23:00	\N	\N	\N	\N	t
-12	12	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-0001/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0001/2026	24	19	\N	2026-01-06 18:42:00	\N	\N	\N	\N	t
-13	13	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0001/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0001/2026	32	11	\N	2026-01-24 06:16:00	\N	\N	\N	\N	t
-14	14	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0001/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0001/2026	31	12	\N	2026-01-01 14:45:00	\N	\N	\N	\N	t
-15	15	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0002/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0002/2026	32	11	\N	2026-01-23 17:27:00	\N	\N	\N	\N	t
-16	16	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0002/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0002/2026	29	14	\N	2026-01-08 15:59:00	\N	\N	\N	\N	t
-17	17	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0001/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0001/2026	37	6	\N	2026-01-13 02:44:00	\N	\N	\N	\N	t
-18	18	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0002/2026	\N	EM-SMADSOT.SSGASE-0002/2026	22	21	\N	2026-01-18 09:15:00	\N	\N	\N	\N	t
-19	19	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-0003/2026	\N	EM-SMADSOT.SSGTDU-0003/2026	36	7	\N	2026-01-18 07:37:00	\N	\N	\N	\N	t
-20	20	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0002/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0002/2026	24	19	\N	2026-01-15 05:54:00	\N	\N	\N	\N	t
-21	21	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0001/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0001/2026	34	9	\N	2026-02-16 01:44:00	\N	\N	\N	\N	t
-22	22	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0003/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0003/2026	24	19	\N	2026-01-18 02:23:00	\N	\N	\N	\N	t
-23	23	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0001/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0001/2026	42	1	\N	2026-02-03 05:18:00	\N	\N	\N	\N	t
-24	24	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGCV-0001/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0001/2026	41	2	\N	2026-01-24 04:48:00	\N	\N	\N	\N	t
-25	25	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-0001/2026	\N	EM-SMADSOT.SSGASE-DGCA-0001/2026	25	18	\N	2026-01-17 22:09:00	\N	\N	\N	\N	t
-26	26	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0002/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0002/2026	39	4	\N	2026-02-08 20:51:00	\N	\N	\N	\N	t
-27	27	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0002/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0002/2026	42	1	\N	2026-02-17 20:07:00	\N	\N	\N	\N	t
-28	28	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0001/2026	\N	EM-SMADSOT.SEC-0001/2026	21	22	\N	2026-02-21 17:53:00	\N	\N	\N	\N	t
-29	29	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0004/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0004/2026	24	19	\N	2026-02-18 02:45:00	\N	\N	\N	\N	t
-30	30	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0002/2026	\N	EM-SMADSOT.SSGASE-DGR-0002/2026	26	17	\N	2026-01-22 08:36:00	\N	\N	\N	\N	t
-31	31	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0001/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0001/2026	33	10	\N	2026-03-01 20:51:00	\N	\N	\N	\N	t
-32	32	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0001/2026	\N	EM-SMADSOT.DPG-0001/2026	65	24	\N	2026-01-09 12:17:00	\N	\N	\N	\N	t
-33	33	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0001/2026	\N	EM-SMADSOT.ADMIN-0001/2026	20	23	\N	2026-02-20 13:38:00	\N	\N	\N	\N	t
-34	34	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0002/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0002/2026	35	8	\N	2026-02-02 12:32:00	\N	\N	\N	\N	t
-35	35	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0003/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0003/2026	39	4	\N	2026-02-02 02:12:00	\N	\N	\N	\N	t
-36	36	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0003/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0003/2026	42	1	\N	2026-02-23 17:19:00	\N	\N	\N	\N	t
-37	37	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0002/2026	\N	EM-SMADSOT.SEC-0002/2026	21	22	\N	2026-02-24 05:08:00	\N	\N	\N	\N	t
-38	38	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0002/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0002/2026	33	10	\N	2026-01-27 19:18:00	\N	\N	\N	\N	t
-39	39	EMISION	CERRADO	\N	EM-SMADSOT.SEC-0003/2026	\N	EM-SMADSOT.SEC-0003/2026	21	22	\N	2026-01-09 09:37:00	\N	\N	\N	\N	t
-40	40	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0001/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0001/2026	27	16	\N	2026-02-19 02:23:00	\N	\N	\N	\N	t
-41	41	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-0002/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0002/2026	37	6	\N	2026-03-01 12:10:00	\N	\N	\N	\N	t
-42	42	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0003/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0003/2026	37	6	\N	2026-02-13 01:27:00	\N	\N	\N	\N	t
-43	43	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGR-0001/2026	\N	EM-SMADSOT.SSGTDU-DGR-0001/2026	40	3	\N	2026-02-06 11:16:00	\N	\N	\N	\N	t
-44	44	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0002/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0002/2026	41	2	\N	2026-02-20 18:32:00	\N	\N	\N	\N	t
-45	45	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0003/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0003/2026	32	11	\N	2026-01-06 22:48:00	\N	\N	\N	\N	t
-46	46	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0002/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0002/2026	34	9	\N	2026-02-15 17:04:00	\N	\N	\N	\N	t
-47	47	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0004/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0004/2026	42	1	\N	2026-02-19 13:38:00	\N	\N	\N	\N	t
-48	48	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0002/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0002/2026	30	13	\N	2026-01-02 09:23:00	\N	\N	\N	\N	t
-49	49	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0002/2026	\N	EM-SMADSOT.SSGTDU-DGR-0002/2026	40	3	\N	2026-01-31 20:55:00	\N	\N	\N	\N	t
-50	50	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-0004/2026	\N	EM-SMADSOT.SSGTDU-0004/2026	36	7	\N	2026-02-09 15:49:00	\N	\N	\N	\N	t
-51	51	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0004/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0004/2026	39	4	\N	2026-01-15 03:50:00	\N	\N	\N	\N	t
-52	52	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0004/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0004/2026	32	11	\N	2026-02-21 05:55:00	\N	\N	\N	\N	t
-53	53	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0003/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0003/2026	41	2	\N	2026-02-08 14:50:00	\N	\N	\N	\N	t
-54	54	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0002/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0002/2026	27	16	\N	2026-02-21 06:11:00	\N	\N	\N	\N	t
-55	55	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0003/2026	\N	EM-SMADSOT.SSGTDU-DGR-0003/2026	40	3	\N	2026-02-26 19:36:00	\N	\N	\N	\N	t
-56	56	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0005/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0005/2026	39	4	\N	2026-02-19 23:07:00	\N	\N	\N	\N	t
-57	57	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0004/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0004/2026	41	2	\N	2026-02-22 10:38:00	\N	\N	\N	\N	t
-58	58	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0002/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0002/2026	31	12	\N	2026-02-13 15:05:00	\N	\N	\N	\N	t
-59	59	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0005/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0005/2026	32	11	\N	2026-02-06 11:21:00	\N	\N	\N	\N	t
-60	60	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0003/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0003/2026	30	13	\N	2026-01-28 12:46:00	\N	\N	\N	\N	t
-61	61	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0003/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0003/2026	35	8	\N	2026-01-01 16:34:00	\N	\N	\N	\N	t
-62	62	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0002/2026	\N	EM-SMADSOT.ADMIN-0002/2026	20	23	\N	2026-01-05 03:16:00	\N	\N	\N	\N	t
-63	63	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0003/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0003/2026	27	16	\N	2026-01-02 11:14:00	\N	\N	\N	\N	t
-64	64	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0002/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0002/2026	28	15	\N	2026-01-11 01:39:00	\N	\N	\N	\N	t
-65	65	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-0002/2026	\N	EM-SMADSOT.SSGASE-DSH-0002/2026	23	20	\N	2026-01-17 01:22:00	\N	\N	\N	\N	t
-66	66	EMISION	PENDIENTE	\N	EM-SMADSOT.SEC-0004/2026	\N	EM-SMADSOT.SEC-0004/2026	21	22	\N	2026-01-17 13:01:00	\N	\N	\N	\N	t
-67	67	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-0003/2026	\N	EM-SMADSOT.SSGASE-DSH-0003/2026	23	20	\N	2026-01-13 16:10:00	\N	\N	\N	\N	t
-68	68	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DDUIA-0006/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0006/2026	39	4	\N	2026-01-28 04:02:00	\N	\N	\N	\N	t
-69	69	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0003/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0003/2026	33	10	\N	2026-01-27 06:55:00	\N	\N	\N	\N	t
-70	70	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0005/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0005/2026	41	2	\N	2026-01-13 23:33:00	\N	\N	\N	\N	t
-71	71	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0002/2026	\N	EM-SMADSOT.DPG-0002/2026	65	24	\N	2026-02-11 02:28:00	\N	\N	\N	\N	t
-72	72	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0003/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0003/2026	29	14	\N	2026-01-12 09:14:00	\N	\N	\N	\N	t
-73	73	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0004/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0004/2026	27	16	\N	2026-02-17 11:16:00	\N	\N	\N	\N	t
-74	74	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0003/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0003/2026	28	15	\N	2026-01-19 04:35:00	\N	\N	\N	\N	t
-75	75	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0006/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0006/2026	32	11	\N	2026-01-13 20:48:00	\N	\N	\N	\N	t
-76	76	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0004/2026	\N	EM-SMADSOT.SSGTDU-DGR-0004/2026	40	3	\N	2026-01-11 15:41:00	\N	\N	\N	\N	t
-77	77	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0003/2026	\N	EM-SMADSOT.ADMIN-0003/2026	20	23	\N	2026-02-27 08:32:00	\N	\N	\N	\N	t
-78	78	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0005/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0005/2026	27	16	\N	2026-01-04 03:39:00	\N	\N	\N	\N	t
-79	79	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0003/2026	\N	EM-SMADSOT.SSGASE-DGR-0003/2026	26	17	\N	2026-01-04 14:23:00	\N	\N	\N	\N	t
-80	80	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0004/2026	\N	EM-SMADSOT.ADMIN-0004/2026	20	23	\N	2026-02-17 20:25:00	\N	\N	\N	\N	t
-81	81	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0003/2026	\N	EM-SMADSOT.DPG-0003/2026	65	24	\N	2026-02-01 19:06:00	\N	\N	\N	\N	t
-82	82	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0003/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0003/2026	34	9	\N	2026-01-09 14:16:00	\N	\N	\N	\N	t
-83	83	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0004/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0004/2026	30	13	\N	2026-02-19 07:22:00	\N	\N	\N	\N	t
-84	84	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0007/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0007/2026	39	4	\N	2026-01-25 03:34:00	\N	\N	\N	\N	t
-85	85	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0002/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0002/2026	38	5	\N	2026-02-15 05:17:00	\N	\N	\N	\N	t
-86	86	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0003/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0003/2026	38	5	\N	2026-01-28 15:40:00	\N	\N	\N	\N	t
-87	87	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0004/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0004/2026	29	14	\N	2026-02-03 03:54:00	\N	\N	\N	\N	t
-88	88	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0007/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0007/2026	32	11	\N	2026-02-13 08:32:00	\N	\N	\N	\N	t
-89	89	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0005/2026	\N	EM-SMADSOT.ADMIN-0005/2026	20	23	\N	2026-03-02 03:40:00	\N	\N	\N	\N	t
-90	90	EMISION	ACTIVO	\N	EM-SMADSOT.ADMIN-0006/2026	\N	EM-SMADSOT.ADMIN-0006/2026	20	23	\N	2026-01-13 16:36:00	\N	\N	\N	\N	t
-91	91	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0004/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0004/2026	35	8	\N	2026-02-22 07:28:00	\N	\N	\N	\N	t
-92	92	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0006/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0006/2026	41	2	\N	2026-01-10 17:56:00	\N	\N	\N	\N	t
-93	93	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0004/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0004/2026	28	15	\N	2026-02-28 22:54:00	\N	\N	\N	\N	t
-94	94	EMISION	PENDIENTE	\N	EM-SMADSOT.SEC-0005/2026	\N	EM-SMADSOT.SEC-0005/2026	21	22	\N	2026-01-29 05:52:00	\N	\N	\N	\N	t
-95	95	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0003/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0003/2026	31	12	\N	2026-01-14 06:28:00	\N	\N	\N	\N	t
-96	96	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0005/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0005/2026	28	15	\N	2026-01-18 08:29:00	\N	\N	\N	\N	t
-97	97	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0004/2026	\N	EM-SMADSOT.DPG-0004/2026	65	24	\N	2026-02-23 16:41:00	\N	\N	\N	\N	t
-98	98	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0006/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0006/2026	27	16	\N	2026-02-17 05:34:00	\N	\N	\N	\N	t
-99	99	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0007/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0007/2026	41	2	\N	2026-02-26 04:19:00	\N	\N	\N	\N	t
-100	100	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-0003/2026	\N	EM-SMADSOT.SSGASE-0003/2026	22	21	\N	2026-02-24 16:15:00	\N	\N	\N	\N	t
-101	101	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-0005/2026	\N	EM-SMADSOT.SSGTDU-0005/2026	36	7	\N	2026-02-22 10:37:00	\N	\N	\N	\N	t
-102	102	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0005/2026	\N	EM-SMADSOT.DPG-0005/2026	65	24	\N	2026-01-30 00:23:00	\N	\N	\N	\N	t
-103	103	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0005/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0005/2026	35	8	\N	2026-02-16 14:34:00	\N	\N	\N	\N	t
-104	104	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0004/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0004/2026	38	5	\N	2026-02-08 15:05:00	\N	\N	\N	\N	t
-105	105	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGR-0004/2026	\N	EM-SMADSOT.SSGASE-DGR-0004/2026	26	17	\N	2026-02-03 13:44:00	\N	\N	\N	\N	t
-106	106	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DDUIA-0008/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0008/2026	39	4	\N	2026-02-21 18:11:00	\N	\N	\N	\N	t
-107	107	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0004/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0004/2026	33	10	\N	2026-01-08 23:02:00	\N	\N	\N	\N	t
-108	108	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-0004/2026	\N	EM-SMADSOT.SSGASE-0004/2026	22	21	\N	2026-01-17 03:37:00	\N	\N	\N	\N	t
-109	109	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0007/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0007/2026	27	16	\N	2026-01-07 13:30:00	\N	\N	\N	\N	t
-110	110	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-0005/2026	\N	EM-SMADSOT.SSGASE-0005/2026	22	21	\N	2026-02-14 09:47:00	\N	\N	\N	\N	t
-111	111	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0004/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0004/2026	34	9	\N	2026-01-14 21:01:00	\N	\N	\N	\N	t
-112	112	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0008/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0008/2026	32	11	\N	2026-01-29 14:35:00	\N	\N	\N	\N	t
-113	113	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0005/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0005/2026	29	14	\N	2026-01-23 03:27:00	\N	\N	\N	\N	t
-114	114	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0005/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0005/2026	38	5	\N	2026-01-06 06:09:00	\N	\N	\N	\N	t
-115	115	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0006/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0006/2026	28	15	\N	2026-01-01 06:13:00	\N	\N	\N	\N	t
-116	116	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0008/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0008/2026	27	16	\N	2026-02-26 01:08:00	\N	\N	\N	\N	t
-117	117	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0007/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0007/2026	28	15	\N	2026-01-09 16:34:00	\N	\N	\N	\N	t
-118	118	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0005/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0005/2026	30	13	\N	2026-01-18 02:47:00	\N	\N	\N	\N	t
-119	119	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGSSU-0006/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0006/2026	38	5	\N	2026-01-28 04:12:00	\N	\N	\N	\N	t
-120	120	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-0002/2026	\N	EM-SMADSOT.SSGASE-DGCA-0002/2026	25	18	\N	2026-02-07 00:26:00	\N	\N	\N	\N	t
-121	121	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0007/2026	\N	EM-SMADSOT.ADMIN-0007/2026	20	23	\N	2026-01-23 07:53:00	\N	\N	\N	\N	t
-122	122	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0005/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0005/2026	42	1	\N	2026-01-18 22:05:00	\N	\N	\N	\N	t
-123	123	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0005/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0005/2026	33	10	\N	2026-01-15 12:02:00	\N	\N	\N	\N	t
-124	124	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0006/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0006/2026	33	10	\N	2026-02-02 07:48:00	\N	\N	\N	\N	t
-125	125	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0007/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0007/2026	38	5	\N	2026-01-15 01:06:00	\N	\N	\N	\N	t
-126	126	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DDUIA-0009/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0009/2026	39	4	\N	2026-01-26 21:09:00	\N	\N	\N	\N	t
-127	127	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0005/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0005/2026	34	9	\N	2026-01-15 08:37:00	\N	\N	\N	\N	t
-128	128	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0006/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0006/2026	42	1	\N	2026-01-31 18:05:00	\N	\N	\N	\N	t
-129	129	EMISION	CERRADO	\N	EM-SMADSOT.SEC-0006/2026	\N	EM-SMADSOT.SEC-0006/2026	21	22	\N	2026-02-21 16:19:00	\N	\N	\N	\N	t
-130	130	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-0005/2026	\N	EM-SMADSOT.SSGASE-DGR-0005/2026	26	17	\N	2026-01-07 05:23:00	\N	\N	\N	\N	t
-131	131	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0005/2026	\N	EM-SMADSOT.SSGTDU-DGR-0005/2026	40	3	\N	2026-02-10 23:01:00	\N	\N	\N	\N	t
-132	132	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0008/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0008/2026	28	15	\N	2026-01-03 11:50:00	\N	\N	\N	\N	t
-133	133	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-0006/2026	\N	EM-SMADSOT.SSGASE-DGR-0006/2026	26	17	\N	2026-01-21 01:02:00	\N	\N	\N	\N	t
-134	134	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0006/2026	\N	EM-SMADSOT.SSGTDU-DGR-0006/2026	40	3	\N	2026-02-11 12:20:00	\N	\N	\N	\N	t
-135	135	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-0004/2026	\N	EM-SMADSOT.SSGASE-DSH-0004/2026	23	20	\N	2026-01-06 20:46:00	\N	\N	\N	\N	t
-136	136	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0008/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0008/2026	41	2	\N	2026-01-28 00:34:00	\N	\N	\N	\N	t
-137	137	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0006/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0006/2026	35	8	\N	2026-01-23 23:42:00	\N	\N	\N	\N	t
-138	138	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0004/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0004/2026	37	6	\N	2026-02-03 00:36:00	\N	\N	\N	\N	t
-139	139	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0007/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0007/2026	35	8	\N	2026-01-22 07:45:00	\N	\N	\N	\N	t
-140	140	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0006/2026	\N	EM-SMADSOT.SSGASE-0006/2026	22	21	\N	2026-02-05 18:32:00	\N	\N	\N	\N	t
-141	141	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0007/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0007/2026	33	10	\N	2026-01-10 13:00:00	\N	\N	\N	\N	t
-142	142	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0008/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0008/2026	35	8	\N	2026-02-15 06:01:00	\N	\N	\N	\N	t
-143	143	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0006/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0006/2026	30	13	\N	2026-01-14 10:26:00	\N	\N	\N	\N	t
-144	144	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DSH-DPH-0006/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0006/2026	29	14	\N	2026-02-07 18:40:00	\N	\N	\N	\N	t
-145	145	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0009/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0009/2026	27	16	\N	2026-01-25 19:27:00	\N	\N	\N	\N	t
-146	146	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0004/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0004/2026	31	12	\N	2026-02-19 08:41:00	\N	\N	\N	\N	t
-147	147	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0009/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0009/2026	28	15	\N	2026-01-08 16:48:00	\N	\N	\N	\N	t
-148	148	EMISION	ACTIVO	\N	EM-SMADSOT.ADMIN-0008/2026	\N	EM-SMADSOT.ADMIN-0008/2026	20	23	\N	2026-02-17 00:52:00	\N	\N	\N	\N	t
-149	149	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0008/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0008/2026	38	5	\N	2026-01-26 01:10:00	\N	\N	\N	\N	t
-150	150	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-0005/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0005/2026	24	19	\N	2026-01-09 07:25:00	\N	\N	\N	\N	t
-151	151	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0010/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0010/2026	39	4	\N	2026-01-12 20:25:00	\N	\N	\N	\N	t
-152	152	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0007/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0007/2026	29	14	\N	2026-01-17 21:27:00	\N	\N	\N	\N	t
-153	153	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0009/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0009/2026	35	8	\N	2026-01-10 13:24:00	\N	\N	\N	\N	t
-154	154	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0009/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0009/2026	41	2	\N	2026-01-23 18:42:00	\N	\N	\N	\N	t
-155	155	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0007/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0007/2026	42	1	\N	2026-02-14 15:30:00	\N	\N	\N	\N	t
-156	156	EMISION	CERRADO	\N	EM-SMADSOT.SEC-0007/2026	\N	EM-SMADSOT.SEC-0007/2026	21	22	\N	2026-02-16 23:12:00	\N	\N	\N	\N	t
-157	157	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0010/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0010/2026	28	15	\N	2026-01-21 03:12:00	\N	\N	\N	\N	t
-158	158	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-0003/2026	\N	EM-SMADSOT.SSGASE-DGCA-0003/2026	25	18	\N	2026-02-05 10:30:00	\N	\N	\N	\N	t
-159	159	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0007/2026	\N	EM-SMADSOT.SSGTDU-DGR-0007/2026	40	3	\N	2026-02-22 18:31:00	\N	\N	\N	\N	t
-160	160	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-0005/2026	\N	EM-SMADSOT.SSGASE-DSH-0005/2026	23	20	\N	2026-01-12 23:06:00	\N	\N	\N	\N	t
-161	161	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0005/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0005/2026	31	12	\N	2026-02-09 23:22:00	\N	\N	\N	\N	t
-162	162	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGR-0008/2026	\N	EM-SMADSOT.SSGTDU-DGR-0008/2026	40	3	\N	2026-02-12 07:31:00	\N	\N	\N	\N	t
-163	163	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0009/2026	\N	EM-SMADSOT.SSGTDU-DGR-0009/2026	40	3	\N	2026-03-01 01:35:00	\N	\N	\N	\N	t
-164	164	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-0006/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0006/2026	24	19	\N	2026-01-19 17:41:00	\N	\N	\N	\N	t
-165	165	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0010/2026	\N	EM-SMADSOT.SSGTDU-DGR-0010/2026	40	3	\N	2026-01-23 00:48:00	\N	\N	\N	\N	t
-166	166	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0009/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0009/2026	32	11	\N	2026-02-21 04:46:00	\N	\N	\N	\N	t
-167	167	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0006/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0006/2026	34	9	\N	2026-01-03 03:44:00	\N	\N	\N	\N	t
-168	168	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-0005/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0005/2026	37	6	\N	2026-02-11 11:18:00	\N	\N	\N	\N	t
-169	169	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0010/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0010/2026	35	8	\N	2026-01-16 20:45:00	\N	\N	\N	\N	t
-170	170	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0007/2026	\N	EM-SMADSOT.SSGASE-DGR-0007/2026	26	17	\N	2026-02-27 06:59:00	\N	\N	\N	\N	t
-171	171	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0011/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0011/2026	35	8	\N	2026-03-02 22:57:00	\N	\N	\N	\N	t
-172	172	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0006/2026	\N	EM-SMADSOT.DPG-0006/2026	65	24	\N	2026-02-13 15:18:00	\N	\N	\N	\N	t
-173	173	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-0004/2026	\N	EM-SMADSOT.SSGASE-DGCA-0004/2026	25	18	\N	2026-01-27 17:17:00	\N	\N	\N	\N	t
-174	174	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGSSU-0009/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0009/2026	38	5	\N	2026-01-17 18:01:00	\N	\N	\N	\N	t
-175	175	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0007/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0007/2026	34	9	\N	2026-01-01 05:13:00	\N	\N	\N	\N	t
-176	176	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0010/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0010/2026	27	16	\N	2026-02-26 08:54:00	\N	\N	\N	\N	t
-177	177	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0007/2026	\N	EM-SMADSOT.SSGASE-0007/2026	22	21	\N	2026-01-09 16:07:00	\N	\N	\N	\N	t
-178	178	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0011/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0011/2026	28	15	\N	2026-01-19 15:00:00	\N	\N	\N	\N	t
-179	179	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0007/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0007/2026	30	13	\N	2026-02-06 12:41:00	\N	\N	\N	\N	t
-180	180	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0012/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0012/2026	28	15	\N	2026-01-05 07:05:00	\N	\N	\N	\N	t
-181	181	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0013/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0013/2026	28	15	\N	2026-01-21 12:31:00	\N	\N	\N	\N	t
-182	182	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0014/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0014/2026	28	15	\N	2026-01-06 13:13:00	\N	\N	\N	\N	t
-183	183	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0008/2026	\N	EM-SMADSOT.SEC-0008/2026	21	22	\N	2026-01-21 10:48:00	\N	\N	\N	\N	t
-184	184	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0008/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0008/2026	29	14	\N	2026-01-31 00:53:00	\N	\N	\N	\N	t
-185	185	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0007/2026	\N	EM-SMADSOT.DPG-0007/2026	65	24	\N	2026-02-18 17:50:00	\N	\N	\N	\N	t
-186	186	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0010/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0010/2026	38	5	\N	2026-01-07 21:12:00	\N	\N	\N	\N	t
-187	187	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0008/2026	\N	EM-SMADSOT.DPG-0008/2026	65	24	\N	2026-01-13 17:15:00	\N	\N	\N	\N	t
-188	188	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0011/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0011/2026	27	16	\N	2026-02-19 23:02:00	\N	\N	\N	\N	t
-189	189	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0011/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0011/2026	38	5	\N	2026-02-12 09:32:00	\N	\N	\N	\N	t
-190	190	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-0006/2026	\N	EM-SMADSOT.SSGTDU-0006/2026	36	7	\N	2026-02-19 19:56:00	\N	\N	\N	\N	t
-191	191	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0011/2026	\N	EM-SMADSOT.SSGTDU-DGR-0011/2026	40	3	\N	2026-01-27 04:46:00	\N	\N	\N	\N	t
-192	192	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0012/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0012/2026	35	8	\N	2026-02-21 14:21:00	\N	\N	\N	\N	t
-193	193	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0013/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0013/2026	35	8	\N	2026-01-31 00:12:00	\N	\N	\N	\N	t
-194	194	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0014/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0014/2026	35	8	\N	2026-01-21 14:32:00	\N	\N	\N	\N	t
-195	195	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0012/2026	\N	EM-SMADSOT.SSGTDU-DGR-0012/2026	40	3	\N	2026-02-23 22:31:00	\N	\N	\N	\N	t
-196	196	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-0006/2026	\N	EM-SMADSOT.SSGASE-DSH-0006/2026	23	20	\N	2026-02-22 16:38:00	\N	\N	\N	\N	t
-197	197	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-0007/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0007/2026	24	19	\N	2026-02-19 22:28:00	\N	\N	\N	\N	t
-198	198	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0008/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0008/2026	24	19	\N	2026-01-09 12:13:00	\N	\N	\N	\N	t
-199	199	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0011/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0011/2026	39	4	\N	2026-02-17 01:21:00	\N	\N	\N	\N	t
-200	200	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0008/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0008/2026	34	9	\N	2026-02-16 18:21:00	\N	\N	\N	\N	t
-201	201	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0015/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0015/2026	28	15	\N	2026-01-06 08:50:00	\N	\N	\N	\N	t
-202	202	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0013/2026	\N	EM-SMADSOT.SSGTDU-DGR-0013/2026	40	3	\N	2026-02-14 09:19:00	\N	\N	\N	\N	t
-203	203	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0009/2026	\N	EM-SMADSOT.DPG-0009/2026	65	24	\N	2026-01-24 09:53:00	\N	\N	\N	\N	t
-204	204	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGRNB-0006/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0006/2026	37	6	\N	2026-01-04 09:48:00	\N	\N	\N	\N	t
-205	205	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0010/2026	\N	EM-SMADSOT.DPG-0010/2026	65	24	\N	2026-01-27 00:49:00	\N	\N	\N	\N	t
-206	206	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0008/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0008/2026	33	10	\N	2026-01-02 03:59:00	\N	\N	\N	\N	t
-207	207	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0010/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0010/2026	32	11	\N	2026-02-23 01:41:00	\N	\N	\N	\N	t
-208	208	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0009/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0009/2026	29	14	\N	2026-02-26 11:03:00	\N	\N	\N	\N	t
-209	209	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0014/2026	\N	EM-SMADSOT.SSGTDU-DGR-0014/2026	40	3	\N	2026-02-11 20:06:00	\N	\N	\N	\N	t
-210	210	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0011/2026	\N	EM-SMADSOT.DPG-0011/2026	65	24	\N	2026-02-05 04:39:00	\N	\N	\N	\N	t
-211	211	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0009/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0009/2026	24	19	\N	2026-02-15 11:32:00	\N	\N	\N	\N	t
-212	212	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0009/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0009/2026	34	9	\N	2026-02-23 06:34:00	\N	\N	\N	\N	t
-213	213	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-0007/2026	\N	EM-SMADSOT.SSGASE-DSH-0007/2026	23	20	\N	2026-01-25 07:14:00	\N	\N	\N	\N	t
-214	214	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0008/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0008/2026	42	1	\N	2026-01-06 20:14:00	\N	\N	\N	\N	t
-215	215	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0009/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0009/2026	33	10	\N	2026-01-20 07:50:00	\N	\N	\N	\N	t
-216	216	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0006/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0006/2026	31	12	\N	2026-02-04 04:33:00	\N	\N	\N	\N	t
-217	217	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0015/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0015/2026	35	8	\N	2026-03-02 03:00:00	\N	\N	\N	\N	t
-218	218	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0008/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0008/2026	30	13	\N	2026-02-27 09:01:00	\N	\N	\N	\N	t
-219	219	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0010/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0010/2026	34	9	\N	2026-01-21 06:41:00	\N	\N	\N	\N	t
-220	220	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0010/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0010/2026	41	2	\N	2026-02-19 06:34:00	\N	\N	\N	\N	t
-221	221	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0010/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0010/2026	33	10	\N	2026-01-22 11:55:00	\N	\N	\N	\N	t
-222	222	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-0005/2026	\N	EM-SMADSOT.SSGASE-DGCA-0005/2026	25	18	\N	2026-01-10 15:33:00	\N	\N	\N	\N	t
-223	223	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0011/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0011/2026	33	10	\N	2026-01-07 07:43:00	\N	\N	\N	\N	t
-224	224	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0011/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0011/2026	32	11	\N	2026-01-16 16:44:00	\N	\N	\N	\N	t
-225	225	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0016/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0016/2026	28	15	\N	2026-01-29 05:55:00	\N	\N	\N	\N	t
-226	226	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-0007/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0007/2026	37	6	\N	2026-02-17 03:07:00	\N	\N	\N	\N	t
-227	227	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0012/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0012/2026	38	5	\N	2026-02-03 13:05:00	\N	\N	\N	\N	t
-228	228	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0008/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0008/2026	37	6	\N	2026-01-18 01:12:00	\N	\N	\N	\N	t
-229	229	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DDUIA-0012/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0012/2026	39	4	\N	2026-02-02 20:05:00	\N	\N	\N	\N	t
-230	230	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0010/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0010/2026	24	19	\N	2026-01-29 11:02:00	\N	\N	\N	\N	t
-231	231	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCCITE-0011/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0011/2026	24	19	\N	2026-01-18 19:35:00	\N	\N	\N	\N	t
-232	232	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0008/2026	\N	EM-SMADSOT.SSGASE-0008/2026	22	21	\N	2026-01-20 06:53:00	\N	\N	\N	\N	t
-233	233	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0007/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0007/2026	31	12	\N	2026-02-13 09:54:00	\N	\N	\N	\N	t
-234	234	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-0008/2026	\N	EM-SMADSOT.SSGASE-DSH-0008/2026	23	20	\N	2026-02-12 04:08:00	\N	\N	\N	\N	t
-235	235	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0013/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0013/2026	39	4	\N	2026-01-20 19:50:00	\N	\N	\N	\N	t
-236	236	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0012/2026	\N	EM-SMADSOT.DPG-0012/2026	65	24	\N	2026-02-21 10:10:00	\N	\N	\N	\N	t
-237	237	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-0007/2026	\N	EM-SMADSOT.SSGTDU-0007/2026	36	7	\N	2026-01-03 11:00:00	\N	\N	\N	\N	t
-238	238	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0013/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0013/2026	38	5	\N	2026-01-11 23:12:00	\N	\N	\N	\N	t
-239	239	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGSSU-0014/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0014/2026	38	5	\N	2026-01-16 19:50:00	\N	\N	\N	\N	t
-240	240	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0010/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0010/2026	29	14	\N	2026-02-12 03:03:00	\N	\N	\N	\N	t
-241	241	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DSH-0009/2026	\N	EM-SMADSOT.SSGASE-DSH-0009/2026	23	20	\N	2026-01-19 06:46:00	\N	\N	\N	\N	t
-242	242	EMISION	PENDIENTE	\N	EM-SMADSOT.ADMIN-0009/2026	\N	EM-SMADSOT.ADMIN-0009/2026	20	23	\N	2026-02-13 18:34:00	\N	\N	\N	\N	t
-243	243	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-0008/2026	\N	EM-SMADSOT.SSGASE-DGR-0008/2026	26	17	\N	2026-01-08 06:20:00	\N	\N	\N	\N	t
-244	244	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0014/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0014/2026	39	4	\N	2026-02-17 12:13:00	\N	\N	\N	\N	t
-245	245	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGRNB-0009/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0009/2026	37	6	\N	2026-02-11 15:10:00	\N	\N	\N	\N	t
-246	246	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0015/2026	\N	EM-SMADSOT.SSGTDU-DGR-0015/2026	40	3	\N	2026-03-02 04:57:00	\N	\N	\N	\N	t
-247	247	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0011/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0011/2026	41	2	\N	2026-02-13 03:32:00	\N	\N	\N	\N	t
-248	248	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0009/2026	\N	EM-SMADSOT.SSGASE-0009/2026	22	21	\N	2026-02-26 01:17:00	\N	\N	\N	\N	t
-249	249	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-0009/2026	\N	EM-SMADSOT.SSGASE-DGR-0009/2026	26	17	\N	2026-01-16 09:26:00	\N	\N	\N	\N	t
-250	250	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0017/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0017/2026	28	15	\N	2026-01-30 02:40:00	\N	\N	\N	\N	t
-251	251	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-0012/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0012/2026	24	19	\N	2026-01-21 22:30:00	\N	\N	\N	\N	t
-252	252	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-0008/2026	\N	EM-SMADSOT.SSGTDU-0008/2026	36	7	\N	2026-01-27 19:01:00	\N	\N	\N	\N	t
-253	253	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0009/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0009/2026	30	13	\N	2026-01-12 06:31:00	\N	\N	\N	\N	t
-254	254	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0016/2026	\N	EM-SMADSOT.SSGTDU-DGR-0016/2026	40	3	\N	2026-02-27 05:48:00	\N	\N	\N	\N	t
-255	255	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCCITE-0013/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0013/2026	24	19	\N	2026-01-06 03:56:00	\N	\N	\N	\N	t
-256	256	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0010/2026	\N	EM-SMADSOT.SSGASE-0010/2026	22	21	\N	2026-01-24 16:05:00	\N	\N	\N	\N	t
-257	257	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-0006/2026	\N	EM-SMADSOT.SSGASE-DGCA-0006/2026	25	18	\N	2026-02-01 10:20:00	\N	\N	\N	\N	t
-258	258	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGR-0010/2026	\N	EM-SMADSOT.SSGASE-DGR-0010/2026	26	17	\N	2026-01-05 07:33:00	\N	\N	\N	\N	t
-259	259	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0016/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0016/2026	35	8	\N	2026-01-25 18:28:00	\N	\N	\N	\N	t
-260	260	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0008/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0008/2026	31	12	\N	2026-01-29 16:02:00	\N	\N	\N	\N	t
-261	261	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0015/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0015/2026	39	4	\N	2026-01-13 04:33:00	\N	\N	\N	\N	t
-262	262	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0017/2026	\N	EM-SMADSOT.SSGTDU-DGR-0017/2026	40	3	\N	2026-01-05 12:25:00	\N	\N	\N	\N	t
-263	263	EMISION	PENDIENTE	\N	EM-SMADSOT.SEC-0009/2026	\N	EM-SMADSOT.SEC-0009/2026	21	22	\N	2026-01-16 08:53:00	\N	\N	\N	\N	t
-264	264	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCCITE-0014/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0014/2026	24	19	\N	2026-02-06 17:35:00	\N	\N	\N	\N	t
-265	265	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0012/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0012/2026	27	16	\N	2026-02-22 11:54:00	\N	\N	\N	\N	t
-266	266	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0009/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0009/2026	42	1	\N	2026-01-12 15:49:00	\N	\N	\N	\N	t
-267	267	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0012/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0012/2026	41	2	\N	2026-02-24 05:22:00	\N	\N	\N	\N	t
-268	268	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0011/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0011/2026	29	14	\N	2026-01-20 11:34:00	\N	\N	\N	\N	t
-269	269	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0018/2026	\N	EM-SMADSOT.SSGTDU-DGR-0018/2026	40	3	\N	2026-01-04 17:36:00	\N	\N	\N	\N	t
-270	270	EMISION	CERRADO	\N	EM-SMADSOT.SEC-0010/2026	\N	EM-SMADSOT.SEC-0010/2026	21	22	\N	2026-02-16 05:02:00	\N	\N	\N	\N	t
-271	271	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0009/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0009/2026	31	12	\N	2026-01-10 09:55:00	\N	\N	\N	\N	t
-272	272	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0010/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0010/2026	31	12	\N	2026-02-02 06:46:00	\N	\N	\N	\N	t
-273	273	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-0007/2026	\N	EM-SMADSOT.SSGASE-DGCA-0007/2026	25	18	\N	2026-01-17 19:13:00	\N	\N	\N	\N	t
-274	274	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0019/2026	\N	EM-SMADSOT.SSGTDU-DGR-0019/2026	40	3	\N	2026-02-11 21:22:00	\N	\N	\N	\N	t
-275	275	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0010/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0010/2026	42	1	\N	2026-01-06 12:10:00	\N	\N	\N	\N	t
-276	276	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0013/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0013/2026	27	16	\N	2026-01-10 10:03:00	\N	\N	\N	\N	t
-277	277	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0014/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0014/2026	27	16	\N	2026-01-21 21:39:00	\N	\N	\N	\N	t
-278	278	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0012/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0012/2026	33	10	\N	2026-01-12 23:47:00	\N	\N	\N	\N	t
-279	279	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0018/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0018/2026	28	15	\N	2026-02-11 20:04:00	\N	\N	\N	\N	t
-280	280	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0012/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0012/2026	29	14	\N	2026-01-06 12:46:00	\N	\N	\N	\N	t
-281	281	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0011/2026	\N	EM-SMADSOT.SEC-0011/2026	21	22	\N	2026-01-28 05:00:00	\N	\N	\N	\N	t
-282	282	EMISION	PENDIENTE	\N	EM-SMADSOT.ADMIN-0010/2026	\N	EM-SMADSOT.ADMIN-0010/2026	20	23	\N	2026-01-08 21:07:00	\N	\N	\N	\N	t
-283	283	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-0008/2026	\N	EM-SMADSOT.SSGASE-DGCA-0008/2026	25	18	\N	2026-01-22 01:28:00	\N	\N	\N	\N	t
-284	284	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0015/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0015/2026	24	19	\N	2026-03-01 04:14:00	\N	\N	\N	\N	t
-285	285	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0013/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0013/2026	29	14	\N	2026-01-01 20:37:00	\N	\N	\N	\N	t
-286	286	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0013/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0013/2026	41	2	\N	2026-01-12 02:15:00	\N	\N	\N	\N	t
-287	287	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0011/2026	\N	EM-SMADSOT.SSGASE-0011/2026	22	21	\N	2026-02-17 17:22:00	\N	\N	\N	\N	t
-288	288	EMISION	ACTIVO	\N	EM-SMADSOT.ADMIN-0011/2026	\N	EM-SMADSOT.ADMIN-0011/2026	20	23	\N	2026-01-13 11:24:00	\N	\N	\N	\N	t
-289	289	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0020/2026	\N	EM-SMADSOT.SSGTDU-DGR-0020/2026	40	3	\N	2026-02-21 20:48:00	\N	\N	\N	\N	t
-290	290	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0011/2026	\N	EM-SMADSOT.SSGASE-DGR-0011/2026	26	17	\N	2026-02-15 23:55:00	\N	\N	\N	\N	t
-291	291	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0010/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0010/2026	37	6	\N	2026-02-10 02:59:00	\N	\N	\N	\N	t
-292	292	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0011/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0011/2026	34	9	\N	2026-02-12 23:59:00	\N	\N	\N	\N	t
-293	293	EMISION	ACTIVO	\N	EM-SMADSOT.ADMIN-0012/2026	\N	EM-SMADSOT.ADMIN-0012/2026	20	23	\N	2026-02-14 16:58:00	\N	\N	\N	\N	t
-294	294	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGSSU-0015/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0015/2026	38	5	\N	2026-02-04 23:32:00	\N	\N	\N	\N	t
-295	295	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0012/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0012/2026	34	9	\N	2026-01-25 09:00:00	\N	\N	\N	\N	t
-296	296	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0013/2026	\N	EM-SMADSOT.ADMIN-0013/2026	20	23	\N	2026-01-03 11:21:00	\N	\N	\N	\N	t
-297	297	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0014/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0014/2026	29	14	\N	2026-02-18 18:46:00	\N	\N	\N	\N	t
-298	298	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0015/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0015/2026	29	14	\N	2026-01-11 07:29:00	\N	\N	\N	\N	t
-299	299	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0012/2026	\N	EM-SMADSOT.SSGASE-DGR-0012/2026	26	17	\N	2026-02-24 10:15:00	\N	\N	\N	\N	t
-300	300	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0019/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0019/2026	28	15	\N	2026-01-13 13:03:00	\N	\N	\N	\N	t
-301	301	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0016/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0016/2026	39	4	\N	2026-01-22 05:05:00	\N	\N	\N	\N	t
-302	302	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0015/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0015/2026	27	16	\N	2026-02-12 21:23:00	\N	\N	\N	\N	t
-303	303	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0014/2026	\N	EM-SMADSOT.ADMIN-0014/2026	20	23	\N	2026-02-28 02:10:00	\N	\N	\N	\N	t
-304	304	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0016/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0016/2026	27	16	\N	2026-02-08 00:22:00	\N	\N	\N	\N	t
-305	305	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0016/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0016/2026	29	14	\N	2026-02-16 02:44:00	\N	\N	\N	\N	t
-306	306	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0014/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0014/2026	41	2	\N	2026-02-24 10:02:00	\N	\N	\N	\N	t
-307	307	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0016/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0016/2026	38	5	\N	2026-02-21 13:15:00	\N	\N	\N	\N	t
-308	308	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-0009/2026	\N	EM-SMADSOT.SSGTDU-0009/2026	36	7	\N	2026-02-16 21:26:00	\N	\N	\N	\N	t
-309	309	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0011/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0011/2026	31	12	\N	2026-02-04 16:48:00	\N	\N	\N	\N	t
-310	310	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0012/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0012/2026	31	12	\N	2026-01-06 00:31:00	\N	\N	\N	\N	t
-311	311	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0011/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0011/2026	37	6	\N	2026-02-13 14:23:00	\N	\N	\N	\N	t
-312	312	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0012/2026	\N	EM-SMADSOT.SSGASE-0012/2026	22	21	\N	2026-01-06 07:15:00	\N	\N	\N	\N	t
-313	313	EMISION	CERRADO	\N	EM-SMADSOT.ADMIN-0015/2026	\N	EM-SMADSOT.ADMIN-0015/2026	20	23	\N	2026-02-08 18:59:00	\N	\N	\N	\N	t
-314	314	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-0013/2026	\N	EM-SMADSOT.SSGASE-0013/2026	22	21	\N	2026-01-05 11:03:00	\N	\N	\N	\N	t
-315	315	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0015/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0015/2026	41	2	\N	2026-01-04 13:11:00	\N	\N	\N	\N	t
-316	316	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0017/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0017/2026	29	14	\N	2026-02-15 07:55:00	\N	\N	\N	\N	t
-317	317	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0017/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0017/2026	27	16	\N	2026-02-28 07:29:00	\N	\N	\N	\N	t
-318	318	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0017/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0017/2026	38	5	\N	2026-02-17 11:41:00	\N	\N	\N	\N	t
-319	319	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0016/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0016/2026	24	19	\N	2026-01-25 11:24:00	\N	\N	\N	\N	t
-320	320	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0013/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0013/2026	33	10	\N	2026-02-09 09:00:00	\N	\N	\N	\N	t
-321	321	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0010/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0010/2026	30	13	\N	2026-02-28 16:48:00	\N	\N	\N	\N	t
-322	322	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0012/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0012/2026	32	11	\N	2026-01-11 14:54:00	\N	\N	\N	\N	t
-323	323	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0021/2026	\N	EM-SMADSOT.SSGTDU-DGR-0021/2026	40	3	\N	2026-02-28 01:54:00	\N	\N	\N	\N	t
-324	324	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0012/2026	\N	EM-SMADSOT.SEC-0012/2026	21	22	\N	2026-01-23 09:40:00	\N	\N	\N	\N	t
-325	325	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0012/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0012/2026	37	6	\N	2026-01-30 08:23:00	\N	\N	\N	\N	t
-326	326	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0017/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0017/2026	24	19	\N	2026-02-02 09:35:00	\N	\N	\N	\N	t
-327	327	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0017/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0017/2026	39	4	\N	2026-02-22 03:02:00	\N	\N	\N	\N	t
-328	328	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCA-0009/2026	\N	EM-SMADSOT.SSGASE-DGCA-0009/2026	25	18	\N	2026-01-12 04:58:00	\N	\N	\N	\N	t
-329	329	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0018/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0018/2026	39	4	\N	2026-01-07 15:43:00	\N	\N	\N	\N	t
-330	330	EMISION	ACTIVO	\N	EM-SMADSOT.ADMIN-0016/2026	\N	EM-SMADSOT.ADMIN-0016/2026	20	23	\N	2026-02-16 12:16:00	\N	\N	\N	\N	t
-331	331	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0018/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0018/2026	29	14	\N	2026-02-10 13:55:00	\N	\N	\N	\N	t
-332	332	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0014/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0014/2026	33	10	\N	2026-01-16 22:58:00	\N	\N	\N	\N	t
-333	333	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0018/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0018/2026	38	5	\N	2026-02-02 23:11:00	\N	\N	\N	\N	t
-334	334	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0018/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0018/2026	27	16	\N	2026-02-18 13:48:00	\N	\N	\N	\N	t
-335	335	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0011/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0011/2026	42	1	\N	2026-02-25 08:57:00	\N	\N	\N	\N	t
-336	336	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DDUIA-0019/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0019/2026	39	4	\N	2026-01-30 18:22:00	\N	\N	\N	\N	t
-337	337	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0019/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0019/2026	29	14	\N	2026-01-25 21:29:00	\N	\N	\N	\N	t
-338	338	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0013/2026	\N	EM-SMADSOT.SEC-0013/2026	21	22	\N	2026-01-11 17:57:00	\N	\N	\N	\N	t
-339	339	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0020/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0020/2026	29	14	\N	2026-01-10 10:42:00	\N	\N	\N	\N	t
-340	340	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-0010/2026	\N	EM-SMADSOT.SSGASE-DSH-0010/2026	23	20	\N	2026-01-01 15:10:00	\N	\N	\N	\N	t
-341	341	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0017/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0017/2026	35	8	\N	2026-02-15 20:35:00	\N	\N	\N	\N	t
-342	342	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGSSU-0019/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0019/2026	38	5	\N	2026-01-09 00:33:00	\N	\N	\N	\N	t
-343	343	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0013/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0013/2026	32	11	\N	2026-02-27 05:05:00	\N	\N	\N	\N	t
-344	344	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0021/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0021/2026	29	14	\N	2026-01-22 08:56:00	\N	\N	\N	\N	t
-345	345	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGR-DRME-0018/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0018/2026	35	8	\N	2026-01-04 02:17:00	\N	\N	\N	\N	t
-346	346	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-0014/2026	\N	EM-SMADSOT.SSGASE-0014/2026	22	21	\N	2026-01-19 10:03:00	\N	\N	\N	\N	t
-347	347	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0019/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0019/2026	27	16	\N	2026-01-26 15:05:00	\N	\N	\N	\N	t
-348	348	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0014/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0014/2026	32	11	\N	2026-02-06 07:54:00	\N	\N	\N	\N	t
-349	349	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0014/2026	\N	EM-SMADSOT.SEC-0014/2026	21	22	\N	2026-01-21 09:42:00	\N	\N	\N	\N	t
-350	350	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0013/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0013/2026	31	12	\N	2026-02-04 05:38:00	\N	\N	\N	\N	t
-351	351	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0013/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0013/2026	34	9	\N	2026-01-26 22:05:00	\N	\N	\N	\N	t
-352	352	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-0010/2026	\N	EM-SMADSOT.SSGASE-DGCA-0010/2026	25	18	\N	2026-01-20 22:58:00	\N	\N	\N	\N	t
-353	353	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-0011/2026	\N	EM-SMADSOT.SSGASE-DGCA-0011/2026	25	18	\N	2026-03-02 15:08:00	\N	\N	\N	\N	t
-354	354	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0014/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0014/2026	34	9	\N	2026-01-31 14:32:00	\N	\N	\N	\N	t
-355	355	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0015/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0015/2026	34	9	\N	2026-01-07 09:36:00	\N	\N	\N	\N	t
-356	356	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0020/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0020/2026	28	15	\N	2026-02-15 16:10:00	\N	\N	\N	\N	t
-357	357	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-0011/2026	\N	EM-SMADSOT.SSGASE-DSH-0011/2026	23	20	\N	2026-01-25 22:34:00	\N	\N	\N	\N	t
-358	358	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-0010/2026	\N	EM-SMADSOT.SSGTDU-0010/2026	36	7	\N	2026-02-20 15:41:00	\N	\N	\N	\N	t
-359	359	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0013/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0013/2026	37	6	\N	2026-01-30 20:06:00	\N	\N	\N	\N	t
-360	360	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0022/2026	\N	EM-SMADSOT.SSGTDU-DGR-0022/2026	40	3	\N	2026-01-26 13:14:00	\N	\N	\N	\N	t
-361	361	EMISION	PENDIENTE	\N	EM-SMADSOT.DPG-0013/2026	\N	EM-SMADSOT.DPG-0013/2026	65	24	\N	2026-01-14 14:44:00	\N	\N	\N	\N	t
-362	362	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0023/2026	\N	EM-SMADSOT.SSGTDU-DGR-0023/2026	40	3	\N	2026-02-01 22:35:00	\N	\N	\N	\N	t
-363	363	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0016/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0016/2026	34	9	\N	2026-01-24 10:40:00	\N	\N	\N	\N	t
-364	364	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0019/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0019/2026	35	8	\N	2026-01-02 04:29:00	\N	\N	\N	\N	t
-365	365	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0015/2026	\N	EM-SMADSOT.SSGASE-0015/2026	22	21	\N	2026-02-21 03:13:00	\N	\N	\N	\N	t
-366	366	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-0016/2026	\N	EM-SMADSOT.SSGASE-0016/2026	22	21	\N	2026-03-01 22:59:00	\N	\N	\N	\N	t
-367	367	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0015/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0015/2026	32	11	\N	2026-01-18 04:44:00	\N	\N	\N	\N	t
-368	368	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-0011/2026	\N	EM-SMADSOT.SSGTDU-0011/2026	36	7	\N	2026-01-22 12:50:00	\N	\N	\N	\N	t
-369	369	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0016/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0016/2026	41	2	\N	2026-02-25 23:53:00	\N	\N	\N	\N	t
-370	370	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-0012/2026	\N	EM-SMADSOT.SSGASE-DGCA-0012/2026	25	18	\N	2026-01-29 00:32:00	\N	\N	\N	\N	t
-371	371	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0021/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0021/2026	28	15	\N	2026-01-06 00:00:00	\N	\N	\N	\N	t
-372	372	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0017/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0017/2026	34	9	\N	2026-01-10 05:43:00	\N	\N	\N	\N	t
-373	373	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0016/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0016/2026	32	11	\N	2026-02-07 01:20:00	\N	\N	\N	\N	t
-374	374	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-0018/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0018/2026	24	19	\N	2026-02-11 00:05:00	\N	\N	\N	\N	t
-375	375	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0015/2026	\N	EM-SMADSOT.SEC-0015/2026	21	22	\N	2026-01-28 14:45:00	\N	\N	\N	\N	t
-376	376	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0014/2026	\N	EM-SMADSOT.DPG-0014/2026	65	24	\N	2026-02-25 13:45:00	\N	\N	\N	\N	t
-377	377	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0017/2026	\N	EM-SMADSOT.SSGASE-0017/2026	22	21	\N	2026-01-02 06:24:00	\N	\N	\N	\N	t
-378	378	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0018/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0018/2026	34	9	\N	2026-01-12 05:32:00	\N	\N	\N	\N	t
-379	379	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DDUIA-0020/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0020/2026	39	4	\N	2026-01-24 04:13:00	\N	\N	\N	\N	t
-380	380	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGSSU-0020/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0020/2026	38	5	\N	2026-01-27 02:35:00	\N	\N	\N	\N	t
-381	381	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0020/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0020/2026	35	8	\N	2026-01-01 00:33:00	\N	\N	\N	\N	t
-382	382	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0021/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0021/2026	39	4	\N	2026-01-03 18:45:00	\N	\N	\N	\N	t
-383	383	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-0012/2026	\N	EM-SMADSOT.SSGASE-DSH-0012/2026	23	20	\N	2026-02-16 19:02:00	\N	\N	\N	\N	t
-384	384	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0019/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0019/2026	34	9	\N	2026-02-24 00:18:00	\N	\N	\N	\N	t
-385	385	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0022/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0022/2026	29	14	\N	2026-02-23 15:08:00	\N	\N	\N	\N	t
-386	386	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-0013/2026	\N	EM-SMADSOT.SSGASE-DSH-0013/2026	23	20	\N	2026-02-18 12:38:00	\N	\N	\N	\N	t
-387	387	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0024/2026	\N	EM-SMADSOT.SSGTDU-DGR-0024/2026	40	3	\N	2026-01-24 05:34:00	\N	\N	\N	\N	t
-388	388	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0017/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0017/2026	41	2	\N	2026-02-14 16:22:00	\N	\N	\N	\N	t
-389	389	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0015/2026	\N	EM-SMADSOT.DPG-0015/2026	65	24	\N	2026-02-06 00:54:00	\N	\N	\N	\N	t
-390	390	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0014/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0014/2026	31	12	\N	2026-01-04 12:02:00	\N	\N	\N	\N	t
-391	391	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-0012/2026	\N	EM-SMADSOT.SSGTDU-0012/2026	36	7	\N	2026-01-24 10:46:00	\N	\N	\N	\N	t
-392	392	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0016/2026	\N	EM-SMADSOT.SEC-0016/2026	21	22	\N	2026-01-13 10:50:00	\N	\N	\N	\N	t
-393	393	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0022/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0022/2026	28	15	\N	2026-01-28 20:49:00	\N	\N	\N	\N	t
-394	394	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0021/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0021/2026	38	5	\N	2026-02-25 04:39:00	\N	\N	\N	\N	t
-395	395	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0015/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0015/2026	31	12	\N	2026-02-22 02:10:00	\N	\N	\N	\N	t
-396	396	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGSSU-0022/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0022/2026	38	5	\N	2026-01-13 11:30:00	\N	\N	\N	\N	t
-397	397	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0022/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0022/2026	39	4	\N	2026-02-26 08:56:00	\N	\N	\N	\N	t
-398	398	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0016/2026	\N	EM-SMADSOT.DPG-0016/2026	65	24	\N	2026-01-11 22:02:00	\N	\N	\N	\N	t
-399	399	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0020/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0020/2026	34	9	\N	2026-01-06 14:05:00	\N	\N	\N	\N	t
-400	400	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0021/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0021/2026	34	9	\N	2026-01-11 14:39:00	\N	\N	\N	\N	t
-401	401	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0021/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0021/2026	35	8	\N	2026-02-13 22:52:00	\N	\N	\N	\N	t
-402	402	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0023/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0023/2026	29	14	\N	2026-02-11 16:15:00	\N	\N	\N	\N	t
-403	403	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0025/2026	\N	EM-SMADSOT.SSGTDU-DGR-0025/2026	40	3	\N	2026-02-16 22:39:00	\N	\N	\N	\N	t
-404	404	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0024/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0024/2026	29	14	\N	2026-02-03 23:38:00	\N	\N	\N	\N	t
-405	405	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0022/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0022/2026	34	9	\N	2026-01-15 14:16:00	\N	\N	\N	\N	t
-406	406	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0023/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0023/2026	34	9	\N	2026-02-24 09:26:00	\N	\N	\N	\N	t
-407	407	EMISION	ACTIVO	\N	EM-SMADSOT.SEC-0017/2026	\N	EM-SMADSOT.SEC-0017/2026	21	22	\N	2026-01-31 18:21:00	\N	\N	\N	\N	t
-408	408	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0026/2026	\N	EM-SMADSOT.SSGTDU-DGR-0026/2026	40	3	\N	2026-02-04 02:51:00	\N	\N	\N	\N	t
-409	409	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0018/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0018/2026	41	2	\N	2026-01-05 05:54:00	\N	\N	\N	\N	t
-410	410	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0014/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0014/2026	37	6	\N	2026-02-15 04:33:00	\N	\N	\N	\N	t
-411	411	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0016/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0016/2026	31	12	\N	2026-02-27 11:11:00	\N	\N	\N	\N	t
-412	412	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGR-0027/2026	\N	EM-SMADSOT.SSGTDU-DGR-0027/2026	40	3	\N	2026-01-06 15:19:00	\N	\N	\N	\N	t
-413	413	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0023/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0023/2026	39	4	\N	2026-01-31 11:12:00	\N	\N	\N	\N	t
-414	414	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-0014/2026	\N	EM-SMADSOT.SSGASE-DSH-0014/2026	23	20	\N	2026-01-31 01:28:00	\N	\N	\N	\N	t
-415	415	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0011/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0011/2026	30	13	\N	2026-02-03 07:46:00	\N	\N	\N	\N	t
-416	416	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0028/2026	\N	EM-SMADSOT.SSGTDU-DGR-0028/2026	40	3	\N	2026-01-30 15:25:00	\N	\N	\N	\N	t
-417	417	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0017/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DCCCI-0017/2026	31	12	\N	2026-02-24 23:37:00	\N	\N	\N	\N	t
-418	418	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0020/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0020/2026	27	16	\N	2026-01-11 08:47:00	\N	\N	\N	\N	t
-419	419	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-0018/2026	\N	EM-SMADSOT.SSGASE-0018/2026	22	21	\N	2026-02-04 10:41:00	\N	\N	\N	\N	t
-420	420	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0017/2026	\N	EM-SMADSOT.DPG-0017/2026	65	24	\N	2026-02-24 00:22:00	\N	\N	\N	\N	t
-421	421	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGSSU-0023/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0023/2026	38	5	\N	2026-01-15 05:39:00	\N	\N	\N	\N	t
-422	422	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0024/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0024/2026	34	9	\N	2026-01-05 19:15:00	\N	\N	\N	\N	t
-423	423	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-0013/2026	\N	EM-SMADSOT.SSGASE-DGCA-0013/2026	25	18	\N	2026-02-21 20:20:00	\N	\N	\N	\N	t
-424	424	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0023/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0023/2026	28	15	\N	2026-01-20 01:04:00	\N	\N	\N	\N	t
-425	425	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0025/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0025/2026	29	14	\N	2026-01-19 22:00:00	\N	\N	\N	\N	t
-426	426	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGCV-0019/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0019/2026	41	2	\N	2026-01-21 06:35:00	\N	\N	\N	\N	t
-427	427	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0024/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0024/2026	28	15	\N	2026-02-08 05:48:00	\N	\N	\N	\N	t
-428	428	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0013/2026	\N	EM-SMADSOT.SSGASE-DGR-0013/2026	26	17	\N	2026-02-11 02:21:00	\N	\N	\N	\N	t
-429	429	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGSSU-0024/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0024/2026	38	5	\N	2026-01-21 18:09:00	\N	\N	\N	\N	t
-430	430	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0018/2026	\N	EM-SMADSOT.DPG-0018/2026	65	24	\N	2026-02-10 14:36:00	\N	\N	\N	\N	t
-431	431	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0012/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0012/2026	30	13	\N	2026-03-01 08:29:00	\N	\N	\N	\N	t
-432	432	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0017/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0017/2026	32	11	\N	2026-01-02 17:41:00	\N	\N	\N	\N	t
-433	433	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0015/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0015/2026	37	6	\N	2026-01-21 22:32:00	\N	\N	\N	\N	t
-434	434	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-0014/2026	\N	EM-SMADSOT.SSGASE-DGCA-0014/2026	25	18	\N	2026-01-31 22:46:00	\N	\N	\N	\N	t
-435	435	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0021/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0021/2026	27	16	\N	2026-02-12 07:23:00	\N	\N	\N	\N	t
-436	436	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DDUIA-0024/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0024/2026	39	4	\N	2026-01-27 16:54:00	\N	\N	\N	\N	t
-437	437	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0019/2026	\N	EM-SMADSOT.DPG-0019/2026	65	24	\N	2026-01-30 21:41:00	\N	\N	\N	\N	t
-438	438	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0025/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0025/2026	34	9	\N	2026-02-27 21:27:00	\N	\N	\N	\N	t
-439	439	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0026/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0026/2026	34	9	\N	2026-02-20 05:05:00	\N	\N	\N	\N	t
-440	440	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0022/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0022/2026	27	16	\N	2026-01-30 00:25:00	\N	\N	\N	\N	t
-441	441	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGSSU-0025/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0025/2026	38	5	\N	2026-02-15 19:02:00	\N	\N	\N	\N	t
-442	442	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0012/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0012/2026	42	1	\N	2026-02-17 23:09:00	\N	\N	\N	\N	t
-443	443	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0019/2026	\N	EM-SMADSOT.SSGASE-0019/2026	22	21	\N	2026-01-02 11:02:00	\N	\N	\N	\N	t
-444	444	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0027/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0027/2026	34	9	\N	2026-02-07 17:25:00	\N	\N	\N	\N	t
-445	445	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0018/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0018/2026	32	11	\N	2026-02-12 14:59:00	\N	\N	\N	\N	t
-446	446	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0014/2026	\N	EM-SMADSOT.SSGASE-DGR-0014/2026	26	17	\N	2026-02-07 07:36:00	\N	\N	\N	\N	t
-447	447	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-0013/2026	\N	EM-SMADSOT.SSGTDU-0013/2026	36	7	\N	2026-01-23 13:07:00	\N	\N	\N	\N	t
-448	448	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0020/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0020/2026	41	2	\N	2026-02-15 13:54:00	\N	\N	\N	\N	t
-449	449	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-0016/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0016/2026	37	6	\N	2026-02-22 07:42:00	\N	\N	\N	\N	t
-450	450	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DDUIA-0025/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0025/2026	39	4	\N	2026-01-10 01:54:00	\N	\N	\N	\N	t
-451	451	EMISION	ACTIVO	\N	EM-SMADSOT.ADMIN-0017/2026	\N	EM-SMADSOT.ADMIN-0017/2026	20	23	\N	2026-01-24 22:18:00	\N	\N	\N	\N	t
-452	452	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0015/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0015/2026	33	10	\N	2026-02-03 19:31:00	\N	\N	\N	\N	t
-453	453	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0020/2026	\N	EM-SMADSOT.SSGASE-0020/2026	22	21	\N	2026-02-12 19:15:00	\N	\N	\N	\N	t
-454	454	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-0017/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0017/2026	37	6	\N	2026-01-14 05:43:00	\N	\N	\N	\N	t
-455	455	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0028/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0028/2026	34	9	\N	2026-01-04 11:17:00	\N	\N	\N	\N	t
-456	456	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-0019/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0019/2026	24	19	\N	2026-02-18 08:05:00	\N	\N	\N	\N	t
-457	457	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0021/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0021/2026	41	2	\N	2026-02-20 22:58:00	\N	\N	\N	\N	t
-458	458	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0016/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0016/2026	33	10	\N	2026-01-13 08:45:00	\N	\N	\N	\N	t
-459	459	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-0014/2026	\N	EM-SMADSOT.SSGTDU-0014/2026	36	7	\N	2026-01-30 08:36:00	\N	\N	\N	\N	t
-460	460	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-0015/2026	\N	EM-SMADSOT.SSGASE-DSH-0015/2026	23	20	\N	2026-01-30 05:07:00	\N	\N	\N	\N	t
-461	461	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0019/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0019/2026	32	11	\N	2026-01-24 10:45:00	\N	\N	\N	\N	t
-462	462	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0013/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-DRRE-0013/2026	42	1	\N	2026-01-26 12:28:00	\N	\N	\N	\N	t
-463	463	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0020/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0020/2026	32	11	\N	2026-02-08 16:47:00	\N	\N	\N	\N	t
-464	464	EMISION	PENDIENTE	\N	EM-SMADSOT.SEC-0018/2026	\N	EM-SMADSOT.SEC-0018/2026	21	22	\N	2026-01-01 10:00:00	\N	\N	\N	\N	t
-465	465	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0025/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0025/2026	28	15	\N	2026-02-26 23:02:00	\N	\N	\N	\N	t
-466	466	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DDUIA-0026/2026	\N	EM-SMADSOT.SSGTDU-DDUIA-0026/2026	39	4	\N	2026-01-02 17:04:00	\N	\N	\N	\N	t
-467	467	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0015/2026	\N	EM-SMADSOT.SSGASE-DGR-0015/2026	26	17	\N	2026-01-17 11:50:00	\N	\N	\N	\N	t
-468	468	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGRNB-0018/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0018/2026	37	6	\N	2026-01-02 12:32:00	\N	\N	\N	\N	t
-469	469	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DRME-0022/2026	\N	EM-SMADSOT.SSGASE-DGR-DRME-0022/2026	35	8	\N	2026-02-19 19:21:00	\N	\N	\N	\N	t
-470	470	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DSH-0016/2026	\N	EM-SMADSOT.SSGASE-DSH-0016/2026	23	20	\N	2026-02-09 01:50:00	\N	\N	\N	\N	t
-471	471	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0023/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0023/2026	27	16	\N	2026-02-07 04:24:00	\N	\N	\N	\N	t
-472	472	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DRC-0024/2026	\N	EM-SMADSOT.SSGASE-DSH-DRC-0024/2026	27	16	\N	2026-01-30 14:12:00	\N	\N	\N	\N	t
-473	473	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGSSU-0026/2026	\N	EM-SMADSOT.SSGTDU-DGSSU-0026/2026	38	5	\N	2026-01-06 08:55:00	\N	\N	\N	\N	t
-474	474	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0021/2026	\N	EM-SMADSOT.SSGASE-0021/2026	22	21	\N	2026-02-04 23:15:00	\N	\N	\N	\N	t
-475	475	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-0022/2026	\N	EM-SMADSOT.SSGASE-0022/2026	22	21	\N	2026-02-25 06:25:00	\N	\N	\N	\N	t
-476	476	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0013/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0013/2026	30	13	\N	2026-02-10 07:41:00	\N	\N	\N	\N	t
-477	477	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0021/2026	\N	EM-SMADSOT.SSGASE-DGCA-DMEE-0021/2026	32	11	\N	2026-02-07 08:22:00	\N	\N	\N	\N	t
-478	478	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0017/2026	\N	EM-SMADSOT.SSGASE-DGCA-DVRF-0017/2026	33	10	\N	2026-01-18 12:37:00	\N	\N	\N	\N	t
-479	479	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGR-0029/2026	\N	EM-SMADSOT.SSGTDU-DGR-0029/2026	40	3	\N	2026-02-27 15:06:00	\N	\N	\N	\N	t
-480	480	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-0019/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0019/2026	37	6	\N	2026-01-25 05:08:00	\N	\N	\N	\N	t
-481	481	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-0023/2026	\N	EM-SMADSOT.SSGASE-0023/2026	22	21	\N	2026-02-05 20:36:00	\N	\N	\N	\N	t
-482	482	EMISION	CERRADO	\N	EM-SMADSOT.DPG-0020/2026	\N	EM-SMADSOT.DPG-0020/2026	65	24	\N	2026-01-21 13:34:00	\N	\N	\N	\N	t
-483	483	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-0016/2026	\N	EM-SMADSOT.SSGASE-DGR-0016/2026	26	17	\N	2026-03-01 21:22:00	\N	\N	\N	\N	t
-484	484	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0014/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-DSE-0014/2026	30	13	\N	2026-02-08 18:00:00	\N	\N	\N	\N	t
-485	485	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0026/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0026/2026	29	14	\N	2026-01-20 19:12:00	\N	\N	\N	\N	t
-486	486	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGRNB-0020/2026	\N	EM-SMADSOT.SSGTDU-DGRNB-0020/2026	37	6	\N	2026-01-18 18:01:00	\N	\N	\N	\N	t
-487	487	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCCITE-0020/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0020/2026	24	19	\N	2026-01-06 19:04:00	\N	\N	\N	\N	t
-488	488	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DGCA-0015/2026	\N	EM-SMADSOT.SSGASE-DGCA-0015/2026	25	18	\N	2026-01-11 20:22:00	\N	\N	\N	\N	t
-489	489	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-0017/2026	\N	EM-SMADSOT.SSGASE-DSH-0017/2026	23	20	\N	2026-01-15 09:36:00	\N	\N	\N	\N	t
-490	490	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0029/2026	\N	EM-SMADSOT.SSGASE-DGR-DTRS-0029/2026	34	9	\N	2026-01-05 01:37:00	\N	\N	\N	\N	t
-491	491	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-0024/2026	\N	EM-SMADSOT.SSGASE-0024/2026	22	21	\N	2026-01-24 01:16:00	\N	\N	\N	\N	t
-492	492	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0026/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0026/2026	28	15	\N	2026-01-19 10:00:00	\N	\N	\N	\N	t
-493	493	EMISION	ACTIVO	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0027/2026	\N	EM-SMADSOT.SSGASE-DSH-DIEE-0027/2026	28	15	\N	2026-02-20 21:27:00	\N	\N	\N	\N	t
-494	494	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-DGCV-0022/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0022/2026	41	2	\N	2026-01-20 03:50:00	\N	\N	\N	\N	t
-495	495	EMISION	PENDIENTE	\N	EM-SMADSOT.SSGTDU-DGR-0030/2026	\N	EM-SMADSOT.SSGTDU-DGR-0030/2026	40	3	\N	2026-02-08 03:09:00	\N	\N	\N	\N	t
-496	496	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0021/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0021/2026	24	19	\N	2026-02-18 01:03:00	\N	\N	\N	\N	t
-497	497	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DGCCITE-0022/2026	\N	EM-SMADSOT.SSGASE-DGCCITE-0022/2026	24	19	\N	2026-01-10 13:16:00	\N	\N	\N	\N	t
-498	498	EMISION	CERRADO	\N	EM-SMADSOT.SSGASE-DSH-DPH-0027/2026	\N	EM-SMADSOT.SSGASE-DSH-DPH-0027/2026	29	14	\N	2026-01-14 20:23:00	\N	\N	\N	\N	t
-499	499	EMISION	ACTIVO	\N	EM-SMADSOT.SSGTDU-DGCV-0023/2026	\N	EM-SMADSOT.SSGTDU-DGCV-0023/2026	41	2	\N	2026-02-14 16:03:00	\N	\N	\N	\N	t
-500	500	EMISION	CERRADO	\N	EM-SMADSOT.SSGTDU-0015/2026	\N	EM-SMADSOT.SSGTDU-0015/2026	36	7	\N	2026-01-18 08:26:00	\N	\N	\N	\N	t
-501	502	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0021/2026	\N	EM-SMADSOT.DPG-0021/2026	65	24	\N	2026-03-11 05:54:54.455728	\N	\N	Favor de revisar a la brevedad.	\N	t
-502	503	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0022/2026	\N	EM-SMADSOT.DPG-0022/2026	65	24	\N	2026-03-11 06:00:12.859108	\N	\N	Favor de revisar a la brevedad.	\N	t
-503	504	EMISION	ACTIVO	\N	EM-SMADSOT.DPG-0023/2026	\N	EM-SMADSOT.DPG-0023/2026	65	24	\N	2026-03-11 06:01:44.816004	\N	\N	Revisar con urgencia	Caso prioritario	t
-504	505	EMISION	CERRADO	\N	EM-SMADSOT.SMADSOT.SGTDU.DDUIA-0027/2026	\N	EM-SMADSOT.SMADSOT.SGTDU.DDUIA-0027/2026	39	4	\N	2026-03-12 04:33:10.180795	\N	2026-03-12 04:33:10.274891	\N	Turnado por usuario 4	f
-505	505	RECEPCION	PENDIENTE	504	EM-SMADSOT.SMADSOT.SGTDU.DDUIA-0027/2026	EM-SMADSOT.SMADSOT.SGTDU.DDUIA-0027/2026		61	4	\N	2026-03-12 04:33:10.274891	\N	\N	\N	\N	t
-506	506	EMISION	CERRADO	\N	EM-SMADSOT.SMADSOT.DGAJ-0001/2026	\N	EM-SMADSOT.SMADSOT.DGAJ-0001/2026	61	6	\N	2026-03-13 09:03:57.313472	\N	2026-03-13 09:03:57.420834	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	Turnado por usuario 6	f
-507	506	RECEPCION	PENDIENTE	506	EM-SMADSOT.SMADSOT.DGAJ-0001/2026	EM-SMADSOT.SMADSOT.DGAJ-0001/2026		72	6	\N	2026-03-13 09:03:57.420834	\N	\N	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	\N	t
-508	507	EMISION	CERRADO	\N	EM-SMADSOT.SMADSOT.DGAJ-0002/2026	\N	EM-SMADSOT.SMADSOT.DGAJ-0002/2026	61	6	\N	2026-03-13 09:04:44.715903	\N	2026-03-13 09:04:44.811063	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	Turnado por usuario 6	f
-509	507	RECEPCION	PENDIENTE	508	EM-SMADSOT.SMADSOT.DGAJ-0002/2026	EM-SMADSOT.SMADSOT.DGAJ-0002/2026		72	6	\N	2026-03-13 09:04:44.811063	\N	\N	Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores amet, nostrum iste pariatur expedita cum veritatis ratione vel dolorem repudiandae?	\N	t
 \.
 
 
@@ -10141,92 +13357,6 @@ COPY public.refresh_tokens (id, token, usuario_id, expires_at, created_at, ip_ad
 73	9c6d789116c1e59beaf4be167da1192c9eb196b6cee7397983ce863551d1573ea29dcb00bd512e2ef7ec50cd8d0556c3c5218009c12ad9f4f2d9770fe43d774e	23	2026-03-18 20:40:27.009	2026-03-12 02:40:27.02658	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
 4	68d7063720a883ace009f2d65aa8b0fea441bcc608345caec831b30831be4b5192525f7c1f2cdc7690da5eee67d1578f3d7e707c0e45e6cd80bcd1dbb46f6ab6	23	2026-03-15 17:19:23.758	2026-03-08 23:19:23.747227	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-08 23:19:40.827771	\N
 5	607be00fbfa36fd762bc4563a342607d221e2ec6e8b4db8683cb2f3d18bc771828661a2e6170759466594c9ce6a7729a521c51d2cd43fdab3f9f1d6bafdb74ba	23	2026-03-17 01:17:44.115	2026-03-10 07:17:44.120139	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-10 07:17:48.28732	\N
-2	26356b40bdc23ce5a80d14e1320485b5f8c46b0c7834bd9035aae3e8479ae9c583a85a3b35cde942d9cb605aa1be2d4fa7c24cbbe004964f7ca956a6ffcaf08f	24	2026-03-15 13:28:55.783	2026-03-08 19:28:56.001421	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-08 19:30:04.680115	\N
-7	e4ceaa16ded1b25e73cabade19b9ea3ebaf9bf245e7bd76c6b6a2d3198c6c5a0b68d86e10691e966903cabdb7072776f5a64282df6052781e7e96620684f8161	23	2026-03-17 01:31:35.12	2026-03-10 07:31:35.190899	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-10 07:39:50.995194	\N
-8	fa9af98d1cf0cd4d75778c7e45a1bd3e23c8f078aae2224ce2eeb8509ed7b080e46d76bd1b3035cf6de3706b2800c54b48f1556bb548a7a85881f7514cf10cd7	23	2026-03-17 01:39:57.877	2026-03-10 07:39:57.877274	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-9	c1f146805c6d62012b9ed37dd6c75cce240cf33bd2ccd6c924d32ba347d13de5ab2061b21536512aa066301e43e047dae69e015915db1e4ba58a147fad0997c5	23	2026-03-17 01:44:37.933	2026-03-10 07:44:37.915179	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-10 07:45:47.95443	\N
-6	5578f28f98c41ec19a6594215b5e6758659ff37036915c26d083cf472195e0e2fec7f04e1944fe6e59b1055ebf9ed11c5b0da87a22f5285d3841de71b57895a2	24	2026-03-17 01:17:58.113	2026-03-10 07:17:58.05993	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 03:47:18.632609	\N
-10	ccc18afd90a87c18d2c948c2abb0a648c027bee37ff1929aa117f20e54b627754f04184c1915a75d1fe3eef1b341ab5434cfaae4494dd1cb618caa4da6b583c5	24	2026-03-17 01:45:55.102	2026-03-10 07:45:55.091019	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 03:47:52.484578	\N
-11	376b90750327488ff481f2d42bb7cd626030afae7fa05f19f0c3cd3977212583c957119105c6a5ff3f4c8b7c8c560328fd25e525149fc6cdea06fe3bff38be15	24	2026-03-17 21:35:47.053	2026-03-11 03:35:46.764713	::1	Mozilla/5.0 (Windows NT; Windows NT 10.0; es-MX) WindowsPowerShell/5.1.19041.6456	t	2026-03-11 03:51:03.857821	\N
-12	580fa60128ebad2bb35d71cffcee47c61c4c316234a278168357c09cf3da996fdcc2f43823b7dd1a9fa5953f18debbf55dbb185296d022a94fa8a4f9cfbe2c69	24	2026-03-17 21:36:51.178	2026-03-11 03:36:51.264555	::1	Mozilla/5.0 (Windows NT; Windows NT 10.0; es-MX) WindowsPowerShell/5.1.19041.6456	t	2026-03-11 03:53:44.298996	\N
-13	ad8f38d23ed6150aac84d052b846018611fddeada34b49ecde88e621ffd17bab1b549fdbb832d7ae59223b4681cef8fffdf2ea5fb19d344807f91b5d212f25ca	24	2026-03-17 21:37:57.189	2026-03-11 03:37:57.618317	::1	Mozilla/5.0 (Windows NT; Windows NT 10.0; es-MX) WindowsPowerShell/5.1.19041.6456	t	2026-03-11 03:55:35.897858	\N
-14	76825fa3b94f31cb644770c230767da8915b167cd09626e0976335c1862e37b4efe954ec11c5de31478342756272f78d99e82f352db82f82b1bf70d032c71f12	24	2026-03-17 21:47:17.92	2026-03-11 03:47:18.621057	::1	Mozilla/5.0 (Windows NT; Windows NT 10.0; es-MX) WindowsPowerShell/5.1.19041.6456	t	2026-03-11 04:18:38.951429	\N
-15	5a688f90595af9ba165a362ff3f016a09771f8a41bcc5d67389dfc3d5837e866cd48092edc2226e180c5432387ed559eb3c1ac9d1ca917202addf6b2efb12f92	24	2026-03-17 21:47:52.284	2026-03-11 03:47:52.476017	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 04:34:18.791941	\N
-16	f89b403f4bc874dec05ec4a05a3c38fd59bc4139d468fd32ce712ce03b8c01180394272a48a48374df7ddfea3d523842a4c23a24f6b18524ceef90a95310ac48	24	2026-03-17 21:51:04.064	2026-03-11 03:51:03.845186	::1	Mozilla/5.0 (Windows NT; Windows NT 10.0; es-MX) WindowsPowerShell/5.1.19041.6456	t	2026-03-11 04:34:27.592466	\N
-21	f3b1b1828c8ec8ed8e14e225e0049235e9f22642ac47e2678e3baf3747e5585b006aeae03ff142fa351969b086a99f293762d9224e37c787ad9ad5083c72f1e1	24	2026-03-17 22:34:27.65	2026-03-11 04:34:27.580929	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 04:37:15.594312	\N
-17	9cefa1f8e545adb6cd82d9519f0b9fa1ec9e011d304dfba91ecc075da414cd85572c9b0eb2064dceda2dfc8c17d1e9c290c59f6b1c17748b5a42c98ecc9f608e	24	2026-03-17 21:53:43.696	2026-03-11 03:53:44.285475	::1	Mozilla/5.0 (Windows NT; Windows NT 10.0; es-MX) WindowsPowerShell/5.1.19041.6456	t	2026-03-11 05:50:05.907507	\N
-22	f9808cc537963cfb83ff6571fe3956f71ab0f3fcc601ed8730f96102b2fc24b74e5581ad4d1dcb4f72bbdec2bdb2d3a0478304104012a5ef94e004a9dabe9ffd	4	2026-03-17 22:37:22.822	2026-03-11 04:37:22.942604	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 06:06:30.429339	\N
-18	d02df67fff7679cfeda679cc2ae50e1514ad2c0c1e0bbd2b375ed10c067c75cfd54ed1be81129a3309018201fd9aa0650a80a7702ef85a23ceb3d33352564991	24	2026-03-17 21:55:35.417	2026-03-11 03:55:35.882644	::1	Mozilla/5.0 (Windows NT; Windows NT 10.0; es-MX) WindowsPowerShell/5.1.19041.6456	t	2026-03-11 06:15:01.937848	\N
-19	0121fbeaa27ea793fcf6a209105ee44386dce6986376d24138932f31999ca89bfba48dbd0b5a044030aa24c4256f4430206d9cf97816fab115c9a1a7bc7f89cd	24	2026-03-17 22:18:39.307	2026-03-11 04:18:38.931139	::1	PostmanRuntime/7.51.1	t	2026-03-11 06:33:02.497674	\N
-20	dcdb657a4321a6099c3e3bfe96ba802128f01216db04bdd99808c9f7c885e7fb22d0bbc6534d60de833101b383c8a61a49d510c4cc5462813bdc89cde896d9aa	24	2026-03-17 22:34:19.259	2026-03-11 04:34:18.763959	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 17:28:19.006899	\N
-23	8fad30bcf1db91cdb5e2349cf6b5775881659921e30559048558bea87e5a05834a81f3588a890121cb521c73b3aa0e6ef06de526a66113a5aceb0c9108391a07	24	2026-03-17 22:41:48.036	2026-03-11 04:41:48.579463	::1	PostmanRuntime/7.51.1	t	2026-03-11 20:07:39.77686	\N
-24	b186fe82db27cf9979033457c2aac0e53d0990075cbb57c8162ac9ba7228c952b62088771d37bdd61ae631aa5347392540090a6626e8f7c58aa4e5603735e816	24	2026-03-17 23:50:05.729	2026-03-11 05:50:05.852421	::1	PostmanRuntime/7.51.1	t	2026-03-11 20:34:43.573268	\N
-75	c9a563622e5e17c24379d052272740f065232a49d0a474c6cfbd3e54c4cf9cba7045798b79473235e3ba1a71cfc2051e345a521bd91bb634871fe08491e2cf95	24	2026-03-18 20:47:37.06	2026-03-12 02:47:37.019823	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 03:04:15.026499	\N
-25	f7e3871ee1e2ca6cf2502eed44e7b8cec970f49ffa12e28f7e628cbc3b193b65d3b5f315b91f3ae7100278de1486d2022fd981ebdb9a1f9e722f3b99cb68203a	4	2026-03-18 00:06:30.911	2026-03-11 06:06:30.445526	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 06:26:34.41584	\N
-27	6c447580028b20f5956369486c9b366ddaa5cb0f44f9a560b8852f67c61cb499c2ff7491791ed558c1cd7e6550ca91808af66c6b76ec65af7b0a1eb641d35e36	4	2026-03-18 00:26:34.494	2026-03-11 06:26:34.512924	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-26	f10d5dcaa842ff809c07ac85d4e67895677e07baa5af3a0cb003ca34d96029051e66394fad2650ee8a39dcd4065de37333078654df1d40fa49dcedc900a91877	24	2026-03-18 00:15:02.43	2026-03-11 06:15:01.928661	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36	t	2026-03-11 06:30:16.948479	\N
-28	f1599d3331064a0f1278cb0be270583356abd531d7199b2e2c223d8a1593a75e78fa088e002c9262276779f0d942e0a7dde5fe4bb683b304d8bd5e6b34a5b9c5	24	2026-03-18 00:30:17.215	2026-03-11 06:30:16.976446	::1	Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36	t	2026-03-11 06:47:08.445884	\N
-29	d9d39333b73310006e7e5b5a8a81c8a0d750edbf7fc8d1dd2c5a4c65df071ac195cc2407b6cb6e50d6127a8772ded283aa807108adad84ac38c1b6c575de2d53	24	2026-03-18 00:33:02.995	2026-03-11 06:33:02.48493	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 06:50:56.83414	\N
-30	907c8a33dd8d479878520c44e299048a63242753a7fe1be812aaef72544f2b71869fef82fde0cea4d1be0d740ab9c0c0bd6b155c0e051e7d2d32d730afeac711	24	2026-03-18 00:47:07.837	2026-03-11 06:47:08.466528	::1	Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36	t	2026-03-11 07:18:57.299769	\N
-32	50a86204809275c5994cd18429f77a55fb6e28cea10cd64d119dac8ce3a1d72184dac8fb39c9a2d2efa8de3bb1a58ef553ddcc3b5b562c00830f2ef4000a13c8	24	2026-03-18 01:18:57.883	2026-03-11 07:18:57.322256	::1	Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36	t	2026-03-11 07:28:17.745539	\N
-34	52f58278ecac1f4a5fe1d17303e91083f39a0782800144edaa7fa5870e0486f8ed9e64b4e3e398bcb639b04a53bf07ef8320c108ad8f8c0a56e7b61219c3ff9d	24	2026-03-18 01:28:24.606	2026-03-11 07:28:23.971213	::1	Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36	t	2026-03-11 07:29:20.416082	\N
-31	64640c0c0fb18c077c6a1fb363340d3fd0271944f9f8dff4e7fda08f0e6a0f5dc76bff9f88404a8813364449fecb4617a1653ea0bcddc7ed565bc01056de81ff	24	2026-03-18 00:50:57.662	2026-03-11 06:50:56.84258	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 07:29:28.707464	\N
-35	5f2dc2653f5c1da028656121061465772f4aa583e77dc6c1a7aa902408bf4a6c282b60b97877001c9365696468651f4a63587046c2cbcbb5bcddb442fde7f148	4	2026-03-18 01:29:34.339	2026-03-11 07:29:34.462195	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 07:30:09.849674	\N
-36	c1114d0e67c38e1b65f4f4ece36f6729afd354d673818a60660ce14e39baade64274596cea358171fd13f0da454d296f0ef90be1c44f2b4d3e9dcd0f28ebf386	23	2026-03-18 01:30:14.507	2026-03-11 07:30:13.676926	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 07:37:20.433626	\N
-38	f46f48e18d9f54c0d294ee4411fe4eb51e2a0fc6c977cfc8264b069ad4b67459362d0aa1a93f900afb5e4e83f18662b5ba6e8ab5054609b33ff184ee3d33df79	23	2026-03-18 01:40:53.579	2026-03-11 07:40:53.601805	::1	Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36	t	2026-03-11 07:42:28.374977	\N
-39	ad1e4d1719a8fa03e3121227b8154b1fb9912a8ad2f66416890d6715cd4659e7c80dc221ecccd0ee44e360f14370ea0d5fdc53628dee8ca3f298f0bf7832efdd	23	2026-03-18 01:42:54.899	2026-03-11 07:42:55.376829	::1	Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36	t	2026-03-11 07:44:22.676302	\N
-40	4f90e4a0c279cf5c34fedb740e2b1758e69efed76eb8aa793c7ebcef82626f1e7ebe56d9832fc59cf8c18794089163c5869aa279d0a2e5ce1a4c7f028cc4629e	23	2026-03-18 01:44:34.754	2026-03-11 07:44:34.445714	::1	Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36	t	2026-03-11 07:45:49.810455	\N
-41	57f612dc7164d880e2d7a2120e7c085ee4aff258f1f2fa800806d3305dcb0cab97f0a43a1605a7802f43b9e3fc3362efe548edd9009169e7d816f5f26eb10c94	24	2026-03-18 01:45:58.014	2026-03-11 07:45:57.597847	::1	Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36	t	2026-03-11 07:46:22.709994	\N
-37	b3d64e4f19ac1b2b920fea8c070f0dab6302ee3d87d22c1e21c5c4ee138a5fb8dbd33ef02cffcafe6889217ec2f37557c8cc9413fa023369df57fd3a64cf51c3	23	2026-03-18 01:37:28.445	2026-03-11 07:37:28.088667	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 07:46:30.93537	\N
-42	56244eb63d90889a9923638cf74db1ea543bf71e86bd4272488b6eb0ccbc075f147751a883f0795acb9a5d8ac160ee0ea60ed26874c6add40067a32ec9f5cfe9	4	2026-03-18 01:46:39.519	2026-03-11 07:46:39.873602	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 07:46:56.299223	\N
-45	a245c9d6786fd7fb6de69e4944833ecb1efd37e1553ed84ad116de6dcdcf5f071c1d3688c6df6e650f6ed3de4c45d0207c989a7b662dc79c5a5981761591a61e	24	2026-03-18 14:07:41.195	2026-03-11 20:07:39.734754	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 20:34:37.137016	\N
-33	86f4dce3d091d58e7d495d61bcc74c3b16ba691597c2c9d2de700aa1797aa395e31a71d173e386162215c322e270853b8db7d321f4cba5cd0b6ad34a688c8b17	24	2026-03-18 01:20:18.544	2026-03-11 07:20:17.710934	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 20:46:46.726863	\N
-43	2c5e816541b1861f52747507c0e6bf4331b88e75b1bdec4a98b0af774222ad585c24e743c4b00bc88a9edf69237d4725ae672d99480bfc1e3204d551559d2b6d	24	2026-03-18 01:47:04.569	2026-03-11 07:47:04.737789	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 20:49:38.592834	\N
-44	936ca3453f50a972b3412fe55fd481bf46b0f8725e074905a7f0a21a6567b926108f062d23bd4d1bb4c3ed638c899f4781e30247323b38ce01f8b96e4ce0ea4a	24	2026-03-18 11:28:18.732	2026-03-11 17:28:18.949642	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 21:11:41.779769	\N
-46	17177a605a59c8c85228763d65168f0836a81887fcee871121b2cbc6567ab1806b838f0a0b2cf2730e950dd1fd2cf3c2860536ce2a9d70a4b8f3505c0f0f1ec5	24	2026-03-18 14:27:31.769	2026-03-11 20:27:30.819845	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 00:17:07.906827	\N
-47	fc8e59f89fe1e7bcf56d21520d12996a694f9598a404cc2fa203329a84194db8a40e873bf4996b74319930ec31a8cd366e32abbd6cb3438497d115be4492bf4d	24	2026-03-18 14:34:42.886	2026-03-11 20:34:43.553942	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 20:42:34.848861	\N
-50	bf61916821aceca4302fec6065f8f5ff34eed268d503d60ad851a38216a3e2e7831adfa83d605d16e1bbf6ebc85ce242bcd65a74499e6c0f175cc7b6bdc8e502	24	2026-03-18 14:45:29.069	2026-03-11 20:45:28.415767	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 02:47:37.036878	\N
-48	b88f8c14c04cd4214154385d3267a5aa16c9de161c89fb1765390feb04c5335f87aa820aa9e7638f1dddeb5cdb0d0d4ecec09e12fe4f954443022b157721b294	23	2026-03-18 14:42:41.02	2026-03-11 20:42:40.028834	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 20:44:30.248893	\N
-51	5ce9a3a3c710e240c2cde22a4e757a0ce5a9cc3b040cd2faaff6d04d08719b12eaeae9b0ca046b7d9ede843eb07da737b9213e241fb9f1d78b7f492364a6e034	24	2026-03-18 14:46:47.742	2026-03-11 20:46:46.711132	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36	t	2026-03-12 03:34:40.794101	\N
-49	1f2543848fa7f1ece666019a9a9e0abf8abeea89ad8b7a4c2b6523fc9ffd77e3b0c5061614dad702f4c9f561f843d35027cf74930b50eeb617e19793f12d5f36	24	2026-03-18 14:44:38.276	2026-03-11 20:44:37.928186	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-11 20:45:13.685945	\N
-52	cf7f0fa8b94c35c44c37ce06afb2e66ecd8061562432a280101c6489b8b0ffa03a7348268d6a6f33a0163ed57a081b8c41a444d5d150326a4807b74551da93f4	24	2026-03-18 14:49:39.069	2026-03-11 20:49:38.569087	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-11 20:52:05.111841	\N
-53	362f772df17a2065e0731c4ce512bc5208b8697130df856014cf57114ebab280988cf844b6030af41872fcee6e5a74dc1c4554e7dc249c420ba96e5bf49d3101	23	2026-03-18 14:52:10.977	2026-03-11 20:52:11.803013	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-11 20:54:22.259641	\N
-54	70f2d3e040dbce58d76550d53d1c726beff44ed09ed40fc469c346390a5955e5e88a9abfc67f803c43cb4f381214d0e77c73d70b9d7fdec554908d0e1e6bb46e	24	2026-03-18 14:54:34.022	2026-03-11 20:54:32.824684	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-11 20:56:52.401048	\N
-55	4caea2d33210a9c30f6488e7612c595218ca85f8f04f8575d2c8b84ecab8d8f56a40c1283c60f03ad218f807fdfbde5b5f22ff7b1627e75aca5c649e4b1422b7	24	2026-03-18 14:57:00.975	2026-03-11 20:57:00.526025	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-11 21:13:18.680874	\N
-57	03e5bf297ee7115de95b9a163cb84422ab74bf2f6d08977e6b65790c03b3b83770ebf4196fe68e719a72ed31e816bcc71892851a72005b20962222399e846f85	24	2026-03-18 15:13:20.149	2026-03-11 21:13:18.691256	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	f	\N	\N
-56	a906fa1f610c1bfba0222828e67dca348a379c4a2e085b71f9d6b03e5c6a32148c8ae45d2e21469036aeefec06b94f1b01f965617119a258d0b1bcc0a3b33f58	24	2026-03-18 15:11:42.165	2026-03-11 21:11:41.765598	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-11 21:26:46.639802	\N
-59	fa31315f2db741b4cc8e986928ff36252ed6a2359f89624ab03f5aa61a383e8ee2e88a80cce1a622eded10d8984ea8270ea11b1b523e1fd77e9ee7fc48a64b00	24	2026-03-18 15:38:34.963	2026-03-11 21:38:33.615632	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 00:09:51.313039	\N
-60	c029590e95f9bbec5b065fafbadb48957c27d3076b4ca71781216618a1b1377671b05d471e295664150232b91575b0ba62487cd489f1673e0d30d0096cea3021	24	2026-03-18 18:09:51.348	2026-03-12 00:09:51.328367	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 00:13:48.216971	\N
-61	00275166b20c2aeedc8ea7a108cb0324799e1f5afc620636e7a491275bd1e8525b7bbd2c39a9ed3ca8bd26102b9318afdd09f41b8a9b7ba45633c8760fdf66e0	24	2026-03-18 18:14:11.473	2026-03-12 00:14:11.493945	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 00:32:15.296955	\N
-62	6093e9de7fc56b9c2dffccb5e2745008b12867e4644c98ddb496f4d4f1d8a1298f761a89a9d356e814187dc9c37436fe583c68cb77519451a8f3bf8a90cc6584	24	2026-03-18 18:17:07.888	2026-03-12 00:17:07.895581	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 00:32:15.739677	\N
-63	690647e66317eecceec538b5979246d4171d0565e893902c65390b89f0cc0cd314d25dd1c66a21dc22abcf7a1deb1f89b2c78cd94f7fbe0ba48f4fc2e2ab6cdf	24	2026-03-18 18:32:15.267	2026-03-12 00:32:15.308976	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 01:06:33.881791	\N
-64	6dc06f79f4afc2105f79b21ca1198e5d627bd23325aadbfd937792cc8598115f6bc9682976868c03188e338c6c5aca4a926228af8bee76f6f892c508c879de3c	24	2026-03-18 18:32:15.744	2026-03-12 00:32:15.751928	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 01:16:27.727219	\N
-66	038bd03ebe63900f3be1fe9b7fb09a730ea088f0085c39ad0aef9c7f0508dd9a8d380a4619c2bd4e03c2723abcd1505460e74b57cfb2c857e3c7af76ff73f5e8	24	2026-03-18 19:16:27.763	2026-03-12 01:16:27.743635	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-65	a22280759cd4a1237b60f7a61dfc78b6bbe244d0eb74aab44c3ae21ff3201455bdcbb68067718bed14b854efc9d4e3c765715098bedcdaa6bf7d09bf7851137b	24	2026-03-18 19:06:33.816	2026-03-12 01:06:33.919175	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 01:18:18.748266	\N
-67	d7980aec6b00b3b1d0de444a333554cdd1c6f85cc879ffb3c3b59444bcb8fcc25a959b0b7cd21011695898f6f78a07af47914b4f790568ce68efcb5738587272	24	2026-03-18 19:18:45.518	2026-03-12 01:18:45.501603	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 01:20:02.132783	\N
-68	ba8a7b0d668f22405fb13572373ed8c02d1671df9921f474486e7570b67ebfc7a59211993e264171bfbc026e4ec5cbdd5d73f2d1d27083eb26623b5766886a1e	24	2026-03-18 19:20:16.329	2026-03-12 01:20:16.308628	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 01:37:01.16948	\N
-70	fe8381e21917d85ad38c6b98d31a5a79379dbaac468a2cc3ce318fd6e10119b68f236230f5b4391d4d277d800d4461d21967e91dbe7368aeeb94b6ffc1d33eb6	24	2026-03-18 20:02:11.522	2026-03-12 02:02:11.50132	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 02:18:37.105994	\N
-71	5692eeec092d197af1fcd9b6b393cd6b82fc5c428f6cb22dee06183cb3a069f68e4ec786ef6f7858b68de0cad0f327418e8dbd38135d1ef8b497c6799dfc9e9d	24	2026-03-18 20:18:37.127	2026-03-12 02:18:37.128339	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-69	6eb5a088afc9b09270c81c7f7b8972e6a58e9a2cb7274deb32ee5c927c8ba1b44e3fb3c7f6c8db6852e1af67da9817db8c76fb508661529abc3b09a29dd23bfe	24	2026-03-18 19:37:01.218	2026-03-12 01:37:01.215648	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 02:26:02.716523	\N
-72	223d303334bf31279542b25d81b93005efad08f104532ce3e35c76fe8ba411246d5bc38f77383a9655c062ea6f7bf0e81a4da60f565dc4faed2f887b74d037a1	23	2026-03-18 20:26:13.59	2026-03-12 02:26:13.546189	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-74	56ca0fe010d0a8b14b79011f5ea4e7e1db47b8a7f401e97acb028fdc21ece1021d0caaffe6425d0900614caa332b8bb730552c772fe36e7d0b592e44647f3455	23	2026-03-18 20:41:56.777	2026-03-12 02:41:56.801161	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 02:47:08.257851	\N
-76	0b6480c37bf2808ba557c19396604629d7e29a8a0d0c27f19928dfc78f889580a058e332a6e8c993b80e0eb329dec3f3d230e2a4e184bb81efc7c0e9fe053633	23	2026-03-18 20:49:10.886	2026-03-12 02:49:10.827324	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 03:34:08.848454	\N
-79	790d4b1722568f69f742255168e6936a8e6b31bcaa05188b777cc449fa2adf6abcb4ccce81658d01094458b20ef60a17afa60888ae8f477712c16cb4f387451f	23	2026-03-18 21:34:16.884	2026-03-12 03:34:16.897004	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 03:34:32.545558	\N
-80	bae3bab03cbac46771d3b83646b0c3b6e652d77f3422f70ad4fe34da12b31648305ac2b23e4ac233a5ab83fef39fc999c23ee3447070e61332a1ac5f4e589cb5	24	2026-03-18 21:34:40.827	2026-03-12 03:34:40.784735	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 03:38:04.206825	\N
-81	a6b61034a65e688200460d9d2a2aba8ce551a8c299c88452c4129d5e59a0687c1dd96769d49a9d2058fafcd29ef4056178fa5a0ce6109cb3a3a17a6300cd57a2	4	2026-03-18 21:38:10.377	2026-03-12 03:38:10.343111	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 03:39:17.842839	\N
-83	7e834e0fe55e4b8932f62189f31b152742adcb4b8801b2987bfb5cd7321f891fadb1bccf9a955939f0577cf45fa243b8dc0d9e01584813cd4af10da0b4f0c86c	4	2026-03-18 22:06:00.68	2026-03-12 04:06:00.620343	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-82	68bd0992baabec0786b0a101b484333da6efea40c82d6130fe1c7313c45430c1bb83d0cc668abdef4d0fa5544d7cf176f3b1477df6f30431642adbb091759cc2	4	2026-03-18 21:39:25.043	2026-03-12 03:39:25.133985	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 04:06:00.648278	\N
-84	ecfb36f543f1bcaa60675ad605d450f4285d03930ab5295019eb234fb057d2215cceec348edf86e2d93587dbbc8545fef3dfbb6adc235c1ad51793f7f347b52d	4	2026-03-18 22:06:05.803	2026-03-12 04:06:05.760436	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-85	9f4f794b711f1e42e47f2f3ba48add5c8284757f0de26397e41811a8e8b706c3231d07cf1e8ddc3ca043790fbc2c5160720c23b844329e6d1aaaaebd52a88593	4	2026-03-18 22:07:46.342	2026-03-12 04:07:46.397229	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-77	3a38ea936f78015e38227d30001698c5907d9e572d9b0125be5e5dbbfa29c73e75c137f8bf1eac96e69f81b4a7785d0d32a3c65b337b7e37468b2f1bde61d4b3	24	2026-03-18 21:04:15.095	2026-03-12 03:04:15.05255	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	t	2026-03-12 04:08:48.555757	\N
-87	09bd7544887e85a32c7cb94104c58fc593d98405faa1eea0157d1c8766656441b0494ed40355227e524f117adf6ef242b2a9ae2d92886d5a53cd7f1161adf9f1	4	2026-03-18 22:25:32.758	2026-03-12 04:25:32.724146	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 04:32:04.287948	\N
-89	35c9587fc5633cd9d91e1426399246ff1a1572c320510dd6b3888e051ce54e6fdf02de84809d3766e1b974fb082c3af5cd068a41932c170de01ac86bcba82a3e	23	2026-03-18 22:35:11.132	2026-03-12 04:35:11.192017	::ffff:127.0.0.1	Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0	f	\N	\N
-88	61a15315595d4a7eb2c807d27db76fd9882a1d598976b4abd9f5873491f2b80d779e0ffbc0cb132cc6740c48f53ac0b50bec28f8e5814850c13dad2a3a460571	4	2026-03-18 22:32:10.582	2026-03-12 04:32:10.636384	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-12 04:37:12.397495	\N
-90	bee505177b4d0241c490c55d87eeee4b4e5285db2974a4dcb0f93399a3fa734a297909067dfe3efee100dff0a49df076a892f6136f0ec5bfcc81f3a72a7d237a	6	2026-03-18 22:37:20.534	2026-03-12 04:37:20.483931	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
-91	20856ed9be032987781182e3516f69faa85ed152cb7574e50b6063772b23c8d9746c852f4dfc34ea773534c91e0bf5aba3b809b70a639c230255284ca3bd828d	6	2026-03-20 03:02:41.106	2026-03-13 09:02:40.962171	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-13 16:24:47.163498	\N
-92	07f60edb8f275fa6f85e4ec8dbcdedfbe395d071ef29021f98437248d78c9500e2a71e08f3ba51a3ff08026399949269d3cbad08e4aeb5449875223cc62da91b	6	2026-03-20 10:24:46.729	2026-03-13 16:24:47.203699	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-13 19:54:47.32992	\N
-94	b1f1155227f0ab70318fff3ca478aed9d3770dda6464618cb2d08e37ae5d065bad62fa77c08a0aa462ec4d59b3faf08b56ff4a4d05ff7f9040412d052752469f	23	2026-03-20 13:54:59.15	2026-03-13 19:54:59.016155	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	t	2026-03-13 19:55:04.661943	\N
-95	720d43e9519b8d752518e8300f92b6be02496a82a46de576be7ee656918a0e0909a5f98812e7fb93293868c922d92aeb71ef932dc2528842c952e524ff785011	23	2026-03-20 13:55:22.148	2026-03-13 19:55:21.701562	::1	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0	f	\N	\N
 \.
 
 
@@ -11997,9 +15127,12 @@ CREATE POLICY pol_documento_area_usuario ON public.documento FOR SELECT USING ((
 -- Name: POLICY pol_documento_area_usuario ON documento; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON POLICY pol_documento_area_usuario ON public.documento IS 'RLS: Los usuarios solo ven documentos de su área, emitidos por su área, o con copia de conocimiento.
-
-
+COMMENT ON POLICY pol_documento_area_usuario ON public.documento IS 'RLS: Los usuarios solo ven documentos de su área, emitidos por su área, o con copia de conocimiento.
+
+
+
+
+
 Los administradores ven todos los documentos.';
 
 

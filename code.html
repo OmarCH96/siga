@@ -5,11 +5,13 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Gestión de Unidades Administrativas</title>
+    <title>Detalle de Unidad Administrativa - SIGA</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap"
         rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
@@ -19,793 +21,417 @@
             darkMode: "class",
             theme: {
                 extend: {
-                    colors: {
-                        "primary": "#246257",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#111621",
+                    "colors": {
+                        "surface-container-highest": "#d9e4ec",
+                        "surface-container": "#e8eff4",
+                        "surface-container-high": "#e1e9f0",
+                        "on-background": "#29343a",
+                        "error": "#9f403d",
+                        "inverse-on-surface": "#9a9da0",
+                        "surface-container-low": "#f0f4f8",
+                        "primary-dim": "#1d5c51",
+                        "on-tertiary-fixed-variant": "#566a4f",
+                        "surface": "#f7f9fc",
+                        "surface-bright": "#f7f9fc",
+                        "primary": "#2b685d",
+                        "on-tertiary-fixed": "#3a4d34",
+                        "on-primary-fixed-variant": "#28655a",
+                        "error-dim": "#4e0309",
+                        "tertiary-fixed": "#e0f8d5",
+                        "on-surface": "#29343a",
+                        "secondary-dim": "#505452",
+                        "tertiary-container": "#e0f8d5",
+                        "error-container": "#fe8983",
+                        "surface-tint": "#2b685d",
+                        "surface-dim": "#cedce5",
+                        "primary-fixed-dim": "#a3e0d2",
+                        "on-primary": "#ddfff6",
+                        "on-secondary-fixed": "#3c403f",
+                        "on-error": "#fff7f6",
+                        "on-tertiary": "#ebffe0",
+                        "on-error-container": "#752121",
+                        "outline": "#717c84",
+                        "tertiary-fixed-dim": "#d2e9c7",
+                        "inverse-surface": "#0b0f11",
+                        "surface-variant": "#d9e4ec",
+                        "tertiary": "#50644a",
+                        "secondary": "#5c605e",
+                        "on-secondary": "#f7f9f7",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-dim": "#45583f",
+                        "inverse-primary": "#b6f5e6",
+                        "background": "#f7f9fc",
+                        "on-primary-fixed": "#00483e",
+                        "secondary-container": "#e0e3e1",
+                        "primary-container": "#b1efe0",
+                        "on-secondary-container": "#4f5251",
+                        "secondary-fixed": "#e0e3e1",
+                        "secondary-fixed-dim": "#d2d5d3",
+                        "on-secondary-fixed-variant": "#595c5b",
+                        "on-tertiary-container": "#4c5f45",
+                        "primary-fixed": "#b1efe0",
+                        "outline-variant": "#a8b3bb",
+                        "on-primary-container": "#1c5b50",
+                        "on-surface-variant": "#566168"
                     },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"]
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
                     },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Public Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
                 },
             },
         }
     </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .font-headline {
+            font-family: 'Public Sans', sans-serif;
+        }
+    </style>
 </head>
 
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
-    <div class="flex min-h-screen">
-        <!-- Sidebar Navigation -->
-        <aside
-            class="w-72 bg-white dark:bg-background-dark border-r border-slate-200 dark:border-slate-800 flex flex-col sticky top-0 h-screen">
-            <div class="p-6 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
-                    <span class="material-symbols-outlined">description</span>
-                </div>
-                <div>
-                    <h1 class="text-base font-bold leading-none">Sistema Documental</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Admin v2.0</p>
-                </div>
+<body class="bg-background text-on-background min-h-screen flex">
+    <!-- SideNavBar -->
+    <aside class="w-64 h-screen sticky top-0 left-0 bg-surface-container-low flex flex-col py-6">
+        <div class="px-6 mb-8 flex items-center gap-3">
+            <div class="w-10 h-10 rounded bg-primary flex items-center justify-center text-on-primary">
+                <span class="material-symbols-outlined font-bold">domain</span>
             </div>
-            <nav class="flex-1 px-4 space-y-1">
-                <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    href="#">
-                    <span class="material-symbols-outlined">home</span>
-                    <span class="text-sm font-medium">Inicio</span>
-                </a>
-                <a class="flex items-center gap-3 px-3 py-2 bg-primary/10 text-primary rounded-lg" href="#">
-                    <span class="material-symbols-outlined">account_tree</span>
-                    <span class="text-sm font-medium">Unidades Administrativas</span>
-                </a>
-                <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    href="#">
-                    <span class="material-symbols-outlined">article</span>
-                    <span class="text-sm font-medium">Documentos</span>
-                </a>
-                <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    href="#">
-                    <span class="material-symbols-outlined">bar_chart</span>
-                    <span class="text-sm font-medium">Reportes</span>
-                </a>
-                <a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    href="#">
-                    <span class="material-symbols-outlined">settings</span>
-                    <span class="text-sm font-medium">Configuración</span>
-                </a>
-            </nav>
-            <div class="p-4 border-t border-slate-200 dark:border-slate-800">
-                <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-900">
-                    <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                        <span class="material-symbols-outlined text-sm">person</span>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs font-bold truncate">Admin User</p>
-                        <p class="text-[10px] text-slate-500 truncate">admin@gob.example</p>
-                    </div>
-                </div>
+            <div>
+                <h1 class="text-2xl font-bold text-primary font-headline tracking-tight">SIGA</h1>
+                <p class="text-xs text-on-surface-variant font-label uppercase tracking-widest">Administración Central
+                </p>
             </div>
-        </aside>
-        <!-- Main Content -->
-        <main class="flex-1 flex flex-col">
-            <!-- Header -->
-            <header class="bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800 px-8 py-6">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        </div>
+        <nav class="flex-1 px-4 space-y-1">
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors duration-200"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                <span class="font-medium text-sm">Inicio</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/20 transition-colors duration-200"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+                <span class="font-medium text-sm">Unidades Administrativas</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors duration-200"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="description">description</span>
+                <span class="font-medium text-sm">Documentos</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors duration-200"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                <span class="font-medium text-sm">Reportes</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors duration-200"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="settings">settings</span>
+                <span class="font-medium text-sm">Configuración</span>
+            </a>
+        </nav>
+    </aside>
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- TopNavBar -->
+        <header
+            class="w-full sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center px-8 h-16">
+            <div class="flex items-center">
+                <!-- Search could go here -->
+            </div>
+            <div class="flex items-center gap-4">
+                <button
+                    class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container">
+                    <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                </button>
+                <button
+                    class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container">
+                    <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+                </button>
+            </div>
+        </header>
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto p-8">
+            <div class="max-w-7xl mx-auto space-y-8">
+                <!-- Header Section -->
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                        <h2 class="text-3xl font-black tracking-tight">Gestión de Unidades Administrativas</h2>
-                        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Administre las dependencias y su
-                            personal autorizado.</p>
+                        <nav class="flex items-center gap-2 text-sm text-on-surface-variant mb-3 font-label">
+                            <a class="hover:text-primary transition-colors" href="#">Unidades Administrativas</a>
+                            <span class="material-symbols-outlined text-sm">chevron_right</span>
+                            <span class="text-on-surface">Detalle</span>
+                        </nav>
+                        <h2 class="text-4xl font-extrabold text-on-background font-headline tracking-tight">Dirección
+                            General de Normatividad</h2>
+                        <p class="text-on-surface-variant mt-2 max-w-2xl">Gestión y seguimiento de trámites, emisiones y
+                            recepciones correspondientes a esta unidad.</p>
                     </div>
-                    <button id="btn-nueva-unidad"
-                        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-lg shadow-sm hover:bg-primary/90 transition-all">
-                        <span class="material-symbols-outlined text-lg">add</span>
-                        <span>Nueva Unidad</span>
-                    </button>
-                </div>
-                <!-- Filters & Search -->
-                <div class="mt-8 flex flex-col sm:flex-row gap-4">
-                    <div class="relative flex-1">
-                        <span
-                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                        <input
-                            id="search-input"
-                            class="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary text-sm placeholder:text-slate-500"
-                            placeholder="Buscar unidad por nombre o código ID..." type="text" />
-                    </div>
-                    <div class="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <div class="flex gap-3 shrink-0">
                         <button
-                            data-filter="all"
-                            class="filter-btn px-4 py-1.5 text-xs font-bold bg-white dark:bg-slate-700 shadow-sm rounded-md">Todas</button>
+                            class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-surface-container-highest text-on-surface font-medium hover:bg-surface-container transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                            Editar Unidad
+                        </button>
                         <button
-                            data-filter="active"
-                            class="filter-btn px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700">Activas</button>
-                        <button
-                            data-filter="inactive"
-                            class="filter-btn px-4 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700">Inactivas</button>
+                            class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-on-primary font-medium hover:bg-primary-dim transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-sm">download</span>
+                            Reporte
+                        </button>
                     </div>
                 </div>
-            </header>
-            <!-- Grid View -->
-            <section class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <!-- Unit Card 1 -->
-                    <div data-unit-id="1"
-                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                        <div class="p-5 flex-1">
-                            <div class="flex justify-between items-start mb-4">
-                                <div
-                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
-                                    <span class="material-symbols-outlined text-2xl">account_balance</span>
-                                </div>
-                                <span
-                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
-                            </div>
-                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Dirección General</h3>
-                            <p
-                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
-                                Código: DG-001</p>
-                            <div
-                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                <span class="material-symbols-outlined text-sm">group</span>
-                                <span class="text-xs">12 Usuarios asignados</span>
-                            </div>
-                        </div>
-                        <div
-                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
-                                    <span class="material-symbols-outlined text-xl">edit</span>
-                                </button>
-                                <label class="relative inline-flex items-center cursor-pointer ml-1"
-                                    title="Activar/Desactivar">
-                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
-                                    <div
-                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
-                                    </div>
-                                </label>
-                            </div>
-                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                <span>Ver Usuarios</span>
-                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                            </button>
-                        </div>
+                <!-- Tabs & Filters Row -->
+                <div
+                    class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-4 border-b border-surface-container-high">
+                    <!-- Tabs -->
+                    <div class="flex gap-8 bg-surface-container-lowest p-1 rounded-xl shadow-sm">
+                        <button aria-pressed="true" data-tab="emisiones" id="tabEmisiones"
+                            class="px-6 py-2.5 rounded-lg bg-surface-container-high text-on-surface font-semibold text-sm transition-all shadow-sm">
+                            Emisiones
+                        </button>
+                        <button aria-pressed="false" data-tab="recepciones" id="tabRecepciones"
+                            class="px-6 py-2.5 rounded-lg text-on-surface-variant hover:text-on-surface font-medium text-sm transition-all hover:bg-surface-container/50">
+                            Recepciones
+                        </button>
                     </div>
-                    <!-- Unit Card 2 -->
-                    <div data-unit-id="2"
-                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                        <div class="p-5 flex-1">
-                            <div class="flex justify-between items-start mb-4">
-                                <div
-                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
-                                    <span class="material-symbols-outlined text-2xl">groups</span>
-                                </div>
-                                <span
-                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
-                            </div>
-                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Recursos Humanos</h3>
-                            <p
-                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
-                                Código: RRHH-020</p>
-                            <div
-                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                <span class="material-symbols-outlined text-sm">group</span>
-                                <span class="text-xs">24 Usuarios asignados</span>
-                            </div>
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-3">
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+                            <input
+                                class="pl-10 pr-4 py-2 rounded-lg bg-surface-container-lowest border-none focus:ring-2 focus:ring-primary text-sm shadow-sm w-48 placeholder:text-on-surface-variant"
+                                placeholder="Buscar folio..." type="text" />
                         </div>
-                        <div
-                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
-                                    <span class="material-symbols-outlined text-xl">edit</span>
-                                </button>
-                                <label class="relative inline-flex items-center cursor-pointer ml-1">
-                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
-                                    <div
-                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
-                                    </div>
-                                </label>
-                            </div>
-                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                <span>Ver Usuarios</span>
-                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                            </button>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">calendar_today</span>
+                            <input
+                                class="pl-10 pr-4 py-2 rounded-lg bg-surface-container-lowest border-none focus:ring-2 focus:ring-primary text-sm shadow-sm w-48 placeholder:text-on-surface-variant"
+                                placeholder="Rango de fechas" type="text" />
                         </div>
-                    </div>
-                    <!-- Unit Card 3 -->
-                    <div data-unit-id="3"
-                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                        <div class="p-5 flex-1">
-                            <div class="flex justify-between items-start mb-4">
-                                <div
-                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
-                                    <span class="material-symbols-outlined text-2xl">gavel</span>
-                                </div>
-                                <span
-                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">Inactiva</span>
-                            </div>
-                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Departamento Legal</h3>
-                            <p
-                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
-                                Código: LEG-045</p>
-                            <div
-                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                <span class="material-symbols-outlined text-sm">group</span>
-                                <span class="text-xs">8 Usuarios asignados</span>
-                            </div>
-                        </div>
-                        <div
-                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
-                                    <span class="material-symbols-outlined text-xl">edit</span>
-                                </button>
-                                <label class="relative inline-flex items-center cursor-pointer ml-1">
-                                    <input class="toggle-unit-status sr-only peer" type="checkbox" />
-                                    <div
-                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
-                                    </div>
-                                </label>
-                            </div>
-                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                <span>Ver Usuarios</span>
-                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Unit Card 4 -->
-                    <div data-unit-id="4"
-                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                        <div class="p-5 flex-1">
-                            <div class="flex justify-between items-start mb-4">
-                                <div
-                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
-                                    <span class="material-symbols-outlined text-2xl">payments</span>
-                                </div>
-                                <span
-                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
-                            </div>
-                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Finanzas</h3>
-                            <p
-                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
-                                Código: FIN-012</p>
-                            <div
-                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                <span class="material-symbols-outlined text-sm">group</span>
-                                <span class="text-xs">15 Usuarios asignados</span>
-                            </div>
-                        </div>
-                        <div
-                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
-                                    <span class="material-symbols-outlined text-xl">edit</span>
-                                </button>
-                                <label class="relative inline-flex items-center cursor-pointer ml-1">
-                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
-                                    <div
-                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
-                                    </div>
-                                </label>
-                            </div>
-                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                <span>Ver Usuarios</span>
-                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Unit Card 5 -->
-                    <div data-unit-id="5"
-                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                        <div class="p-5 flex-1">
-                            <div class="flex justify-between items-start mb-4">
-                                <div
-                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
-                                    <span class="material-symbols-outlined text-2xl">precision_manufacturing</span>
-                                </div>
-                                <span
-                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
-                            </div>
-                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Operaciones</h3>
-                            <p
-                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
-                                Código: OPS-110</p>
-                            <div
-                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                <span class="material-symbols-outlined text-sm">group</span>
-                                <span class="text-xs">42 Usuarios asignados</span>
-                            </div>
-                        </div>
-                        <div
-                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
-                                    <span class="material-symbols-outlined text-xl">edit</span>
-                                </button>
-                                <label class="relative inline-flex items-center cursor-pointer ml-1">
-                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
-                                    <div
-                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
-                                    </div>
-                                </label>
-                            </div>
-                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                <span>Ver Usuarios</span>
-                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Unit Card 6 -->
-                    <div data-unit-id="6"
-                        class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                        <div class="p-5 flex-1">
-                            <div class="flex justify-between items-start mb-4">
-                                <div
-                                    class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
-                                    <span class="material-symbols-outlined text-2xl">campaign</span>
-                                </div>
-                                <span
-                                    class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Activa</span>
-                            </div>
-                            <h3 class="font-bold text-slate-900 dark:text-white text-lg">Comunicaciones</h3>
-                            <p
-                                class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
-                                Código: COM-005</p>
-                            <div
-                                class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                <span class="material-symbols-outlined text-sm">group</span>
-                                <span class="text-xs">6 Usuarios asignados</span>
-                            </div>
-                        </div>
-                        <div
-                            class="px-5 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <button class="btn-edit-unit p-2 text-slate-400 hover:text-primary transition-colors" title="Editar">
-                                    <span class="material-symbols-outlined text-xl">edit</span>
-                                </button>
-                                <label class="relative inline-flex items-center cursor-pointer ml-1">
-                                    <input checked="" class="toggle-unit-status sr-only peer" type="checkbox" />
-                                    <div
-                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
-                                    </div>
-                                </label>
-                            </div>
-                            <button class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                <span>Ver Usuarios</span>
-                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Add New Unit Placeholder Card -->
-                    <button id="btn-nueva-unidad-card"
-                        class="bg-slate-100/50 dark:bg-slate-800/30 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center p-8 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group">
-                        <div
-                            class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 group-hover:bg-primary group-hover:text-white transition-all">
-                            <span class="material-symbols-outlined">add</span>
-                        </div>
-                        <p class="mt-4 font-bold text-slate-600 dark:text-slate-400 group-hover:text-primary">Nueva
-                            Unidad</p>
-                        <p class="text-xs text-slate-400 mt-1">Haga clic para expandir el sistema</p>
-                    </button>
-                </div>
-            </section>
-            <!-- Pagination -->
-            <footer
-                class="mt-auto px-8 py-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <p class="text-xs font-medium text-slate-500">Mostrando 6 de 24 unidades administrativas</p>
-                <div class="flex items-center gap-2">
-                    <button
-                        class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-800 text-slate-400 hover:bg-slate-100">
-                        <span class="material-symbols-outlined text-sm">chevron_left</span>
-                    </button>
-                    <button
-                        class="w-8 h-8 flex items-center justify-center rounded bg-primary text-white text-xs font-bold">1</button>
-                    <button
-                        class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-800 text-slate-600 text-xs font-bold hover:bg-slate-100">2</button>
-                    <button
-                        class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-800 text-slate-600 text-xs font-bold hover:bg-slate-100">3</button>
-                    <button
-                        class="w-8 h-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-800 text-slate-400 hover:bg-slate-100">
-                        <span class="material-symbols-outlined text-sm">chevron_right</span>
-                    </button>
-                </div>
-            </footer>
-        </main>
-    </div>
+                        <select
+                            class="px-4 py-2 rounded-lg bg-surface-container-lowest border-none focus:ring-2 focus:ring-primary text-sm shadow-sm text-on-surface">
+                            <option value="">Todos los estatus</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="proceso">En Proceso</option>
+                            <option value="concluido">Concluido</option>
+                        </select>
 
-    <!-- Modal: Nueva/Editar Unidad -->
-    <div id="modal-unit" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-slate-200 dark:border-slate-800">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-primary">account_tree</span>
+                        <div id="emisionesFilterContainer" class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">tune</span>
+                            <select id="filtroTipoEmision"
+                                class="pl-10 pr-4 py-2 rounded-lg bg-surface-container-lowest border-none focus:ring-2 focus:ring-primary text-sm shadow-sm text-on-surface">
+                                <option value="">Tipo de emisión</option>
+                                <option value="EC">EC: Emisión de Circulares</option>
+                                <option value="EO">EO: Emisión de Oficios</option>
+                                <option value="EM">EM: Emisión de Memorandum</option>
+                                <option value="ET">ET: Emisión de Tarjeta Informativa</option>
+                                <option value="MC">MC: Emisión de Memorandum Circular</option>
+                            </select>
                         </div>
-                        <h3 id="modal-unit-title" class="text-xl font-bold">Nueva Unidad Administrativa</h3>
-                    </div>
-                    <button id="btn-close-modal-unit" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-            </div>
-            <form id="form-unit" class="p-6 space-y-5">
-                <div>
-                    <label class="block text-sm font-bold mb-2">Nombre de la Unidad <span class="text-red-500">*</span></label>
-                    <input 
-                        type="text" 
-                        id="unit-name" 
-                        name="nombre"
-                        class="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                        placeholder="Ej: Dirección de Recursos Humanos"
-                        required
-                    />
-                </div>
-                <div>
-                    <label class="block text-sm font-bold mb-2">Dependencia Superior</label>
-                    <select 
-                        id="unit-parent" 
-                        name="dependencia"
-                        class="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                    >
-                        <option value="">Ninguna (Unidad principal)</option>
-                        <option value="1">Dirección General</option>
-                        <option value="2">Recursos Humanos</option>
-                        <option value="3">Departamento Legal</option>
-                        <option value="4">Finanzas</option>
-                        <option value="5">Operaciones</option>
-                        <option value="6">Comunicaciones</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold mb-2">Tipo de Area</label>
-                    <select 
-                        id="unit-type" 
-                        name="tipo_area"
-                        class="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                    >
-                        <option value="">Ninguna (Tipo de area)</option>
-                        <option value="1">Oficialía</option>
-                        <option value="2">Secretaría</option>
-                        <option value="3">Secretaría Particular</option>
-                        <option value="4">Subsecretaría</option>
-                        <option value="5">Instituto</option>
-                        <option value="6">Dirección</option>
-                        <option value="7">Dirección General</option>
-                        <option value="8">Subdirección</option>
-                        <option value="9">Coordinación</option>
-                        <option value="10">Departamento</option>
-                        <option value="11">Unidad</option>
-                        <option value="12">Comité</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold mb-2">Código/Determinante <span class="text-red-500">*</span></label>
-                    <input 
-                        type="text" 
-                        id="unit-code" 
-                        name="codigo"
-                        class="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                        placeholder="Ej: DRH-001"
-                        required
-                    />
-                    <p class="mt-1.5 text-xs text-slate-500">Código único que identifica a la unidad administrativa</p>
-                </div>
-                <div class="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <button 
-                        type="submit"
-                        class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-all"
-                    >
-                        <span class="material-symbols-outlined text-lg">save</span>
-                        <span id="btn-submit-text">Crear Unidad</span>
-                    </button>
-                    <button 
-                        type="button"
-                        id="btn-cancel-modal-unit"
-                        class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                    >
-                        Cancelar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: Confirmar Desactivación -->
-    <div id="modal-confirm-disable" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full">
-            <div class="p-6">
-                <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-amber-600 dark:text-amber-400">warning</span>
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="text-lg font-bold mb-2">¿Desactivar Unidad Administrativa?</h3>
-                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                            Está a punto de <span class="font-bold" id="confirm-action-text">desactivar</span> la unidad:
-                        </p>
-                        <p class="text-sm font-bold text-slate-900 dark:text-white" id="confirm-unit-name">-</p>
-                        <p class="text-xs text-slate-500 mt-3">
-                            Esta acción puede revertirse más adelante desde esta misma pantalla.
-                        </p>
                     </div>
                 </div>
-            </div>
-            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3 rounded-b-2xl">
-                <button 
-                    id="btn-cancel-disable"
-                    class="px-5 py-2 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all"
-                >
-                    Cancelar
-                </button>
-                <button 
-                    id="btn-confirm-disable"
-                    class="px-5 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all flex items-center gap-2"
-                >
-                    <span class="material-symbols-outlined text-lg">check</span>
-                    <span>Confirmar</span>
-                </button>
+                <!-- Data Table Container -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="bg-surface-container/50 text-on-surface-variant text-xs uppercase tracking-wider font-semibold font-label">
+                                    <th class="py-4 px-6">Folio</th>
+                                    <th class="py-4 px-6">Tema / Asunto</th>
+                                    <th class="py-4 px-6">Estatus</th>
+                                    <th class="py-4 px-6">Fecha Emisión</th>
+                                    <th class="py-4 px-6">Destino</th>
+                                    <th class="py-4 px-6">Responsable</th>
+                                    <th class="py-4 px-6 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-surface-container-high">
+                                <!-- Row 1 -->
+                                <tr class="hover:bg-surface-container-low/50 transition-colors group">
+                                    <td class="py-4 px-6 font-medium text-on-surface">DGN-2023-0042</td>
+                                    <td class="py-4 px-6">
+                                        <p class="text-on-surface font-medium truncate max-w-xs">Aprobación de Normativa
+                                            Ambiental V.2</p>
+                                        <p class="text-on-surface-variant text-xs mt-0.5 truncate max-w-xs">
+                                            Actualización de lineamientos operativos sectoriales.</p>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-tertiary-container text-on-tertiary-container">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                                            Concluido
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6 text-on-surface-variant">12 Oct 2023</td>
+                                    <td class="py-4 px-6 text-on-surface">Dir. Evaluación</td>
+                                    <td class="py-4 px-6">
+                                        <div class="flex items-center gap-2">
+                                            <div
+                                                class="w-7 h-7 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold">
+                                                MR
+                                            </div>
+                                            <span class="text-on-surface text-sm">M. Ruiz</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-6 text-right">
+                                        <button
+                                            class="text-on-surface-variant hover:text-primary p-1 rounded transition-colors opacity-0 group-hover:opacity-100">
+                                            <span class="material-symbols-outlined text-sm">visibility</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Row 2 -->
+                                <tr class="hover:bg-surface-container-low/50 transition-colors group">
+                                    <td class="py-4 px-6 font-medium text-on-surface">DGN-2023-0045</td>
+                                    <td class="py-4 px-6">
+                                        <p class="text-on-surface font-medium truncate max-w-xs">Solicitud de Revisión
+                                            de Impacto</p>
+                                        <p class="text-on-surface-variant text-xs mt-0.5 truncate max-w-xs">Proyecto
+                                            vial zona norte, tramo 4.</p>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary-container/40 text-on-primary-container">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                            En Proceso
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6 text-on-surface-variant">15 Oct 2023</td>
+                                    <td class="py-4 px-6 text-on-surface">Secretaría Técnica</td>
+                                    <td class="py-4 px-6">
+                                        <div class="flex items-center gap-2">
+                                            <div
+                                                class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-xs font-bold">
+                                                JL
+                                            </div>
+                                            <span class="text-on-surface text-sm">J. López</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-6 text-right">
+                                        <button
+                                            class="text-on-surface-variant hover:text-primary p-1 rounded transition-colors opacity-0 group-hover:opacity-100">
+                                            <span class="material-symbols-outlined text-sm">visibility</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Row 3 -->
+                                <tr class="hover:bg-surface-container-low/50 transition-colors group">
+                                    <td class="py-4 px-6 font-medium text-on-surface">DGN-2023-0048</td>
+                                    <td class="py-4 px-6">
+                                        <p class="text-on-surface font-medium truncate max-w-xs">Respuesta a Auditoría
+                                            Externa</p>
+                                        <p class="text-on-surface-variant text-xs mt-0.5 truncate max-w-xs">
+                                            Observaciones del tercer trimestre.</p>
+                                    </td>
+                                    <td class="py-4 px-6">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-container-high text-on-surface">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                            Pendiente
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6 text-on-surface-variant">18 Oct 2023</td>
+                                    <td class="py-4 px-6 text-on-surface">Órgano Interno</td>
+                                    <td class="py-4 px-6">
+                                        <div class="flex items-center gap-2">
+                                            <div
+                                                class="w-7 h-7 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold">
+                                                MR
+                                            </div>
+                                            <span class="text-on-surface text-sm">M. Ruiz</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-6 text-right">
+                                        <button
+                                            class="text-on-surface-variant hover:text-primary p-1 rounded transition-colors opacity-0 group-hover:opacity-100">
+                                            <span class="material-symbols-outlined text-sm">visibility</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination -->
+                    <div
+                        class="px-6 py-4 bg-surface-container-lowest border-t border-surface-container-high flex items-center justify-between">
+                        <span class="text-sm text-on-surface-variant">Mostrando 1 a 3 de 45 registros</span>
+                        <div class="flex gap-1">
+                            <button
+                                class="p-1 rounded text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
+                                disabled="">
+                                <span class="material-symbols-outlined text-sm">chevron_left</span>
+                            </button>
+                            <button class="px-3 py-1 rounded bg-primary text-on-primary text-sm font-medium">1</button>
+                            <button
+                                class="px-3 py-1 rounded text-on-surface hover:bg-surface-container text-sm font-medium">2</button>
+                            <button
+                                class="px-3 py-1 rounded text-on-surface hover:bg-surface-container text-sm font-medium">3</button>
+                            <span class="px-2 py-1 text-on-surface-variant text-sm">...</span>
+                            <button class="p-1 rounded text-on-surface-variant hover:bg-surface-container">
+                                <span class="material-symbols-outlined text-sm">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- JavaScript -->
+    </main>
     <script>
-        // Estado de la aplicación
-        const appState = {
-            units: [
-                { id: 1, name: 'Dirección General', code: 'DG-001', parent: null, active: true, users: 12 },
-                { id: 2, name: 'Recursos Humanos', code: 'RRHH-020', parent: null, active: true, users: 24 },
-                { id: 3, name: 'Departamento Legal', code: 'LEG-045', parent: null, active: false, users: 8 },
-                { id: 4, name: 'Finanzas', code: 'FIN-012', parent: null, active: true, users: 15 },
-                { id: 5, name: 'Operaciones', code: 'OPS-110', parent: null, active: true, users: 42 },
-                { id: 6, name: 'Comunicaciones', code: 'COM-005', parent: null, active: true, users: 6 }
-            ],
-            currentEditId: null,
-            currentToggleElement: null
-        };
+        const tabEmisiones = document.getElementById('tabEmisiones');
+        const tabRecepciones = document.getElementById('tabRecepciones');
+        const emisionesFilterContainer = document.getElementById('emisionesFilterContainer');
+        const filtroTipoEmision = document.getElementById('filtroTipoEmision');
 
-        // Elementos del DOM
-        const elements = {
-            modalUnit: document.getElementById('modal-unit'),
-            modalConfirmDisable: document.getElementById('modal-confirm-disable'),
-            formUnit: document.getElementById('form-unit'),
-            btnNuevaUnidad: document.getElementById('btn-nueva-unidad'),
-            btnNuevaUnidadCard: document.getElementById('btn-nueva-unidad-card'),
-            btnCloseModalUnit: document.getElementById('btn-close-modal-unit'),
-            btnCancelModalUnit: document.getElementById('btn-cancel-modal-unit'),
-            btnCancelDisable: document.getElementById('btn-cancel-disable'),
-            btnConfirmDisable: document.getElementById('btn-confirm-disable'),
-            modalUnitTitle: document.getElementById('modal-unit-title'),
-            btnSubmitText: document.getElementById('btn-submit-text'),
-            unitName: document.getElementById('unit-name'),
-            unitCode: document.getElementById('unit-code'),
-            unitParent: document.getElementById('unit-parent'),
-            confirmUnitName: document.getElementById('confirm-unit-name'),
-            confirmActionText: document.getElementById('confirm-action-text'),
-            searchInput: document.getElementById('search-input'),
-            filterButtons: document.querySelectorAll('.filter-btn')
-        };
+        const activeTabClasses = ['bg-surface-container-high', 'text-on-surface', 'font-semibold', 'shadow-sm'];
+        const inactiveTabClasses = ['text-on-surface-variant', 'hover:text-on-surface', 'font-medium', 'hover:bg-surface-container/50'];
 
-        // Funciones de utilidad
-        function showModal(modal) {
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
+        function setTabState(activeTab) {
+            const isEmisiones = activeTab === 'emisiones';
 
-        function hideModal(modal) {
-            modal.classList.add('hidden');
-            document.body.style.overflow = '';
-        }
+            tabEmisiones.classList.remove(...activeTabClasses, ...inactiveTabClasses);
+            tabRecepciones.classList.remove(...activeTabClasses, ...inactiveTabClasses);
 
-        function resetForm() {
-            elements.formUnit.reset();
-            appState.currentEditId = null;
-            elements.modalUnitTitle.textContent = 'Nueva Unidad Administrativa';
-            elements.btnSubmitText.textContent = 'Crear Unidad';
-        }
-
-        // Event Listeners - Modal Nueva/Editar Unidad
-        elements.btnNuevaUnidad.addEventListener('click', () => {
-            resetForm();
-            showModal(elements.modalUnit);
-        });
-
-        elements.btnNuevaUnidadCard.addEventListener('click', () => {
-            resetForm();
-            showModal(elements.modalUnit);
-        });
-
-        elements.btnCloseModalUnit.addEventListener('click', () => {
-            hideModal(elements.modalUnit);
-            resetForm();
-        });
-
-        elements.btnCancelModalUnit.addEventListener('click', () => {
-            hideModal(elements.modalUnit);
-            resetForm();
-        });
-
-        // Click fuera del modal para cerrar
-        elements.modalUnit.addEventListener('click', (e) => {
-            if (e.target === elements.modalUnit) {
-                hideModal(elements.modalUnit);
-                resetForm();
-            }
-        });
-
-        elements.modalConfirmDisable.addEventListener('click', (e) => {
-            if (e.target === elements.modalConfirmDisable) {
-                hideModal(elements.modalConfirmDisable);
-            }
-        });
-
-        // Submit del formulario
-        elements.formUnit.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                name: elements.unitName.value,
-                code: elements.unitCode.value,
-                parent: elements.unitParent.value || null
-            };
-
-            if (appState.currentEditId) {
-                // Modo edición
-                console.log('Editando unidad:', appState.currentEditId, formData);
-                alert(`Unidad "${formData.name}" actualizada exitosamente`);
+            if (isEmisiones) {
+                tabEmisiones.classList.add(...activeTabClasses);
+                tabRecepciones.classList.add(...inactiveTabClasses);
             } else {
-                // Modo creación
-                console.log('Creando nueva unidad:', formData);
-                alert(`Unidad "${formData.name}" creada exitosamente`);
+                tabRecepciones.classList.add(...activeTabClasses);
+                tabEmisiones.classList.add(...inactiveTabClasses);
             }
 
-            hideModal(elements.modalUnit);
-            resetForm();
-            
-            // Aquí iría la llamada al API para guardar los datos
-        });
+            tabEmisiones.setAttribute('aria-pressed', String(isEmisiones));
+            tabRecepciones.setAttribute('aria-pressed', String(!isEmisiones));
 
-        // Event Listeners - Botones de Editar
-        document.addEventListener('click', (e) => {
-            const editBtn = e.target.closest('.btn-edit-unit');
-            if (editBtn) {
-                const card = editBtn.closest('[data-unit-id]');
-                const unitId = parseInt(card.dataset.unitId);
-                const unit = appState.units.find(u => u.id === unitId);
-                
-                if (unit) {
-                    appState.currentEditId = unitId;
-                    elements.modalUnitTitle.textContent = 'Editar Unidad Administrativa';
-                    elements.btnSubmitText.textContent = 'Guardar Cambios';
-                    elements.unitName.value = unit.name;
-                    elements.unitCode.value = unit.code;
-                    elements.unitParent.value = unit.parent || '';
-                    showModal(elements.modalUnit);
-                }
+            emisionesFilterContainer.classList.toggle('hidden', !isEmisiones);
+            filtroTipoEmision.disabled = !isEmisiones;
+            if (!isEmisiones) {
+                filtroTipoEmision.value = '';
             }
-        });
+        }
 
-        // Event Listeners - Toggle Status
-        document.addEventListener('change', (e) => {
-            if (e.target.classList.contains('toggle-unit-status')) {
-                const card = e.target.closest('[data-unit-id]');
-                const unitId = parseInt(card.dataset.unitId);
-                const unit = appState.units.find(u => u.id === unitId);
-                
-                if (unit) {
-                    const newStatus = e.target.checked;
-                    const actionText = newStatus ? 'activar' : 'desactivar';
-                    
-                    // Guardar el elemento toggle y el nuevo estado
-                    appState.currentToggleElement = e.target;
-                    appState.currentToggleNewStatus = newStatus;
-                    
-                    // Revertir temporalmente el cambio hasta la confirmación
-                    e.target.checked = !newStatus;
-                    
-                    // Configurar y mostrar modal de confirmación
-                    elements.confirmUnitName.textContent = unit.name;
-                    elements.confirmActionText.textContent = actionText;
-                    showModal(elements.modalConfirmDisable);
-                }
-            }
-        });
-
-        // Event Listeners - Confirmar/Cancelar Desactivación
-        elements.btnCancelDisable.addEventListener('click', () => {
-            hideModal(elements.modalConfirmDisable);
-            appState.currentToggleElement = null;
-        });
-
-        elements.btnConfirmDisable.addEventListener('click', () => {
-            if (appState.currentToggleElement) {
-                // Aplicar el cambio
-                appState.currentToggleElement.checked = appState.currentToggleNewStatus;
-                
-                const card = appState.currentToggleElement.closest('[data-unit-id]');
-                const unitId = parseInt(card.dataset.unitId);
-                const unit = appState.units.find(u => u.id === unitId);
-                
-                if (unit) {
-                    unit.active = appState.currentToggleNewStatus;
-                    console.log(`Unidad ${unit.name} ${unit.active ? 'activada' : 'desactivada'}`);
-                    
-                    // Aquí iría la llamada al API para actualizar el estado
-                }
-                
-                appState.currentToggleElement = null;
-            }
-            hideModal(elements.modalConfirmDisable);
-        });
-
-        // Tecla ESC para cerrar modales
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (!elements.modalUnit.classList.contains('hidden')) {
-                    hideModal(elements.modalUnit);
-                    resetForm();
-                }
-                if (!elements.modalConfirmDisable.classList.contains('hidden')) {
-                    hideModal(elements.modalConfirmDisable);
-                }
-            }
-        });
-
-        // Funcionalidad de búsqueda
-        elements.searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('[data-unit-id]');
-            
-            cards.forEach(card => {
-                const name = card.querySelector('h3').textContent.toLowerCase();
-                const code = card.querySelector('p').textContent.toLowerCase();
-                
-                if (name.includes(searchTerm) || code.includes(searchTerm)) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
-
-        // Funcionalidad de filtros
-        elements.filterButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const filter = btn.dataset.filter;
-                const cards = document.querySelectorAll('[data-unit-id]');
-                
-                // Actualizar estado visual de los botones
-                elements.filterButtons.forEach(b => {
-                    b.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm');
-                    b.classList.add('text-slate-500', 'hover:text-slate-700');
-                });
-                btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm');
-                btn.classList.remove('text-slate-500', 'hover:text-slate-700');
-                
-                // Filtrar tarjetas
-                cards.forEach(card => {
-                    const unitId = parseInt(card.dataset.unitId);
-                    const unit = appState.units.find(u => u.id === unitId);
-                    
-                    if (!unit) return;
-                    
-                    if (filter === 'all') {
-                        card.style.display = '';
-                    } else if (filter === 'active') {
-                        card.style.display = unit.active ? '' : 'none';
-                    } else if (filter === 'inactive') {
-                        card.style.display = !unit.active ? '' : 'none';
-                    }
-                });
-            });
-        });
-
-        console.log('Sistema de Gestión de Unidades Administrativas cargado ✓');
+        tabEmisiones.addEventListener('click', () => setTabState('emisiones'));
+        tabRecepciones.addEventListener('click', () => setTabState('recepciones'));
+        setTabState('emisiones');
     </script>
 </body>
 
