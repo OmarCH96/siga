@@ -7,6 +7,7 @@ const db = require('../config/database');
 const documentoRepository = require('../repositories/documento.repository');
 const tipoDocumentoRepository = require('../repositories/tipoDocumento.repository');
 const auditoriaRepository = require('../repositories/auditoria.repository');
+const prestamoRepository = require('../repositories/prestamo.repository');
 const log = require('../utils/logger');
 const { NotFoundError, ValidationError, AuthorizationError } = require('../utils/errors');
 
@@ -92,6 +93,17 @@ class DocumentoService {
       throw new AuthorizationError('No tiene permiso para crear documentos');
     }
 
+    // DETECCIÓN DE FLUJO: Si area_folio_id viene y es distinta al área del usuario
+    // → flujo de préstamo con reserva (documento bloqueado hasta aprobación)
+    const areaFolioId = datosDocumento.area_folio_id
+      ? Number(datosDocumento.area_folio_id)
+      : null;
+    const esPrestamoReserva = areaFolioId !== null && areaFolioId !== usuario.area_id;
+
+    if (esPrestamoReserva) {
+      return this._emitirConPrestamoReserva(datosDocumento, usuario, areaFolioId);
+    }
+
     // VALIDACIÓN 2: Verificar que el usuario pertenezca al área de origen
     if (datosDocumento.area_origen_id && datosDocumento.area_origen_id !== usuario.area_id) {
       throw new AuthorizationError('Solo puede emitir documentos desde su área asignada');
@@ -168,6 +180,75 @@ class DocumentoService {
       documentoId: resultado.p_documento_id,
       nodoId: resultado.p_nodo_id,
       folio: resultado.p_folio_emision,
+    };
+  }
+
+  /**
+   * Flujo interno: emitir documento vía préstamo con reserva de folio del área padre.
+   * El documento se crea en estado PENDIENTE_PRESTAMO (bloqueado).
+   * @param {Object} datosDocumento - Datos del documento
+   * @param {Object} usuario - Usuario autenticado
+   * @param {number} areaFolioId - ID del área prestamista (de donde se toma el folio)
+   * @returns {Promise<Object>} { documentoId, nodoId, folio, pendienteAprobacion: true }
+   * @private
+   */
+  async _emitirConPrestamoReserva(datosDocumento, usuario, areaFolioId) {
+    // Configurar contexto RLS
+    await this.configurarContextoRLS(usuario.id);
+
+    const params = {
+      area_solicitante_id: usuario.area_id,
+      area_prestamista_id: areaFolioId,
+      usuario_solicita_id: usuario.id,
+      motivacion: datosDocumento.motivacion ||
+        `Solicitud de folio del área ${areaFolioId} para documento: ${datosDocumento.asunto}`,
+      tipo_documento_id: Number(datosDocumento.tipo_documento_id),
+      asunto: datosDocumento.asunto,
+      contenido: datosDocumento.contenido || null,
+      fecha_limite: datosDocumento.fecha_limite || null,
+      prioridad: datosDocumento.prioridad || 'MEDIA',
+      instrucciones: datosDocumento.instrucciones || null,
+      observaciones: datosDocumento.observaciones || null,
+      contexto: datosDocumento.contexto || 'OTRO',
+    };
+
+    const resultado = await prestamoRepository.solicitarConReserva(params);
+
+    if (!resultado || !resultado.p_documento_id) {
+      throw new ValidationError('No se pudo crear el préstamo con reserva de folio');
+    }
+
+    await auditoriaRepository.registrarEvento({
+      documentoId: resultado.p_documento_id,
+      accion: 'PRESTAMO_RESERVA_INICIADO',
+      descripcion: `Documento en PENDIENTE_PRESTAMO con folio reservado ${resultado.p_folio_reservado}`,
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
+      detalles: JSON.stringify({
+        area_prestamista_id: areaFolioId,
+        prestamo_id: resultado.p_prestamo_id,
+        folio_reservado: resultado.p_folio_reservado,
+        contexto: params.contexto,
+      }),
+      ipAddress: usuario.ip_address || null,
+    });
+
+    log.info('Documento creado con préstamo de reserva', {
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
+      areaFolioId,
+      documentoId: resultado.p_documento_id,
+      prestamoId: resultado.p_prestamo_id,
+      folio: resultado.p_folio_reservado,
+    });
+
+    return {
+      documentoId: resultado.p_documento_id,
+      nodoId: resultado.p_nodo_id,
+      folio: resultado.p_folio_reservado,
+      prestamoId: resultado.p_prestamo_id,
+      pendienteAprobacion: true,
+      estado: 'PENDIENTE_PRESTAMO',
     };
   }
 

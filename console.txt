@@ -1,136 +1,927 @@
-PS F:\GESTOR REACT-TAURI\SIGA\frontend> npm run tauri:dev
-
-> siga-frontend@1.0.0 tauri:dev
-> tauri dev
-
-     Running BeforeDevCommand (`npm run dev`)
-
-> siga-frontend@1.0.0 dev
-> vite
-
-        Warn Waiting for your frontend dev server to start on http://localhost:5173/...
-
-  VITE v5.4.21  ready in 7014 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: http://192.168.56.1:5173/
-  ➜  Network: http://192.168.137.1:5173/
-  ➜  Network: http://10.0.5.10:5173/
-  ➜  Network: http://192.168.32.1:5173/
-        Info Watching F:\GESTOR REACT-TAURI\SIGA\frontend\src-tauri for changes...
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.74s
-1:11:33 p.m. [vite] Pre-transform error: F:\GESTOR REACT-TAURI\SIGA\frontend\src\pages\UnidadesAdministrativas\DetalleUnidad.jsx: Identifier 'BADGE_ESTADO' has already been declared. (543:6)
-
-  541 |
-  542 | // ─── Mapeo de estatus a estilos ────────────────────────────────────────────────
-> 543 | const BADGE_ESTADO = {
-      |       ^
-  544 |   Concluido: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
-  545 |   'En Proceso': 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
-  546 |   Pendiente: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
-1:11:33 p.m. [vite] Internal server error: F:\GESTOR REACT-TAURI\SIGA\frontend\src\pages\UnidadesAdministrativas\DetalleUnidad.jsx: Identifier 'BADGE_ESTADO' has already been declared. (543:6)
-
-  541 |
-  542 | // ─── Mapeo de estatus a estilos ────────────────────────────────────────────────
-> 543 | const BADGE_ESTADO = {
-      |       ^
-  544 |   Concluido: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
-  545 |   'En Proceso': 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
-  546 |   Pendiente: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
-  Plugin: vite:react-babel
-  File: F:/GESTOR REACT-TAURI/SIGA/frontend/src/pages/UnidadesAdministrativas/DetalleUnidad.jsx:543:6
-  556|    primary: 'bg-primary/10 text-primary',
-  557|    secondary: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  558|  };
-     |    ^
-  559|
-  560|  const TIPOS_EMISION = [
-      at constructor (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:365:19)
-      at JSXParserMixin.raise (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:6599:19)
-      at ScopeHandler.checkRedeclarationInScope (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:1619:19)
-      at ScopeHandler.declareName (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:1585:12)
-      at JSXParserMixin.declareNameFromIdentifier (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7567:16)
-      at JSXParserMixin.checkIdentifier (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7563:12)
-      at JSXParserMixin.checkLVal (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7500:12)
-      at JSXParserMixin.parseVarId (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13412:10)
-      at JSXParserMixin.parseVar (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13383:12)
-      at JSXParserMixin.parseVarStatement (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13230:10)
-      at JSXParserMixin.parseStatementContent (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12851:23)
-      at JSXParserMixin.parseStatementLike (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12767:17)
-      at JSXParserMixin.parseModuleItem (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12744:17)
-      at JSXParserMixin.parseBlockOrModuleBlockBody (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13316:36)
-      at JSXParserMixin.parseBlockBody (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13309:10)
-      at JSXParserMixin.parseProgram (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12622:10)
-      at JSXParserMixin.parseTopLevel (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12612:25)
-      at JSXParserMixin.parse (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:14488:25)
-      at parse (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:14522:38)
-      at parser (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\parser\index.js:41:34)
-      at parser.next (<anonymous>)
-      at normalizeFile (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
-      at normalizeFile.next (<anonymous>)
-      at run (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transformation\index.js:22:50)
-      at run.next (<anonymous>)
-      at transform (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transform.js:22:33)
-      at transform.next (<anonymous>)
-      at step (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:261:32)
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:273:13
-      at async.call.result.err.err (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:223:11)
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:189:28
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\gensync-utils\async.js:67:7
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:113:33
-      at step (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:287:14)
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:273:13
-      at async.call.result.err.err (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:223:11)
-1:11:33 p.m. [vite] Internal server error: F:\GESTOR REACT-TAURI\SIGA\frontend\src\pages\UnidadesAdministrativas\DetalleUnidad.jsx: Identifier 'BADGE_ESTADO' has already been declared. (543:6)
-
-  541 |
-  542 | // ─── Mapeo de estatus a estilos ────────────────────────────────────────────────
-> 543 | const BADGE_ESTADO = {
-      |       ^
-  544 |   Concluido: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
-  545 |   'En Proceso': 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
-  546 |   Pendiente: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
-  Plugin: vite:react-babel
-  File: F:/GESTOR REACT-TAURI/SIGA/frontend/src/pages/UnidadesAdministrativas/DetalleUnidad.jsx:543:6
-  556|    primary: 'bg-primary/10 text-primary',
-  557|    secondary: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  558|  };
-     |    ^
-  559|
-  560|  const TIPOS_EMISION = [
-      at constructor (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:365:19)
-      at JSXParserMixin.raise (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:6599:19)
-      at ScopeHandler.checkRedeclarationInScope (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:1619:19)
-      at ScopeHandler.declareName (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:1585:12)
-      at JSXParserMixin.declareNameFromIdentifier (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7567:16)
-      at JSXParserMixin.checkIdentifier (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7563:12)
-      at JSXParserMixin.checkLVal (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:7500:12)
-      at JSXParserMixin.parseVarId (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13412:10)
-      at JSXParserMixin.parseVar (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13383:12)
-      at JSXParserMixin.parseVarStatement (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13230:10)
-      at JSXParserMixin.parseStatementContent (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12851:23)
-      at JSXParserMixin.parseStatementLike (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12767:17)
-      at JSXParserMixin.parseModuleItem (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12744:17)
-      at JSXParserMixin.parseBlockOrModuleBlockBody (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13316:36)
-      at JSXParserMixin.parseBlockBody (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:13309:10)
-      at JSXParserMixin.parseProgram (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12622:10)
-      at JSXParserMixin.parseTopLevel (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:12612:25)
-      at JSXParserMixin.parse (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:14488:25)
-      at parse (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\parser\lib\index.js:14522:38)
-      at parser (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\parser\index.js:41:34)
-      at parser.next (<anonymous>)
-      at normalizeFile (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transformation\normalize-file.js:64:37)
-      at normalizeFile.next (<anonymous>)
-      at run (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transformation\index.js:22:50)
-      at run.next (<anonymous>)
-      at transform (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\transform.js:22:33)
-      at transform.next (<anonymous>)
-      at step (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:261:32)
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:273:13
-      at async.call.result.err.err (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:223:11)
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:189:28
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\@babel\core\lib\gensync-utils\async.js:67:7
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:113:33
-      at step (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:287:14)
-      at F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:273:13
-      at async.call.result.err.err (F:\GESTOR REACT-TAURI\SIGA\frontend\node_modules\gensync\index.js:223:11)
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+Consulta ejecutada: {
+  text: '\n' +
+    '      UPDATE refresh_tokens\n' +
+    '      SET revoked = TRUE,\n' +
+    '          revoked_at = NOW(),\n' +
+    '          replaced_by_token = $2\n' +
+    '      WHERE token = $1\n' +
+    '      RETURNING id\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+]: Refresh token revoked {"token":"***REDACTED***"}
+]: [AUDIT] Refresh token revoked (logout) {"token":"***REDACTED***","type":"audit"}
+]: [AUDIT] User logged out {"usuarioId":24,"type":"audit"}
+]: Login attempt {"nombreUsuario":"admin","ipAddress":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE u.nombre_usuario = $1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      UPDATE usuario \n' +
+    '      SET fecha_ultimo_acceso = CURRENT_TIMESTAMP \n' +
+    '      WHERE id = $1\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '        INSERT INTO auditoria_sistema (\n' +
+    '          accion, descripcion, usuario_id, area_id, detalles, ip_address, user_agent\n' +
+    '        )\n' +
+    '        VALUES ($1, $2, $3, $4, $5, $6, $7)\n' +
+    '        RETURNING *\n' +
+    '      ',
+  duration: '3ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      INSERT INTO refresh_tokens (token, usuario_id, expires_at, ip_address, user_agent)\n' +
+    '      VALUES ($1, $2, $3, $4, $5)\n' +
+    '      RETURNING id, token, usuario_id, expires_at, created_at\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+]: Refresh token created {"usuarioId":23,"tokenId":"***REDACTED***"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, token, expires_at, created_at, ip_address, user_agent\n' +
+    '      FROM refresh_tokens\n' +
+    '      WHERE usuario_id = $1 AND revoked = FALSE AND expires_at > NOW()\n' +
+    '      ORDER BY created_at DESC\n' +
+    '    ',
+  duration: '1ms',
+  rows: 6
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      UPDATE refresh_tokens\n' +
+    '      SET revoked = TRUE,\n' +
+    '          revoked_at = NOW(),\n' +
+    '          replaced_by_token = $2\n' +
+    '      WHERE token = $1\n' +
+    '      RETURNING id\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+]: Refresh token revoked {"token":"***REDACTED***"}
+]: Old tokens revoked due to limit {"usuarioId":23,"revoked":1}
+]: Token pair generated {"usuarioId":23,"expiresAt":"2026-04-28T20:34:37.987Z"}
+]: [AUDIT] User logged in {"usuarioId":23,"nombreUsuario":"admin","ipAddress":"::1","type":"audit"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '2ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=23, area=20, rol=1
+]: CSRF token created {"identifier":"user:23"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=23, area=20, rol=1
+]: Obteniendo usuarios del dashboard {"usuarioId":23}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      u.id,\n' +
+    '      u.nombre,\n' +
+    '      u.apellidos,\n' +
+    '      u.nombre_usuario,\n' +
+    '      u.email,\n' +
+    '      u.activo,\n' +
+    '      r.nombre as rol,\n' +
+    '      a.nombre as area\n' +
+    '    FROM usuario u\n' +
+    '    INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '    INNER JOIN area a ON u.area_id = a.id\n' +
+    '    WHERE u.activo = true\n' +
+    '    ORDER BY u.nombre, u.apellidos\n' +
+    '  ',
+  duration: '5ms',
+  rows: 24
+}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '22ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=23, area=20, rol=1
+]: Obteniendo datos del dashboard {"usuarioId":23}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '26ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=23, area=20, rol=1
+]: Obteniendo registros del dashboard {"usuarioId":23}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      a.id,\n' +
+    '      a.nombre,\n' +
+    '      a.clave,\n' +
+    '      a.tipo,\n' +
+    '      COUNT(DISTINCT d.id) as total_documentos,\n' +
+    '      COUNT(DISTINCT u.id) as total_usuarios\n' +
+    '    FROM area a\n' +
+    '    LEFT JOIN documento d ON d.area_origen_id = a.id\n' +
+    '    LEFT JOIN usuario u ON u.area_id = a.id AND u.activo = true\n' +
+    '    WHERE a.activa = true\n' +
+    '    GROUP BY a.id, a.nombre, a.clave, a.tipo\n' +
+    '    ORDER BY a.nombre\n' +
+    '  ',
+  duration: '7ms',
+  rows: 73
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      d.id,\n' +
+    '      d.folio,\n' +
+    '      d.asunto,\n' +
+    '      d.estado,\n' +
+    '      d.prioridad,\n' +
+    '      d.fecha_creacion,\n' +
+    '      d.fecha_limite as fecha_vencimiento,\n' +
+    '      ao.nombre as area_origen,\n' +
+    '      td.nombre as tipo_documento,\n' +
+    "      u.nombre || ' ' || u.apellidos as creado_por\n" +
+    '    FROM documento d\n' +
+    '    LEFT JOIN area ao ON d.area_origen_id = ao.id\n' +
+    '    LEFT JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
+    '    LEFT JOIN usuario u ON d.usuario_creador_id = u.id\n' +
+    '    ORDER BY d.fecha_creacion DESC\n' +
+    '    LIMIT 50\n' +
+    '  ',
+  duration: '4ms',
+  rows: 50
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      DATE(fecha_creacion) as fecha,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '7 days'\n" +
+    '    GROUP BY DATE(fecha_creacion)\n' +
+    '    ORDER BY fecha\n' +
+    '  ',
+  duration: '4ms',
+  rows: 2
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '    SELECT \n' +
+    '      estado,\n' +
+    '      COUNT(*) as total\n' +
+    '    FROM documento\n' +
+    "    WHERE fecha_creacion >= NOW() - INTERVAL '30 days'\n" +
+    '    GROUP BY estado\n' +
+    '    ORDER BY total DESC\n' +
+    '  ',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=23, area=20, rol=1
+Consulta ejecutada: {
+  text: '\n' +
+    '      UPDATE refresh_tokens\n' +
+    '      SET revoked = TRUE,\n' +
+    '          revoked_at = NOW(),\n' +
+    '          replaced_by_token = $2\n' +
+    '      WHERE token = $1\n' +
+    '      RETURNING id\n' +
+    '    ',
+  duration: '6ms',
+  rows: 1
+}
+]: Refresh token revoked {"token":"***REDACTED***"}
+]: [AUDIT] Refresh token revoked (logout) {"token":"***REDACTED***","type":"audit"}
+]: [AUDIT] User logged out {"usuarioId":23,"type":"audit"}
+]: Login attempt {"nombreUsuario":"carcamo08","ipAddress":"::1"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
+    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
+    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
+    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
+    '      FROM usuario u\n' +
+    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
+    '      INNER JOIN area a ON u.area_id = a.id\n' +
+    '      WHERE u.nombre_usuario = $1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      UPDATE usuario \n' +
+    '      SET fecha_ultimo_acceso = CURRENT_TIMESTAMP \n' +
+    '      WHERE id = $1\n' +
+    '    ',
+  duration: '3ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '        INSERT INTO auditoria_sistema (\n' +
+    '          accion, descripcion, usuario_id, area_id, detalles, ip_address, user_agent\n' +
+    '        )\n' +
+    '        VALUES ($1, $2, $3, $4, $5, $6, $7)\n' +
+    '        RETURNING *\n' +
+    '      ',
+  duration: '3ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      INSERT INTO refresh_tokens (token, usuario_id, expires_at, ip_address, user_agent)\n' +
+    '      VALUES ($1, $2, $3, $4, $5)\n' +
+    '      RETURNING id, token, usuario_id, expires_at, created_at\n' +
+    '    ',
+  duration: '3ms',
+  rows: 1
+}
+]: Refresh token created {"usuarioId":24,"tokenId":"***REDACTED***"}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT id, token, expires_at, created_at, ip_address, user_agent\n' +
+    '      FROM refresh_tokens\n' +
+    '      WHERE usuario_id = $1 AND revoked = FALSE AND expires_at > NOW()\n' +
+    '      ORDER BY created_at DESC\n' +
+    '    ',
+  duration: '1ms',
+  rows: 5
+}
+]: Token pair generated {"usuarioId":24,"expiresAt":"2026-04-28T20:34:47.306Z"}
+]: [AUDIT] User logged in {"usuarioId":24,"nombreUsuario":"carcamo08","ipAddress":"::1","type":"audit"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: CSRF token created {"identifier":"user:24"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de bandeja de recepción {"usuarioId":24,"areaId":65,"ip":"::1"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '2ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de bandeja de recepción {"usuarioId":24,"areaId":65,"ip":"::1"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '2ms',
+  rows: 1
+}
+]: Contexto RLS configurado {"usuarioId":24}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+]: Contexto RLS configurado {"usuarioId":24}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        d.id,\n' +
+    '        d.folio,\n' +
+    '        d.asunto,\n' +
+    '        d.contenido,\n' +
+    '        d.fecha_creacion,\n' +
+    '        d.fecha_limite,\n' +
+    '        d.prioridad,\n' +
+    '        d.estado AS estado_documento,\n' +
+    '        d.solo_conocimiento,\n' +
+    '        d.observaciones,\n' +
+    '        d.contexto,\n' +
+    '        -- Tipo de documento\n' +
+    '        td.id AS tipo_documento_id,\n' +
+    '        td.nombre AS tipo_documento_nombre,\n' +
+    '        td.clave AS tipo_documento_clave,\n' +
+    '        -- Área origen\n' +
+    '        ao.id AS area_origen_id,\n' +
+    '        ao.nombre AS area_origen_nombre,\n' +
+    '        ao.clave AS area_origen_clave,\n' +
+    '        ao.tipo AS area_origen_tipo,\n' +
+    '        -- Usuario creador\n' +
+    '        uc.id AS usuario_creador_id,\n' +
+    '        uc.nombre AS usuario_creador_nombre,\n' +
+    '        uc.apellidos AS usuario_creador_apellidos,\n' +
+    '        -- Nodo activo (PENDIENTE)\n' +
+    '        n.id AS nodo_id,\n' +
+    '        n.tipo_nodo,\n' +
+    '        n.estado AS estado_nodo,\n' +
+    '        n.folio_propio,\n' +
+    '        n.folio_padre,\n' +
+    '        n.folio_original,\n' +
+    '        n.fecha_generacion AS nodo_fecha_generacion,\n' +
+    '        n.instrucciones,\n' +
+    '        n.observaciones AS nodo_observaciones,\n' +
+    '        -- Usuario que turnó (responsable del nodo)\n' +
+    '        ur.id AS usuario_turna_id,\n' +
+    '        ur.nombre AS usuario_turna_nombre,\n' +
+    '        ur.apellidos AS usuario_turna_apellidos,\n' +
+    '        -- Área que turnó (padre del nodo)\n' +
+    '        CASE \n' +
+    '          WHEN n.nodo_padre_id IS NOT NULL THEN np.area_id\n' +
+    '          ELSE NULL\n' +
+    '        END AS area_turna_id,\n' +
+    '        CASE \n' +
+    '          WHEN n.nodo_padre_id IS NOT NULL THEN at.nombre\n' +
+    '          ELSE NULL\n' +
+    '        END AS area_turna_nombre,\n' +
+    '        -- Entidades externas (si aplica)\n' +
+    '        eeo.id AS entidad_externa_origen_id,\n' +
+    '        eeo.nombre AS entidad_externa_origen_nombre,\n' +
+    '        eed.id AS entidad_externa_destino_id,\n' +
+    '        eed.nombre AS entidad_externa_destino_nombre\n' +
+    '      FROM documento d\n' +
+    '      INNER JOIN nodo_documental n ON n.documento_id = d.id\n' +
+    '      INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
+    '      INNER JOIN area ao ON d.area_origen_id = ao.id\n' +
+    '      INNER JOIN usuario uc ON d.usuario_creador_id = uc.id\n' +
+    '      LEFT JOIN usuario ur ON n.usuario_responsable_id = ur.id\n' +
+    '      LEFT JOIN nodo_documental np ON n.nodo_padre_id = np.id\n' +
+    '      LEFT JOIN area at ON np.area_id = at.id\n' +
+    '      LEFT JOIN entidad_externa eeo ON d.entidad_externa_origen_id = eeo.id\n' +
+    '      LEFT JOIN entidad_externa eed ON d.entidad_externa_destino_id = eed.id\n' +
+    '      WHERE \n' +
+    '        n.es_nodo_activo = true\n' +
+    "        AND n.estado = 'PENDIENTE'\n" +
+    '        AND n.area_id = $1\n' +
+    "        AND d.estado != 'CANCELADO'\n" +
+    '      ORDER BY \n' +
+    '        d.prioridad DESC,\n' +
+    '        d.fecha_creacion DESC\n' +
+    '    ',
+  duration: '9ms',
+  rows: 4
+}
+]: Bandeja de recepción obtenida {"usuarioId":24,"areaId":65,"cantidad":4}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        d.id,\n' +
+    '        d.folio,\n' +
+    '        d.asunto,\n' +
+    '        d.contenido,\n' +
+    '        d.fecha_creacion,\n' +
+    '        d.fecha_limite,\n' +
+    '        d.prioridad,\n' +
+    '        d.estado AS estado_documento,\n' +
+    '        d.solo_conocimiento,\n' +
+    '        d.observaciones,\n' +
+    '        d.contexto,\n' +
+    '        -- Tipo de documento\n' +
+    '        td.id AS tipo_documento_id,\n' +
+    '        td.nombre AS tipo_documento_nombre,\n' +
+    '        td.clave AS tipo_documento_clave,\n' +
+    '        -- Área origen\n' +
+    '        ao.id AS area_origen_id,\n' +
+    '        ao.nombre AS area_origen_nombre,\n' +
+    '        ao.clave AS area_origen_clave,\n' +
+    '        ao.tipo AS area_origen_tipo,\n' +
+    '        -- Usuario creador\n' +
+    '        uc.id AS usuario_creador_id,\n' +
+    '        uc.nombre AS usuario_creador_nombre,\n' +
+    '        uc.apellidos AS usuario_creador_apellidos,\n' +
+    '        -- Nodo activo (PENDIENTE)\n' +
+    '        n.id AS nodo_id,\n' +
+    '        n.tipo_nodo,\n' +
+    '        n.estado AS estado_nodo,\n' +
+    '        n.folio_propio,\n' +
+    '        n.folio_padre,\n' +
+    '        n.folio_original,\n' +
+    '        n.fecha_generacion AS nodo_fecha_generacion,\n' +
+    '        n.instrucciones,\n' +
+    '        n.observaciones AS nodo_observaciones,\n' +
+    '        -- Usuario que turnó (responsable del nodo)\n' +
+    '        ur.id AS usuario_turna_id,\n' +
+    '        ur.nombre AS usuario_turna_nombre,\n' +
+    '        ur.apellidos AS usuario_turna_apellidos,\n' +
+    '        -- Área que turnó (padre del nodo)\n' +
+    '        CASE \n' +
+    '          WHEN n.nodo_padre_id IS NOT NULL THEN np.area_id\n' +
+    '          ELSE NULL\n' +
+    '        END AS area_turna_id,\n' +
+    '        CASE \n' +
+    '          WHEN n.nodo_padre_id IS NOT NULL THEN at.nombre\n' +
+    '          ELSE NULL\n' +
+    '        END AS area_turna_nombre,\n' +
+    '        -- Entidades externas (si aplica)\n' +
+    '        eeo.id AS entidad_externa_origen_id,\n' +
+    '        eeo.nombre AS entidad_externa_origen_nombre,\n' +
+    '        eed.id AS entidad_externa_destino_id,\n' +
+    '        eed.nombre AS entidad_externa_destino_nombre\n' +
+    '      FROM documento d\n' +
+    '      INNER JOIN nodo_documental n ON n.documento_id = d.id\n' +
+    '      INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
+    '      INNER JOIN area ao ON d.area_origen_id = ao.id\n' +
+    '      INNER JOIN usuario uc ON d.usuario_creador_id = uc.id\n' +
+    '      LEFT JOIN usuario ur ON n.usuario_responsable_id = ur.id\n' +
+    '      LEFT JOIN nodo_documental np ON n.nodo_padre_id = np.id\n' +
+    '      LEFT JOIN area at ON np.area_id = at.id\n' +
+    '      LEFT JOIN entidad_externa eeo ON d.entidad_externa_origen_id = eeo.id\n' +
+    '      LEFT JOIN entidad_externa eed ON d.entidad_externa_destino_id = eed.id\n' +
+    '      WHERE \n' +
+    '        n.es_nodo_activo = true\n' +
+    "        AND n.estado = 'PENDIENTE'\n" +
+    '        AND n.area_id = $1\n' +
+    "        AND d.estado != 'CANCELADO'\n" +
+    '      ORDER BY \n' +
+    '        d.prioridad DESC,\n' +
+    '        d.fecha_creacion DESC\n' +
+    '    ',
+  duration: '12ms',
+  rows: 4
+}
+]: Bandeja de recepción obtenida {"usuarioId":24,"areaId":65,"cantidad":4}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '3ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de catálogo de tipos de documento {"usuarioId":24}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '5ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '5ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de catálogo de tipos de documento {"usuarioId":24}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1 AND activo = $1\n' +
+    '    ',
+  duration: '4ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: 'SELECT COUNT(*) as total FROM (\n' +
+    '      SELECT \n' +
+    '        a.id,\n' +
+    '        a.nombre,\n' +
+    '        a.clave,\n' +
+    '        a.tipo,\n' +
+    '        a.area_padre_id,\n' +
+    '        a.nivel,\n' +
+    '        a.activa,\n' +
+    '        a.descripcion,\n' +
+    '        a.fecha_creacion,\n' +
+    '        ap.nombre AS area_padre_nombre,\n' +
+    '        ap.clave AS area_padre_clave,\n' +
+    '        (\n' +
+    '          SELECT COUNT(*)\n' +
+    '          FROM area sub\n' +
+    '          WHERE sub.area_padre_id = a.id AND sub.activa = true\n' +
+    '        ) AS total_subareas\n' +
+    '      FROM area a\n' +
+    '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
+    '      WHERE 1=1\n' +
+    '    ) AS count_query',
+  duration: '4ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1 AND activo = $1\n' +
+    '    ',
+  duration: '3ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1 AND activo = $1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $2',
+  duration: '3ms',
+  rows: 6
+}
+]: Catálogo de tipos de documento obtenido {"cantidad":6}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        a.id,\n' +
+    '        a.nombre,\n' +
+    '        a.clave,\n' +
+    '        a.tipo,\n' +
+    '        a.area_padre_id,\n' +
+    '        a.nivel,\n' +
+    '        a.activa,\n' +
+    '        a.descripcion,\n' +
+    '        a.fecha_creacion,\n' +
+    '        ap.nombre AS area_padre_nombre,\n' +
+    '        ap.clave AS area_padre_clave,\n' +
+    '        (\n' +
+    '          SELECT COUNT(*)\n' +
+    '          FROM area sub\n' +
+    '          WHERE sub.area_padre_id = a.id AND sub.activa = true\n' +
+    '        ) AS total_subareas\n' +
+    '      FROM area a\n' +
+    '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY a.nivel ASC, a.nombre ASC LIMIT $1 OFFSET $2',
+  duration: '3ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1 AND activo = $1\n' +
+    '      ORDER BY \n' +
+    '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
+    '      nombre ASC\n' +
+    '     LIMIT $2',
+  duration: '3ms',
+  rows: 6
+}
+]: Catálogo de tipos de documento obtenido {"cantidad":6}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '18ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+Consulta ejecutada: {
+  text: 'SELECT COUNT(*) as total FROM (\n' +
+    '      SELECT \n' +
+    '        a.id,\n' +
+    '        a.nombre,\n' +
+    '        a.clave,\n' +
+    '        a.tipo,\n' +
+    '        a.area_padre_id,\n' +
+    '        a.nivel,\n' +
+    '        a.activa,\n' +
+    '        a.descripcion,\n' +
+    '        a.fecha_creacion,\n' +
+    '        ap.nombre AS area_padre_nombre,\n' +
+    '        ap.clave AS area_padre_clave,\n' +
+    '        (\n' +
+    '          SELECT COUNT(*)\n' +
+    '          FROM area sub\n' +
+    '          WHERE sub.area_padre_id = a.id AND sub.activa = true\n' +
+    '        ) AS total_subareas\n' +
+    '      FROM area a\n' +
+    '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
+    '      WHERE 1=1\n' +
+    '    ) AS count_query',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        a.id,\n' +
+    '        a.nombre,\n' +
+    '        a.clave,\n' +
+    '        a.tipo,\n' +
+    '        a.area_padre_id,\n' +
+    '        a.nivel,\n' +
+    '        a.activa,\n' +
+    '        a.descripcion,\n' +
+    '        a.fecha_creacion,\n' +
+    '        ap.nombre AS area_padre_nombre,\n' +
+    '        ap.clave AS area_padre_clave,\n' +
+    '        (\n' +
+    '          SELECT COUNT(*)\n' +
+    '          FROM area sub\n' +
+    '          WHERE sub.area_padre_id = a.id AND sub.activa = true\n' +
+    '        ) AS total_subareas\n' +
+    '      FROM area a\n' +
+    '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
+    '      WHERE 1=1\n' +
+    '     ORDER BY a.nivel ASC, a.nombre ASC LIMIT $1 OFFSET $2',
+  duration: '1ms',
+  rows: 10
+}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '2ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de preview de consecutivo {"usuarioId":24,"areaId":65,"tipoDocumentoId":2}
+Consulta ejecutada: {
+  text: '\n' +
+    '        SELECT id, clave, nombre, activa \n' +
+    '        FROM area \n' +
+    '        WHERE id = $1\n' +
+    '      ',
+  duration: '3ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE id = $1\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '        SELECT \n' +
+    '          a.clave AS clave_area,\n' +
+    '          a.nombre AS nombre_area,\n' +
+    '          td.clave AS clave_tipo_doc,\n' +
+    '          td.nombre AS nombre_tipo_doc\n' +
+    '        FROM area a\n' +
+    '        CROSS JOIN tipo_documento td\n' +
+    '        WHERE a.id = $1 AND td.id = $2\n' +
+    '      ',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '        SELECT public.fn_preview_siguiente_consecutivo($1, $2, $3) AS proximo_consecutivo\n' +
+    '      ',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    "        SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo\n" +
+    '      ',
+  duration: '1ms',
+  rows: 1
+}
+]: Preview de folio completo obtenido {"area_id":65,"tipo_documento_id":2,"anio":2026,"folio_completo":"EM-SMADSOT.DPG-0008/2026","consecutivo":8}
+]: Preview de consecutivo obtenido {"usuario_id":24,"area_id":65,"tipo_documento_id":2,"consecutivo":8,"folio_completo":"EM-SMADSOT.DPG-0008/2026"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+Consulta ejecutada: {
+  text: '\n' +
+    '      WITH RECURSIVE ancestros AS (\n' +
+    '        -- Área actual (puede usar su propio número)\n' +
+    '        SELECT id, nombre, clave, tipo, area_padre_id, nivel\n' +
+    '        FROM area\n' +
+    '        WHERE id = $1 AND activa = true\n' +
+    '        \n' +
+    '        UNION ALL\n' +
+    '        \n' +
+    '        -- Ancestros recursivamente\n' +
+    '        SELECT a.id, a.nombre, a.clave, a.tipo, a.area_padre_id, a.nivel\n' +
+    '        FROM area a\n' +
+    '        INNER JOIN ancestros anc ON a.id = anc.area_padre_id\n' +
+    '        WHERE a.activa = true\n' +
+    '      )\n' +
+    '      SELECT id, nombre, clave, tipo, nivel\n' +
+    '      FROM ancestros\n' +
+    "      WHERE tipo IN ('SECRETARIA', 'SUBSECRETARIA', 'INSTITUTO', 'DIRECCION_GENERAL', 'DIRECCION')\n" +
+    '         OR id = $1  -- Incluir el área propia\n' +
+    '      ORDER BY nivel ASC\n' +
+    '    ',
+  duration: '1ms',
+  rows: 3
+}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '2ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        p.id,\n' +
+    '        p.folio_asignado,\n' +
+    '        p.fecha_vencimiento,\n' +
+    '        p.area_prestamista_id,\n' +
+    '        a.nombre AS area_prestamista_nombre,\n' +
+    '        a.clave AS area_prestamista_clave,\n' +
+    '        EXTRACT(DAY FROM (p.fecha_vencimiento - CURRENT_TIMESTAMP)) AS dias_restantes\n' +
+    '      FROM prestamo_numero_oficio p\n' +
+    '      INNER JOIN area a ON p.area_prestamista_id = a.id\n' +
+    '      WHERE p.area_solicitante_id = $1\n' +
+    "        AND p.estado = 'APROBADO'\n" +
+    '        AND p.fecha_vencimiento > CURRENT_TIMESTAMP\n' +
+    '      ORDER BY p.fecha_vencimiento ASC\n' +
+    '    ',
+  duration: '2ms',
+  rows: 0
+}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '2ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '3ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de preview de consecutivo {"usuarioId":24,"areaId":21,"tipoDocumentoId":2}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    "        td.clave || '-' || a.clave || '-####/' || EXTRACT(YEAR FROM CURRENT_DATE)::TEXT AS formato_folio,\n" +
+    '        a.clave,\n' +
+    '        a.nombre,\n' +
+    '        td.nombre AS tipo_documento_nombre\n' +
+    '      FROM area a\n' +
+    '      CROSS JOIN tipo_documento td\n' +
+    '      WHERE a.id = $1 \n' +
+    '        AND a.activa = true\n' +
+    '        AND td.id = $2\n' +
+    '        AND td.activo = true\n' +
+    '    ',
+  duration: '2ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '        SELECT id, clave, nombre, activa \n' +
+    '        FROM area \n' +
+    '        WHERE id = $1\n' +
+    '      ',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT \n' +
+    '        id, nombre, clave, descripcion, plantilla,\n' +
+    '        requiere_respuesta, activo, fecha_creacion\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE id = $1\n' +
+    '    ',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '        SELECT \n' +
+    '          a.clave AS clave_area,\n' +
+    '          a.nombre AS nombre_area,\n' +
+    '          td.clave AS clave_tipo_doc,\n' +
+    '          td.nombre AS nombre_tipo_doc\n' +
+    '        FROM area a\n' +
+    '        CROSS JOIN tipo_documento td\n' +
+    '        WHERE a.id = $1 AND td.id = $2\n' +
+    '      ',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    '        SELECT public.fn_preview_siguiente_consecutivo($1, $2, $3) AS proximo_consecutivo\n' +
+    '      ',
+  duration: '1ms',
+  rows: 1
+}
+Consulta ejecutada: {
+  text: '\n' +
+    "        SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo\n" +
+    '      ',
+  duration: '3ms',
+  rows: 1
+}
+]: Preview de folio completo obtenido {"area_id":21,"tipo_documento_id":2,"anio":2026,"folio_completo":"EM-SMADSOT-0002/2026","consecutivo":2}
+]: Preview de consecutivo obtenido {"usuario_id":24,"area_id":21,"tipo_documento_id":2,"consecutivo":2,"folio_completo":"EM-SMADSOT-0002/2026"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '2ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Subiendo archivos {"usuarioId":24,"cantidadArchivos":1}
+Consulta ejecutada: {
+  text: '\n' +
+    '      INSERT INTO archivo (\n' +
+    '        nombre_archivo,\n' +
+    '        ruta_archivo,\n' +
+    '        tipo_mime,\n' +
+    '        tamaño,\n' +
+    '        usuario_carga_id,\n' +
+    '        hash\n' +
+    '      ) VALUES ($1, $2, $3, $4, $5, $6)\n' +
+    '      RETURNING id, nombre_archivo, tipo_mime, tamaño\n' +
+    '    ',
+  duration: '8ms',
+  rows: 1
+}
+]: Archivo insertado en BD {"archivoId":12,"nombre":"VDIT599.pdf"}
+]: Archivo procesado exitosamente {"archivoId":12,"nombre":"VDIT599.pdf","tamaño":"823411"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de validación de turno {"areaOrigenId":65,"areaDestinoId":21,"usuarioId":24,"ip":"::1"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+]: Contexto RLS configurado {"usuarioId":24}
+Consulta ejecutada: {
+  text: '\n        SELECT fn_validar_turno($1, $2) as mensaje_error\n      ',
+  duration: '2ms',
+  rows: 1
+}
+]: Validación de turno realizada {"areaOrigenId":65,"areaDestinoId":21,"valido":false,"mensaje":"TURNO NO PERMITIDO: \"Direccion de Planeacion y Geomatica\" (DIRECCION) → \"Secretaria\" (SECRETARIA). Relación jerárquica: ASCENDENTE. No existe una regla activa que autorice esta combinación. Contacte al administrador del sistema para configurarla."}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de validación de turno {"areaOrigenId":65,"areaDestinoId":61,"usuarioId":24,"ip":"::1"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+]: Contexto RLS configurado {"usuarioId":24}
+Consulta ejecutada: {
+  text: '\n        SELECT fn_validar_turno($1, $2) as mensaje_error\n      ',
+  duration: '1ms',
+  rows: 1
+}
+]: Validación de turno realizada {"areaOrigenId":65,"areaDestinoId":61,"valido":true,"mensaje":null}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=24, area=65, rol=4
+]: Solicitud de emisión de documento {"usuarioId":24,"areaId":65,"contexto":"OTRO","asunto":"Secretaría de Medio Ambiente, Desarrollo Sustentab","ip":"::1"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+]: Contexto RLS configurado {"usuarioId":24}
+]: Error al emitir documento {"error":"duplicate key value violates unique constraint \"documento_folio_key\"","params":{"tipo_documento_id":2,"usuario_creador_id":24,"area_origen_id":65}}
+]: Error handled duplicate key value violates unique constraint "documento_folio_key" {"url":"/api/documentos/emitir","method":"POST","userId":24,"ip":"::1"}
+error: duplicate key value violates unique constraint "documento_folio_key"
+    at F:\GESTOR REACT-TAURI\SIGA\backend\node_modules\pg\lib\client.js:631:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async DocumentoRepository.emitirDocumento (F:\GESTOR REACT-TAURI\SIGA\backend\src\repositories\documento.repository.js:221:22)
+    at async DocumentoService.emitirDocumento (F:\GESTOR REACT-TAURI\SIGA\backend\src\services\documento.service.js:142:23)
+    at async F:\GESTOR REACT-TAURI\SIGA\backend\src\controllers\documento.controller.js:38:21

@@ -41,4 +41,4 @@ backend/temp/
 *.sh
 *.sql
 *.env
-!sigavFoliosIndependientesv4.sql
+!gestor_db1.sql

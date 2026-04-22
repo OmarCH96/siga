@@ -36,7 +36,9 @@ const validateEmision = (req, res, next) => {
       contexto = 'OTRO',
       prestamo_numero_id,
       instrucciones,
-      observaciones
+      observaciones,
+      area_folio_id,
+      motivacion
     } = req.body;
 
     const errors = [];
@@ -101,13 +103,27 @@ const validateEmision = (req, res, next) => {
     }
 
     // ==========================================
-    // 7. Validar prestamo_numero_id (obligatorio SI contexto === 'OFICIO')
+    // 7. Validar prestamo_numero_id (obligatorio SI contexto === 'OFICIO' Y sin area_folio_id)
     // ==========================================
-    if (contexto === 'OFICIO') {
+    const esPrestamoReserva =
+      area_folio_id !== undefined &&
+      area_folio_id !== null &&
+      Number(area_folio_id) > 0;
+
+    if (contexto === 'OFICIO' && !esPrestamoReserva) {
       if (!prestamo_numero_id) {
         errors.push('El préstamo de número de oficio es requerido para documentos de tipo OFICIO');
       } else if (!Number.isInteger(Number(prestamo_numero_id)) || Number(prestamo_numero_id) <= 0) {
         errors.push('El ID de préstamo de número debe ser un número entero válido');
+      }
+    }
+
+    // ==========================================
+    // 7b. Validar area_folio_id (opcional, entero positivo)
+    // ==========================================
+    if (area_folio_id !== undefined && area_folio_id !== null) {
+      if (!Number.isInteger(Number(area_folio_id)) || Number(area_folio_id) <= 0) {
+        errors.push('El ID de área de folio debe ser un número entero válido');
       }
     }
 
@@ -160,6 +176,12 @@ const validateEmision = (req, res, next) => {
     // Establecer defaults si no existen
     req.body.prioridad = prioridad || 'MEDIA';
     req.body.contexto = contexto || 'OTRO';
+    if (area_folio_id !== undefined && area_folio_id !== null) {
+      req.body.area_folio_id = Number(area_folio_id);
+    }
+    if (motivacion !== undefined) {
+      req.body.motivacion = sanitizeString(String(motivacion).trim());
+    }
 
     // Continuar al siguiente middleware
     next();

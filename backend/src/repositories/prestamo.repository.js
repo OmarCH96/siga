@@ -47,15 +47,7 @@ class PrestamoRepository {
   async previewFolio(areaId, tipoDocumentoId) {
     const query = `
       SELECT 
-        -- Construir el folio con el prefijo del tipo de documento
-        -- y eliminando 'SMADSOT.' de la clave del área si está presente
-        td.clave || '-SMADSOT.' || 
-        CASE 
-          WHEN a.clave LIKE 'SMADSOT.%' THEN SUBSTRING(a.clave FROM 9)  -- Eliminar 'SMADSOT.' del inicio
-          WHEN a.clave = 'SMADSOT' THEN ''  -- Si es solo SMADSOT, usar vacío (será solo SMADSOT en el formato)
-          ELSE a.clave  -- Si no tiene el prefijo, usar tal cual
-        END || 
-        '-####/' || EXTRACT(YEAR FROM CURRENT_DATE)::TEXT AS formato_folio,
+        td.clave || '-' || a.clave || '-####/' || EXTRACT(YEAR FROM CURRENT_DATE)::TEXT AS formato_folio,
         a.clave,
         a.nombre,
         td.nombre AS tipo_documento_nombre
@@ -105,17 +97,18 @@ class PrestamoRepository {
     const query = `
       SELECT *
       FROM sp_solicitar_prestamo_con_reserva(
-        $1::INTEGER,         -- p_area_solicitante_id
-        $2::INTEGER,         -- p_area_prestamista_id
-        $3::INTEGER,         -- p_usuario_solicita_id
-        $4::TEXT,            -- p_motivacion
-        $5::INTEGER,         -- p_tipo_documento_id
-        $6::VARCHAR,         -- p_asunto
-        $7::TEXT,            -- p_contenido
-        $8::TIMESTAMP,       -- p_fecha_limite
-        $9::prioridad_enum,  -- p_prioridad
-        $10::TEXT,           -- p_instrucciones
-        $11::TEXT            -- p_observaciones
+        $1::INTEGER,                    -- p_area_solicitante_id
+        $2::INTEGER,                    -- p_area_prestamista_id
+        $3::INTEGER,                    -- p_usuario_solicita_id
+        $4::TEXT,                       -- p_motivacion
+        $5::INTEGER,                    -- p_tipo_documento_id
+        $6::VARCHAR,                    -- p_asunto
+        $7::TEXT,                       -- p_contenido
+        $8::TIMESTAMP,                  -- p_fecha_limite
+        $9::prioridad_enum,             -- p_prioridad
+        $10::TEXT,                      -- p_instrucciones
+        $11::TEXT,                      -- p_observaciones
+        $12::contexto_documento_enum    -- p_contexto
       )
     `;
 
@@ -130,7 +123,8 @@ class PrestamoRepository {
       params.fecha_limite || null,
       params.prioridad || 'MEDIA',
       params.instrucciones || null,
-      params.observaciones || null
+      params.observaciones || null,
+      params.contexto || 'OTRO'
     ];
 
     const result = await db.query(query, values);

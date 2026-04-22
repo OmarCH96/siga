@@ -762,14 +762,6 @@ class DocumentoRepository {
     try {
       const currentYear = anio || new Date().getFullYear();
 
-      // Obtener el folio formateado completo
-      const queryFolio = `
-        SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo
-      `;
-
-      const resultFolio = await db.query(queryFolio, [areaId, currentYear, tipoDocumentoId]);
-      const folioCompleto = resultFolio.rows[0]?.folio_completo;
-
       // Obtener información adicional del área y tipo de documento
       const queryInfo = `
         SELECT 
@@ -785,13 +777,22 @@ class DocumentoRepository {
       const resultInfo = await db.query(queryInfo, [areaId, tipoDocumentoId]);
       const info = resultInfo.rows[0];
 
-      // Obtener el consecutivo que se asignará
+      // Desde migración 007: cada (area_id, clave_tipo, anio) tiene su propio contador.
+      // fn_generar_folio con p_tipo_documento_id usa la clave del tipo como clave de contador.
       const claveTipoDoc = info?.clave_tipo_doc || 'EM';
       const queryConsecutivo = `
         SELECT public.fn_preview_siguiente_consecutivo($1, $2, $3) AS proximo_consecutivo
       `;
 
       const resultConsecutivo = await db.query(queryConsecutivo, [areaId, claveTipoDoc, currentYear]);
+
+      // fn_preview_folio con tipoDocumentoId usa la misma lógica que fn_generar_folio v4
+      const queryFolio = `
+        SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo
+      `;
+
+      const resultFolio = await db.query(queryFolio, [areaId, currentYear, tipoDocumentoId]);
+      const folioCompleto = resultFolio.rows[0]?.folio_completo;
       const proximoConsecutivo = resultConsecutivo.rows[0]?.proximo_consecutivo;
 
       logger.debug('Preview de folio completo obtenido', {

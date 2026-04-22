@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { useEmisionDocumento } from '@hooks/useEmisionDocumento';
-import { getAllAreas } from '@services/usuario.service';
+import { getAreasActivas } from '@services/area.service';
 import documentoService from '@services/documento.service';
 import archivoService from '@services/archivo.service';
 import * as prestamoService from '@services/prestamo.service';
@@ -111,8 +111,8 @@ const FormularioEmision = () => {
             setErrorAreas(null);
             
             try {
-                const response = await getAllAreas();
-                // response.data contiene el array de áreas
+                const response = await getAreasActivas();
+                // getAreasActivas devuelve { success, count, data: [...todas las áreas] }
                 const areas = response.data || response || [];
                 setAreasDisponibles(areas);
                 console.log('Áreas cargadas:', areas.length);
@@ -521,16 +521,21 @@ const FormularioEmision = () => {
             a => a.id === parseInt(areaPrestamistaSeleccionada)
         );
 
-        // Si NO es OFICIO, no se requiere préstamo (Memorándum, etc. pueden cruzar sin préstamo)
-        if (formData.contexto !== 'OFICIO') {
+        // Si el área seleccionada es la propia del usuario → flujo normal sin reserva
+        const esAreaPropia = Number(areaPrestamistaSeleccionada) === user?.area?.id;
+        if (esAreaPropia) {
+            setSolicitudReserva(null);
             setIsModalFolioOpen(false);
-            toast.info(`Se emitirá el ${formData.contexto} desde el área seleccionada.`);
+            setAreaPrestamistaSeleccionada('');
+            setMotivacionPrestamo('');
+            setFolioPreview('');
+            setErrorPrestamo(null);
+            toast.info('Se usará el folio de su área. Emisión normal.');
             return;
         }
 
-        // Para OFICIO se requiere una solicitud con reserva; el documento se creará
-        // en PENDIENTE_PRESTAMO hasta aprobación del área prestamista.
-
+        // Área diferente al usuario → reserva de folio con PENDIENTE_PRESTAMO.
+        // Aplica para cualquier contexto: OFICIO, MEMORANDUM, CIRCULAR, etc.
         if (!motivacionPrestamo || motivacionPrestamo.trim().length < 10) {
             setErrorPrestamo('La motivación debe tener al menos 10 caracteres');
             return;
@@ -543,7 +548,7 @@ const FormularioEmision = () => {
             motivacion: motivacionPrestamo.trim()
         });
 
-        // Si se configura reserva, se limpia préstamo aprobado previo.
+        // Limpiar préstamo aprobado previo si había uno
         updateField('prestamo_numero_id', null);
         setPrestamoSeleccionado(null);
 
@@ -553,7 +558,7 @@ const FormularioEmision = () => {
         setFolioPreview('');
         setErrorPrestamo(null);
 
-        toast.success('Reserva configurada. Al emitir se registrará en PENDIENTE_PRESTAMO.');
+        toast.success(`Reserva configurada desde ${areaSeleccionada?.nombre}. El documento quedará bloqueado hasta la aprobación del área prestamista.`);
     };
 
     const handleCerrarModalFolio = () => {
@@ -652,36 +657,39 @@ const FormularioEmision = () => {
             let resultado = null;
             let esPendientePrestamo = false;
 
-            // PASO 1: Para OFICIO sin préstamo aprobado, usar flujo de reserva.
-            if (formData.contexto === 'OFICIO' && !formData.prestamo_numero_id && solicitudReserva) {
-                const reservaResp = await prestamoService.solicitarPrestamoConReserva({
-                    area_prestamista_id: solicitudReserva.area_prestamista_id,
-                    motivacion: solicitudReserva.motivacion,
+            // PASO 1: Si hay reserva configurada (área padre distinta a la del usuario),
+            // usar el endpoint unificado /documentos/emitir con area_folio_id.
+            // Aplica para cualquier contexto, no solo OFICIO.
+            if (solicitudReserva && !formData.prestamo_numero_id) {
+                const reservaResp = await documentoService.emitirDocumento({
                     tipo_documento_id: parseInt(formData.tipo_documento_id, 10),
                     asunto: formData.asunto.trim(),
                     contenido: formData.contenido?.trim() || null,
                     fecha_limite: formData.fecha_limite || null,
                     prioridad: formData.prioridad,
+                    contexto: formData.contexto,
                     instrucciones: formData.instrucciones?.trim() || null,
-                    observaciones: formData.observaciones?.trim() || null
+                    observaciones: formData.observaciones?.trim() || null,
+                    area_folio_id: solicitudReserva.area_prestamista_id,
+                    motivacion: solicitudReserva.motivacion,
                 });
 
                 const data = reservaResp?.data || {};
                 resultado = {
-                    documentoId: data.documento_id,
-                    nodoId: data.nodo_id,
-                    folio: data.folio_reservado,
-                    estadoDocumento: data.estado_documento
+                    documentoId: data.documentoId,
+                    nodoId: data.nodoId,
+                    folio: data.folio,
+                    prestamoId: data.prestamoId,
                 };
 
-                esPendientePrestamo = data.estado_documento === 'PENDIENTE_PRESTAMO';
+                esPendientePrestamo = data.pendienteAprobacion === true;
 
                 setDocumentoRegistrado({
-                    documento_id: data.documento_id,
-                    nodo_id: data.nodo_id,
-                    folio: data.folio_reservado,
+                    documento_id: data.documentoId,
+                    nodo_id: data.nodoId,
+                    folio: data.folio,
                     asunto: formData.asunto,
-                    estado: data.estado_documento
+                    estado: esPendientePrestamo ? 'PENDIENTE_PRESTAMO' : 'REGISTRADO',
                 });
             } else {
                 // PASO 1: Emisión normal con préstamo aprobado (flujo actual).
@@ -1346,6 +1354,19 @@ const FormularioEmision = () => {
                                         </div>
                                     </div>
                                     <div className="p-4">
+                                        {/* Banner de bloqueo cuando hay reserva pendiente */}
+                                        {solicitudReserva && (
+                                            <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg flex items-start gap-2">
+                                                <span className="material-symbols-outlined text-amber-600 !text-base mt-0.5">lock</span>
+                                                <div>
+                                                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Adjuntar bloqueado temporalmente</p>
+                                                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                                                        El documento quedará en <strong>PENDIENTE_PRESTAMO</strong>. Podrá adjuntar archivos una vez que <strong>{solicitudReserva.area_prestamista_nombre}</strong> apruebe el folio.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Input file oculto */}
                                         <input
                                             ref={fileInputRef}
@@ -1354,7 +1375,7 @@ const FormularioEmision = () => {
                                             accept=".pdf,.docx,.doc,.xlsx,.xls,.jpg,.jpeg,.png"
                                             onChange={handleFileInputChange}
                                             className="hidden"
-                                            disabled={!puedeCrearDocumento}
+                                            disabled={!puedeCrearDocumento || !!solicitudReserva}
                                         />
 
                                         {/* Zona de drag & drop */}
@@ -1470,6 +1491,19 @@ const FormularioEmision = () => {
                                         </h3>
                                     </div>
                                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Banner de bloqueo cuando hay reserva pendiente */}
+                                        {solicitudReserva && (
+                                            <div className="col-span-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg flex items-start gap-2">
+                                                <span className="material-symbols-outlined text-amber-600 !text-base mt-0.5">lock</span>
+                                                <div>
+                                                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Turnar y copias bloqueados temporalmente</p>
+                                                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                                                        No se puede turnar ni añadir copias hasta que <strong>{solicitudReserva.area_prestamista_nombre}</strong> apruebe el folio reservado.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Destinatarios */}
                                         <div className="space-y-3">
                                             <label className="block text-xs font-bold text-slate-500 uppercase">
@@ -1828,7 +1862,7 @@ const FormularioEmision = () => {
                                         </button>
                                     </div>
                                     <p className="text-sm text-slate-500 mb-6">
-                                        Seleccione el área desde la cual se emitirá el documento. Para documentos tipo <strong>OFICIO</strong> dirigidos a áreas ancestros, se solicitará autorización.
+                                        Seleccione el área desde la cual se generará el folio. Si elige un <strong>área padre</strong> (diferente a la suya), el documento quedará en <strong>PENDIENTE_PRESTAMO</strong> hasta que dicha área apruebe el folio reservado.
                                     </p>
 
                                     {/* Préstamos aprobados disponibles */}
@@ -1975,8 +2009,8 @@ const FormularioEmision = () => {
                                                 ) : (
                                                     <>
                                                         <span className="material-symbols-outlined !text-sm">check_circle</span>
-                                                        {formData.contexto === 'OFICIO' && !areasPrestamistas.find(a => a.id === parseInt(areaPrestamistaSeleccionada))?.es_area_propia
-                                                            ? 'Solicitar Préstamo'
+                                                        {areaPrestamistaSeleccionada && !areasPrestamistas.find(a => a.id === parseInt(areaPrestamistaSeleccionada))?.es_area_propia
+                                                            ? 'Solicitar Reserva de Folio'
                                                             : 'Confirmar Selección'
                                                         }
                                                     </>

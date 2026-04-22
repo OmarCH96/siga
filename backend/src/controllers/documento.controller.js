@@ -37,11 +37,15 @@ const emitirDocumento = asyncHandler(async (req, res) => {
   // Llamar al servicio pasando el usuario completo
   const resultado = await documentoService.emitirDocumento(datosDocumento, usuario);
 
-  // Respuesta estándar
+  // Respuesta: distingue flujo normal de flujo con préstamo/reserva
+  const message = resultado.pendienteAprobacion
+    ? `Folio ${resultado.folio} reservado. El documento quedará bloqueado hasta que el área prestamista apruebe la solicitud.`
+    : `Documento emitido con folio ${resultado.folio}`;
+
   res.status(201).json({
     success: true,
     data: resultado,
-    message: `Documento emitido con folio ${resultado.folio}`,
+    message,
   });
 });
 
@@ -424,7 +428,6 @@ const getDiagnosticoConsecutivo = asyncHandler(async (req, res) => {
   const areaResult = await db.query(areaQuery, [areaId]);
   
   // 3. Verificar si existe registro en consecutivo_area
-  const claveTipoDoc = tipoDocResult.rows[0]?.clave || '';
   const consecutivosQuery = `
     SELECT 
       area_id, 
@@ -437,14 +440,15 @@ const getDiagnosticoConsecutivo = asyncHandler(async (req, res) => {
   `;
   const consecutivosResult = await db.query(consecutivosQuery, [areaId]);
   
-  // 4. Llamar a fn_preview_siguiente_consecutivo
+  // 4. Llamar a fn_preview_siguiente_consecutivo con la clave del tipo (migración 007)
+  const currentYear = new Date().getFullYear();
+  const claveTipoDoc = tipoDocResult.rows[0]?.clave || '';
   const previewQuery = `
     SELECT public.fn_preview_siguiente_consecutivo($1, $2, $3) AS proximo_consecutivo
   `;
-  const currentYear = new Date().getFullYear();
   const previewResult = await db.query(previewQuery, [areaId, claveTipoDoc, currentYear]);
   
-  // 5. Llamar a fn_preview_folio
+  // 5. Llamar a fn_preview_folio pasando tipoDocumentoId (usa clave del tipo internamente)
   const folioQuery = `
     SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo
   `;
