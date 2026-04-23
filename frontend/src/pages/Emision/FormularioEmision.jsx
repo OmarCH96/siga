@@ -169,22 +169,22 @@ const FormularioEmision = () => {
             }
             
             try {
-                const response = await prestamoService.getPreviewFolio(
-                    areaPrestamistaSeleccionada,
-                    formData.tipo_documento_id
+                // Usar getPreviewConsecutivo para mostrar el folio real (con número o RESERVA si es área padre)
+                const resultado = await documentoService.getPreviewConsecutivo(
+                    parseInt(areaPrestamistaSeleccionada, 10),
+                    parseInt(formData.tipo_documento_id, 10)
                 );
-                console.log('Response completa de preview:', response);
-                console.log('response.data:', response.data);
-                console.log('formato_folio:', response.data?.formato_folio);
-                
-                // El backend devuelve { success: true, data: { formato_folio, clave, nombre } }
-                // El servicio retorna response.data del axios, que es el objeto completo
-                const formatoFolio = response.data?.formato_folio || '';
-                console.log('Formato folio final:', formatoFolio);
-                setFolioPreview(formatoFolio);
+                const data = resultado.data || {};
+                const esAreaPropia = parseInt(areaPrestamistaSeleccionada, 10) === user?.area?.id;
+                const base = `${data.clave_tipo_doc || ''}.${data.clave_area || ''}`;
+                // Área propia → mostrar folio real; área padre → el número se asigna al aprobar
+                if (esAreaPropia) {
+                    setFolioPreview(data.folio_completo || `${base}-${String(data.consecutivo).padStart(4, '0')}/${data.anio}`);
+                } else {
+                    setFolioPreview(`${base}-RESERVA/${data.anio || new Date().getFullYear()}`);
+                }
             } catch (err) {
                 console.error('Error al cargar preview de folio:', err);
-                console.error('Error response:', err.response?.data);
                 setFolioPreview('');
             }
         };
@@ -201,15 +201,15 @@ const FormularioEmision = () => {
             // 3. Área del usuario (por defecto)
             let areaEmisora = null;
             
-            // Si hay un préstamo seleccionado, usar el área prestamista
+            // 1. Préstamo aprobado con folio ya asignado
             if (prestamoSeleccionado?.area_prestamista_id) {
                 areaEmisora = prestamoSeleccionado.area_prestamista_id;
-            } 
-            // Si hay área seleccionada en el modal (aunque no sea préstamo)
-            else if (areaPrestamistaSeleccionada) {
-                areaEmisora = parseInt(areaPrestamistaSeleccionada, 10);
             }
-            // Si no hay nada seleccionado, usar el área del usuario
+            // 2. Reserva confirmada (área padre seleccionada y confirmada en el modal)
+            else if (solicitudReserva?.area_prestamista_id) {
+                areaEmisora = solicitudReserva.area_prestamista_id;
+            }
+            // 3. Área propia del usuario (flujo normal sin préstamo)
             else if (user?.area?.id) {
                 areaEmisora = user.area.id;
             }
@@ -242,9 +242,9 @@ const FormularioEmision = () => {
 
         cargarProximoConsecutivo();
     }, [
-        prestamoSeleccionado?.area_prestamista_id, 
-        areaPrestamistaSeleccionada,
-        user?.area?.id, 
+        prestamoSeleccionado?.area_prestamista_id,
+        solicitudReserva?.area_prestamista_id,
+        user?.area?.id,
         formData.tipo_documento_id
     ]);
 
@@ -503,9 +503,26 @@ const FormularioEmision = () => {
     );
     const tipoDocumentoClave = tipoDocumentoSeleccionado?.clave || 'EM';
     
-    const folioBase = `${tipoDocumentoClave}.${areaClave}`;
-    const numeroPlaceholder = '----';
-    const referenciaCompleta = `${folioBase}-${numeroPlaceholder}/${añoActual}`;
+    // Clave de área efectiva para el folio: área prestamista confirmada > área propia
+    const folioAreaClave = proximoConsecutivo?.clave_area
+        || solicitudReserva?.area_prestamista_clave
+        || areaClave;
+
+    // ¿El folio viene de un área padre (no la propia del usuario)?
+    const esFolioDeAreaPadre = !!(solicitudReserva || prestamoSeleccionado);
+
+    const folioBase = `${tipoDocumentoClave}.${folioAreaClave}`;
+
+    // Referencia completa:
+    // - Préstamo aprobado → usa el folio ya asignado
+    // - Reserva pendiente → el número es desconocido hasta aprobación (muestra RESERVA)
+    // - Flujo normal → muestra el próximo consecutivo real del área
+    const referenciaCompleta =
+        prestamoSeleccionado?.folio_asignado
+        || (solicitudReserva
+            ? `${folioBase}-RESERVA/${añoActual}`
+            : proximoConsecutivo?.folio_completo
+                || `${folioBase}-${'----'}/${añoActual}`);
 
     // Lógica condicional: mostrar campo "Préstamo de Número" solo si contexto === 'OFICIO'
     const requierePrestamoNumero = formData.contexto === 'OFICIO';
@@ -1072,6 +1089,49 @@ const FormularioEmision = () => {
                                     />
                                 </div>
                             </div>
+
+                            {/* Banner de área emisora del folio cuando es distinta a la propia */}
+                            {esFolioDeAreaPadre && (
+                                <div className="px-4 pb-3">
+                                    <div className={`flex items-start gap-2.5 p-3 rounded-lg border ${
+                                        solicitudReserva
+                                            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700'
+                                            : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700'
+                                    }`}>
+                                        <span className={`material-symbols-outlined !text-base mt-0.5 ${
+                                            solicitudReserva ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                                        }`}>account_tree</span>
+                                        <div className="flex-1 min-w-0">
+                                            {solicitudReserva ? (
+                                                <>
+                                                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                                                        Folio reservado — área padre: {solicitudReserva.area_prestamista_nombre}
+                                                    </p>
+                                                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                                                        El número consecutivo se asignará cuando el área apruebe la solicitud. El documento quedará en <strong>PENDIENTE_PRESTAMO</strong>.
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                                        Folio aprobado — área: {prestamoSeleccionado?.area_prestamista_nombre}
+                                                    </p>
+                                                    <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5">
+                                                        Usando folio pre-aprobado: <span className="font-mono font-bold">{prestamoSeleccionado?.folio_asignado}</span>
+                                                    </p>
+                                                </>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setSolicitudReserva(null); setPrestamoSeleccionado(null); updateField('prestamo_numero_id', null); }}
+                                            className="text-xs font-bold underline whitespace-nowrap mt-0.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                                        >
+                                            Cambiar área
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </section>
 
                         {/* Card 2: Datos del Remitente */}

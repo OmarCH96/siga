@@ -287,11 +287,12 @@ const resolverPrestamo = asyncHandler(async (req, res) => {
  */
 const marcarUtilizado = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { areaId } = req.user;
 
-  const utilizado = await prestamoRepository.marcarUtilizado(parseInt(id));
+  const utilizado = await prestamoRepository.marcarUtilizado(parseInt(id), areaId);
 
   if (!utilizado) {
-    throw new ValidationError('No se pudo marcar el préstamo como utilizado');
+    throw new ValidationError('No se pudo marcar el préstamo como utilizado. Verifique que el préstamo esté APROBADO y pertenezca a su área.');
   }
 
   res.status(200).json({

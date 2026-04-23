@@ -233,18 +233,19 @@ class PrestamoRepository {
   /**
    * Marca un préstamo como utilizado
    * @param {number} prestamoId - ID del préstamo
+   * @param {number} areaSolicitanteId - ID del área solicitante (verificación de propiedad)
    * @returns {Promise<boolean>} true si se marcó correctamente
    */
-  async marcarUtilizado(prestamoId) {
+  async marcarUtilizado(prestamoId, areaSolicitanteId) {
     const query = `
       UPDATE prestamo_numero_oficio
       SET estado = 'UTILIZADO',
           fecha_uso = CURRENT_TIMESTAMP
-      WHERE id = $1 AND estado = 'APROBADO'
+      WHERE id = $1 AND estado = 'APROBADO' AND area_solicitante_id = $2
       RETURNING id
     `;
     
-    const result = await db.query(query, [prestamoId]);
+    const result = await db.query(query, [prestamoId, areaSolicitanteId]);
     return result.rows.length > 0;
   }
 }

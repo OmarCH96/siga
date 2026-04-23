@@ -1,541 +1,91 @@
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
+Consulta ejecutada: { text: 'SELECT NOW() as now', duration: '15ms', rows: 1 }
+✓ Conexión a base de datos exitosa: 2026-04-22T23:53:48.684Z
+╔════════════════════════════════════════════════════════════╗
+║   Sistema Integral de Gestión Administrativa (SIGA)       ║
+╚════════════════════════════════════════════════════════════╝
+
+✓ Servidor corriendo en puerto 3000
+✓ Entorno: development
+✓ Base de datos: gestor_db@192.168.43.107
+
+API disponible en: http://localhost:3000/api
+Health check: http://localhost:3000/health
+
+[nodemon] restarting due to changes...
+[nodemon] starting `node src/index.js`
+✓ Configuración validada correctamente
+  Entorno: development
+  Puerto: 3000
+  Base de datos: gestor_db@192.168.43.107
+  JWT Expiration: 8h
+  CORS: http://localhost:5173
+Consulta ejecutada: { text: 'SELECT NOW() as now', duration: '16ms', rows: 1 }
+✓ Conexión a base de datos exitosa: 2026-04-22T23:53:55.010Z
+╔════════════════════════════════════════════════════════════╗
+║   Sistema Integral de Gestión Administrativa (SIGA)       ║
+╚════════════════════════════════════════════════════════════╝
+
+✓ Servidor corriendo en puerto 3000
+✓ Entorno: development
+✓ Base de datos: gestor_db@192.168.43.107
+
+API disponible en: http://localhost:3000/api
+Health check: http://localhost:3000/health
+
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '5ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '17ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '7ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
+]: Solicitud de catálogo de tipos de documento {"usuarioId":25}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '10ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
 Consulta ejecutada: {
   text: '\n' +
-    '      UPDATE refresh_tokens\n' +
-    '      SET revoked = TRUE,\n' +
-    '          revoked_at = NOW(),\n' +
-    '          replaced_by_token = $2\n' +
-    '      WHERE token = $1\n' +
-    '      RETURNING id\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1 AND activo = $1\n' +
     '    ',
   duration: '4ms',
   rows: 1
 }
-]: Refresh token revoked {"token":"***REDACTED***"}
-]: [AUDIT] Refresh token revoked (logout) {"token":"***REDACTED***","type":"audit"}
-]: [AUDIT] User logged out {"usuarioId":24,"type":"audit"}
-]: Login attempt {"nombreUsuario":"admin","ipAddress":"::1"}
 Consulta ejecutada: {
   text: '\n' +
     '      SELECT \n' +
-    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
-    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
-    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
-    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
-    '      FROM usuario u\n' +
-    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
-    '      INNER JOIN area a ON u.area_id = a.id\n' +
-    '      WHERE u.nombre_usuario = $1\n' +
+    '        a.id,\n' +
+    '        a.nombre,\n' +
+    '        a.clave,\n' +
+    '        a.tipo,\n' +
+    '        a.area_padre_id,\n' +
+    '        a.nivel,\n' +
+    '        ap.nombre AS area_padre_nombre\n' +
+    '      FROM area a\n' +
+    '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
+    '      WHERE a.activa = true\n' +
+    '      ORDER BY a.nivel ASC, a.nombre ASC\n' +
     '    ',
-  duration: '2ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '      UPDATE usuario \n' +
-    '      SET fecha_ultimo_acceso = CURRENT_TIMESTAMP \n' +
-    '      WHERE id = $1\n' +
-    '    ',
-  duration: '4ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '        INSERT INTO auditoria_sistema (\n' +
-    '          accion, descripcion, usuario_id, area_id, detalles, ip_address, user_agent\n' +
-    '        )\n' +
-    '        VALUES ($1, $2, $3, $4, $5, $6, $7)\n' +
-    '        RETURNING *\n' +
-    '      ',
-  duration: '3ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '      INSERT INTO refresh_tokens (token, usuario_id, expires_at, ip_address, user_agent)\n' +
-    '      VALUES ($1, $2, $3, $4, $5)\n' +
-    '      RETURNING id, token, usuario_id, expires_at, created_at\n' +
-    '    ',
-  duration: '2ms',
-  rows: 1
-}
-]: Refresh token created {"usuarioId":23,"tokenId":"***REDACTED***"}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT id, token, expires_at, created_at, ip_address, user_agent\n' +
-    '      FROM refresh_tokens\n' +
-    '      WHERE usuario_id = $1 AND revoked = FALSE AND expires_at > NOW()\n' +
-    '      ORDER BY created_at DESC\n' +
-    '    ',
-  duration: '1ms',
-  rows: 6
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '      UPDATE refresh_tokens\n' +
-    '      SET revoked = TRUE,\n' +
-    '          revoked_at = NOW(),\n' +
-    '          replaced_by_token = $2\n' +
-    '      WHERE token = $1\n' +
-    '      RETURNING id\n' +
-    '    ',
-  duration: '2ms',
-  rows: 1
-}
-]: Refresh token revoked {"token":"***REDACTED***"}
-]: Old tokens revoked due to limit {"usuarioId":23,"revoked":1}
-]: Token pair generated {"usuarioId":23,"expiresAt":"2026-04-28T20:34:37.987Z"}
-]: [AUDIT] User logged in {"usuarioId":23,"nombreUsuario":"admin","ipAddress":"::1","type":"audit"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '2ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=23, area=20, rol=1
-]: CSRF token created {"identifier":"user:23"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=23, area=20, rol=1
-]: Obteniendo usuarios del dashboard {"usuarioId":23}
-Consulta ejecutada: {
-  text: '\n' +
-    '    SELECT \n' +
-    '      u.id,\n' +
-    '      u.nombre,\n' +
-    '      u.apellidos,\n' +
-    '      u.nombre_usuario,\n' +
-    '      u.email,\n' +
-    '      u.activo,\n' +
-    '      r.nombre as rol,\n' +
-    '      a.nombre as area\n' +
-    '    FROM usuario u\n' +
-    '    INNER JOIN rol r ON u.rol_id = r.id\n' +
-    '    INNER JOIN area a ON u.area_id = a.id\n' +
-    '    WHERE u.activo = true\n' +
-    '    ORDER BY u.nombre, u.apellidos\n' +
-    '  ',
   duration: '5ms',
-  rows: 24
-}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '22ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=23, area=20, rol=1
-]: Obteniendo datos del dashboard {"usuarioId":23}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '26ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=23, area=20, rol=1
-]: Obteniendo registros del dashboard {"usuarioId":23}
-Consulta ejecutada: {
-  text: '\n' +
-    '    SELECT \n' +
-    '      a.id,\n' +
-    '      a.nombre,\n' +
-    '      a.clave,\n' +
-    '      a.tipo,\n' +
-    '      COUNT(DISTINCT d.id) as total_documentos,\n' +
-    '      COUNT(DISTINCT u.id) as total_usuarios\n' +
-    '    FROM area a\n' +
-    '    LEFT JOIN documento d ON d.area_origen_id = a.id\n' +
-    '    LEFT JOIN usuario u ON u.area_id = a.id AND u.activo = true\n' +
-    '    WHERE a.activa = true\n' +
-    '    GROUP BY a.id, a.nombre, a.clave, a.tipo\n' +
-    '    ORDER BY a.nombre\n' +
-    '  ',
-  duration: '7ms',
   rows: 73
 }
 Consulta ejecutada: {
   text: '\n' +
-    '    SELECT \n' +
-    '      d.id,\n' +
-    '      d.folio,\n' +
-    '      d.asunto,\n' +
-    '      d.estado,\n' +
-    '      d.prioridad,\n' +
-    '      d.fecha_creacion,\n' +
-    '      d.fecha_limite as fecha_vencimiento,\n' +
-    '      ao.nombre as area_origen,\n' +
-    '      td.nombre as tipo_documento,\n' +
-    "      u.nombre || ' ' || u.apellidos as creado_por\n" +
-    '    FROM documento d\n' +
-    '    LEFT JOIN area ao ON d.area_origen_id = ao.id\n' +
-    '    LEFT JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
-    '    LEFT JOIN usuario u ON d.usuario_creador_id = u.id\n' +
-    '    ORDER BY d.fecha_creacion DESC\n' +
-    '    LIMIT 50\n' +
-    '  ',
-  duration: '4ms',
-  rows: 50
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '    SELECT \n' +
-    '      DATE(fecha_creacion) as fecha,\n' +
-    '      COUNT(*) as total\n' +
-    '    FROM documento\n' +
-    "    WHERE fecha_creacion >= NOW() - INTERVAL '7 days'\n" +
-    '    GROUP BY DATE(fecha_creacion)\n' +
-    '    ORDER BY fecha\n' +
-    '  ',
-  duration: '4ms',
-  rows: 2
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '    SELECT \n' +
-    '      estado,\n' +
-    '      COUNT(*) as total\n' +
-    '    FROM documento\n' +
-    "    WHERE fecha_creacion >= NOW() - INTERVAL '30 days'\n" +
-    '    GROUP BY estado\n' +
-    '    ORDER BY total DESC\n' +
-    '  ',
-  duration: '1ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=23, area=20, rol=1
-Consulta ejecutada: {
-  text: '\n' +
-    '      UPDATE refresh_tokens\n' +
-    '      SET revoked = TRUE,\n' +
-    '          revoked_at = NOW(),\n' +
-    '          replaced_by_token = $2\n' +
-    '      WHERE token = $1\n' +
-    '      RETURNING id\n' +
-    '    ',
-  duration: '6ms',
-  rows: 1
-}
-]: Refresh token revoked {"token":"***REDACTED***"}
-]: [AUDIT] Refresh token revoked (logout) {"token":"***REDACTED***","type":"audit"}
-]: [AUDIT] User logged out {"usuarioId":23,"type":"audit"}
-]: Login attempt {"nombreUsuario":"carcamo08","ipAddress":"::1"}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT \n' +
-    '        u.id, u.nombre, u.apellidos, u.email, u.nombre_usuario,\n' +
-    '        u.contraseña, u.activo, u.area_id, u.rol_id,\n' +
-    '        r.nombre AS rol_nombre, r.permisos AS rol_permisos,\n' +
-    '        a.nombre AS area_nombre, a.clave AS area_clave, a.tipo AS area_tipo\n' +
-    '      FROM usuario u\n' +
-    '      INNER JOIN rol r ON u.rol_id = r.id\n' +
-    '      INNER JOIN area a ON u.area_id = a.id\n' +
-    '      WHERE u.nombre_usuario = $1\n' +
-    '    ',
-  duration: '2ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '      UPDATE usuario \n' +
-    '      SET fecha_ultimo_acceso = CURRENT_TIMESTAMP \n' +
-    '      WHERE id = $1\n' +
-    '    ',
-  duration: '3ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '        INSERT INTO auditoria_sistema (\n' +
-    '          accion, descripcion, usuario_id, area_id, detalles, ip_address, user_agent\n' +
-    '        )\n' +
-    '        VALUES ($1, $2, $3, $4, $5, $6, $7)\n' +
-    '        RETURNING *\n' +
-    '      ',
-  duration: '3ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '      INSERT INTO refresh_tokens (token, usuario_id, expires_at, ip_address, user_agent)\n' +
-    '      VALUES ($1, $2, $3, $4, $5)\n' +
-    '      RETURNING id, token, usuario_id, expires_at, created_at\n' +
-    '    ',
-  duration: '3ms',
-  rows: 1
-}
-]: Refresh token created {"usuarioId":24,"tokenId":"***REDACTED***"}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT id, token, expires_at, created_at, ip_address, user_agent\n' +
-    '      FROM refresh_tokens\n' +
-    '      WHERE usuario_id = $1 AND revoked = FALSE AND expires_at > NOW()\n' +
-    '      ORDER BY created_at DESC\n' +
-    '    ',
-  duration: '1ms',
-  rows: 5
-}
-]: Token pair generated {"usuarioId":24,"expiresAt":"2026-04-28T20:34:47.306Z"}
-]: [AUDIT] User logged in {"usuarioId":24,"nombreUsuario":"carcamo08","ipAddress":"::1","type":"audit"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: CSRF token created {"identifier":"user:24"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de bandeja de recepción {"usuarioId":24,"areaId":65,"ip":"::1"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '2ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de bandeja de recepción {"usuarioId":24,"areaId":65,"ip":"::1"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '2ms',
-  rows: 1
-}
-]: Contexto RLS configurado {"usuarioId":24}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-]: Contexto RLS configurado {"usuarioId":24}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT \n' +
-    '        d.id,\n' +
-    '        d.folio,\n' +
-    '        d.asunto,\n' +
-    '        d.contenido,\n' +
-    '        d.fecha_creacion,\n' +
-    '        d.fecha_limite,\n' +
-    '        d.prioridad,\n' +
-    '        d.estado AS estado_documento,\n' +
-    '        d.solo_conocimiento,\n' +
-    '        d.observaciones,\n' +
-    '        d.contexto,\n' +
-    '        -- Tipo de documento\n' +
-    '        td.id AS tipo_documento_id,\n' +
-    '        td.nombre AS tipo_documento_nombre,\n' +
-    '        td.clave AS tipo_documento_clave,\n' +
-    '        -- Área origen\n' +
-    '        ao.id AS area_origen_id,\n' +
-    '        ao.nombre AS area_origen_nombre,\n' +
-    '        ao.clave AS area_origen_clave,\n' +
-    '        ao.tipo AS area_origen_tipo,\n' +
-    '        -- Usuario creador\n' +
-    '        uc.id AS usuario_creador_id,\n' +
-    '        uc.nombre AS usuario_creador_nombre,\n' +
-    '        uc.apellidos AS usuario_creador_apellidos,\n' +
-    '        -- Nodo activo (PENDIENTE)\n' +
-    '        n.id AS nodo_id,\n' +
-    '        n.tipo_nodo,\n' +
-    '        n.estado AS estado_nodo,\n' +
-    '        n.folio_propio,\n' +
-    '        n.folio_padre,\n' +
-    '        n.folio_original,\n' +
-    '        n.fecha_generacion AS nodo_fecha_generacion,\n' +
-    '        n.instrucciones,\n' +
-    '        n.observaciones AS nodo_observaciones,\n' +
-    '        -- Usuario que turnó (responsable del nodo)\n' +
-    '        ur.id AS usuario_turna_id,\n' +
-    '        ur.nombre AS usuario_turna_nombre,\n' +
-    '        ur.apellidos AS usuario_turna_apellidos,\n' +
-    '        -- Área que turnó (padre del nodo)\n' +
-    '        CASE \n' +
-    '          WHEN n.nodo_padre_id IS NOT NULL THEN np.area_id\n' +
-    '          ELSE NULL\n' +
-    '        END AS area_turna_id,\n' +
-    '        CASE \n' +
-    '          WHEN n.nodo_padre_id IS NOT NULL THEN at.nombre\n' +
-    '          ELSE NULL\n' +
-    '        END AS area_turna_nombre,\n' +
-    '        -- Entidades externas (si aplica)\n' +
-    '        eeo.id AS entidad_externa_origen_id,\n' +
-    '        eeo.nombre AS entidad_externa_origen_nombre,\n' +
-    '        eed.id AS entidad_externa_destino_id,\n' +
-    '        eed.nombre AS entidad_externa_destino_nombre\n' +
-    '      FROM documento d\n' +
-    '      INNER JOIN nodo_documental n ON n.documento_id = d.id\n' +
-    '      INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
-    '      INNER JOIN area ao ON d.area_origen_id = ao.id\n' +
-    '      INNER JOIN usuario uc ON d.usuario_creador_id = uc.id\n' +
-    '      LEFT JOIN usuario ur ON n.usuario_responsable_id = ur.id\n' +
-    '      LEFT JOIN nodo_documental np ON n.nodo_padre_id = np.id\n' +
-    '      LEFT JOIN area at ON np.area_id = at.id\n' +
-    '      LEFT JOIN entidad_externa eeo ON d.entidad_externa_origen_id = eeo.id\n' +
-    '      LEFT JOIN entidad_externa eed ON d.entidad_externa_destino_id = eed.id\n' +
-    '      WHERE \n' +
-    '        n.es_nodo_activo = true\n' +
-    "        AND n.estado = 'PENDIENTE'\n" +
-    '        AND n.area_id = $1\n' +
-    "        AND d.estado != 'CANCELADO'\n" +
-    '      ORDER BY \n' +
-    '        d.prioridad DESC,\n' +
-    '        d.fecha_creacion DESC\n' +
-    '    ',
-  duration: '9ms',
-  rows: 4
-}
-]: Bandeja de recepción obtenida {"usuarioId":24,"areaId":65,"cantidad":4}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT \n' +
-    '        d.id,\n' +
-    '        d.folio,\n' +
-    '        d.asunto,\n' +
-    '        d.contenido,\n' +
-    '        d.fecha_creacion,\n' +
-    '        d.fecha_limite,\n' +
-    '        d.prioridad,\n' +
-    '        d.estado AS estado_documento,\n' +
-    '        d.solo_conocimiento,\n' +
-    '        d.observaciones,\n' +
-    '        d.contexto,\n' +
-    '        -- Tipo de documento\n' +
-    '        td.id AS tipo_documento_id,\n' +
-    '        td.nombre AS tipo_documento_nombre,\n' +
-    '        td.clave AS tipo_documento_clave,\n' +
-    '        -- Área origen\n' +
-    '        ao.id AS area_origen_id,\n' +
-    '        ao.nombre AS area_origen_nombre,\n' +
-    '        ao.clave AS area_origen_clave,\n' +
-    '        ao.tipo AS area_origen_tipo,\n' +
-    '        -- Usuario creador\n' +
-    '        uc.id AS usuario_creador_id,\n' +
-    '        uc.nombre AS usuario_creador_nombre,\n' +
-    '        uc.apellidos AS usuario_creador_apellidos,\n' +
-    '        -- Nodo activo (PENDIENTE)\n' +
-    '        n.id AS nodo_id,\n' +
-    '        n.tipo_nodo,\n' +
-    '        n.estado AS estado_nodo,\n' +
-    '        n.folio_propio,\n' +
-    '        n.folio_padre,\n' +
-    '        n.folio_original,\n' +
-    '        n.fecha_generacion AS nodo_fecha_generacion,\n' +
-    '        n.instrucciones,\n' +
-    '        n.observaciones AS nodo_observaciones,\n' +
-    '        -- Usuario que turnó (responsable del nodo)\n' +
-    '        ur.id AS usuario_turna_id,\n' +
-    '        ur.nombre AS usuario_turna_nombre,\n' +
-    '        ur.apellidos AS usuario_turna_apellidos,\n' +
-    '        -- Área que turnó (padre del nodo)\n' +
-    '        CASE \n' +
-    '          WHEN n.nodo_padre_id IS NOT NULL THEN np.area_id\n' +
-    '          ELSE NULL\n' +
-    '        END AS area_turna_id,\n' +
-    '        CASE \n' +
-    '          WHEN n.nodo_padre_id IS NOT NULL THEN at.nombre\n' +
-    '          ELSE NULL\n' +
-    '        END AS area_turna_nombre,\n' +
-    '        -- Entidades externas (si aplica)\n' +
-    '        eeo.id AS entidad_externa_origen_id,\n' +
-    '        eeo.nombre AS entidad_externa_origen_nombre,\n' +
-    '        eed.id AS entidad_externa_destino_id,\n' +
-    '        eed.nombre AS entidad_externa_destino_nombre\n' +
-    '      FROM documento d\n' +
-    '      INNER JOIN nodo_documental n ON n.documento_id = d.id\n' +
-    '      INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id\n' +
-    '      INNER JOIN area ao ON d.area_origen_id = ao.id\n' +
-    '      INNER JOIN usuario uc ON d.usuario_creador_id = uc.id\n' +
-    '      LEFT JOIN usuario ur ON n.usuario_responsable_id = ur.id\n' +
-    '      LEFT JOIN nodo_documental np ON n.nodo_padre_id = np.id\n' +
-    '      LEFT JOIN area at ON np.area_id = at.id\n' +
-    '      LEFT JOIN entidad_externa eeo ON d.entidad_externa_origen_id = eeo.id\n' +
-    '      LEFT JOIN entidad_externa eed ON d.entidad_externa_destino_id = eed.id\n' +
-    '      WHERE \n' +
-    '        n.es_nodo_activo = true\n' +
-    "        AND n.estado = 'PENDIENTE'\n" +
-    '        AND n.area_id = $1\n' +
-    "        AND d.estado != 'CANCELADO'\n" +
-    '      ORDER BY \n' +
-    '        d.prioridad DESC,\n' +
-    '        d.fecha_creacion DESC\n' +
-    '    ',
-  duration: '12ms',
-  rows: 4
-}
-]: Bandeja de recepción obtenida {"usuarioId":24,"areaId":65,"cantidad":4}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '3ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de catálogo de tipos de documento {"usuarioId":24}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '5ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '5ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de catálogo de tipos de documento {"usuarioId":24}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT COUNT(*) as total\n' +
-    '      FROM tipo_documento\n' +
-    '      WHERE 1=1 AND activo = $1\n' +
-    '    ',
-  duration: '4ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: 'SELECT COUNT(*) as total FROM (\n' +
-    '      SELECT \n' +
-    '        a.id,\n' +
-    '        a.nombre,\n' +
-    '        a.clave,\n' +
-    '        a.tipo,\n' +
-    '        a.area_padre_id,\n' +
-    '        a.nivel,\n' +
-    '        a.activa,\n' +
-    '        a.descripcion,\n' +
-    '        a.fecha_creacion,\n' +
-    '        ap.nombre AS area_padre_nombre,\n' +
-    '        ap.clave AS area_padre_clave,\n' +
-    '        (\n' +
-    '          SELECT COUNT(*)\n' +
-    '          FROM area sub\n' +
-    '          WHERE sub.area_padre_id = a.id AND sub.activa = true\n' +
-    '        ) AS total_subareas\n' +
-    '      FROM area a\n' +
-    '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
-    '      WHERE 1=1\n' +
-    '    ) AS count_query',
-  duration: '4ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT COUNT(*) as total\n' +
-    '      FROM tipo_documento\n' +
-    '      WHERE 1=1 AND activo = $1\n' +
-    '    ',
-  duration: '3ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
     '      SELECT \n' +
     '        id, nombre, clave, descripcion, plantilla,\n' +
     '        requiere_respuesta, activo, fecha_creacion\n' +
@@ -545,10 +95,32 @@ Consulta ejecutada: {
     '      CASE WHEN activo = true THEN 0 ELSE 1 END,\n' +
     '      nombre ASC\n' +
     '     LIMIT $2',
-  duration: '3ms',
+  duration: '8ms',
   rows: 6
 }
 ]: Catálogo de tipos de documento obtenido {"cantidad":6}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '28ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '31ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
+]: Solicitud de catálogo de tipos de documento {"usuarioId":25}
+Consulta ejecutada: {
+  text: '\n' +
+    '      SELECT COUNT(*) as total\n' +
+    '      FROM tipo_documento\n' +
+    '      WHERE 1=1 AND activo = $1\n' +
+    '    ',
+  duration: '1ms',
+  rows: 1
+}
 Consulta ejecutada: {
   text: '\n' +
     '      SELECT \n' +
@@ -558,22 +130,14 @@ Consulta ejecutada: {
     '        a.tipo,\n' +
     '        a.area_padre_id,\n' +
     '        a.nivel,\n' +
-    '        a.activa,\n' +
-    '        a.descripcion,\n' +
-    '        a.fecha_creacion,\n' +
-    '        ap.nombre AS area_padre_nombre,\n' +
-    '        ap.clave AS area_padre_clave,\n' +
-    '        (\n' +
-    '          SELECT COUNT(*)\n' +
-    '          FROM area sub\n' +
-    '          WHERE sub.area_padre_id = a.id AND sub.activa = true\n' +
-    '        ) AS total_subareas\n' +
+    '        ap.nombre AS area_padre_nombre\n' +
     '      FROM area a\n' +
     '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
-    '      WHERE 1=1\n' +
-    '     ORDER BY a.nivel ASC, a.nombre ASC LIMIT $1 OFFSET $2',
-  duration: '3ms',
-  rows: 10
+    '      WHERE a.activa = true\n' +
+    '      ORDER BY a.nivel ASC, a.nombre ASC\n' +
+    '    ',
+  duration: '5ms',
+  rows: 73
 }
 Consulta ejecutada: {
   text: '\n' +
@@ -592,125 +156,10 @@ Consulta ejecutada: {
 ]: Catálogo de tipos de documento obtenido {"cantidad":6}
 Consulta ejecutada: {
   text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '18ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-Consulta ejecutada: {
-  text: 'SELECT COUNT(*) as total FROM (\n' +
-    '      SELECT \n' +
-    '        a.id,\n' +
-    '        a.nombre,\n' +
-    '        a.clave,\n' +
-    '        a.tipo,\n' +
-    '        a.area_padre_id,\n' +
-    '        a.nivel,\n' +
-    '        a.activa,\n' +
-    '        a.descripcion,\n' +
-    '        a.fecha_creacion,\n' +
-    '        ap.nombre AS area_padre_nombre,\n' +
-    '        ap.clave AS area_padre_clave,\n' +
-    '        (\n' +
-    '          SELECT COUNT(*)\n' +
-    '          FROM area sub\n' +
-    '          WHERE sub.area_padre_id = a.id AND sub.activa = true\n' +
-    '        ) AS total_subareas\n' +
-    '      FROM area a\n' +
-    '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
-    '      WHERE 1=1\n' +
-    '    ) AS count_query',
-  duration: '1ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT \n' +
-    '        a.id,\n' +
-    '        a.nombre,\n' +
-    '        a.clave,\n' +
-    '        a.tipo,\n' +
-    '        a.area_padre_id,\n' +
-    '        a.nivel,\n' +
-    '        a.activa,\n' +
-    '        a.descripcion,\n' +
-    '        a.fecha_creacion,\n' +
-    '        ap.nombre AS area_padre_nombre,\n' +
-    '        ap.clave AS area_padre_clave,\n' +
-    '        (\n' +
-    '          SELECT COUNT(*)\n' +
-    '          FROM area sub\n' +
-    '          WHERE sub.area_padre_id = a.id AND sub.activa = true\n' +
-    '        ) AS total_subareas\n' +
-    '      FROM area a\n' +
-    '      LEFT JOIN area ap ON a.area_padre_id = ap.id\n' +
-    '      WHERE 1=1\n' +
-    '     ORDER BY a.nivel ASC, a.nombre ASC LIMIT $1 OFFSET $2',
-  duration: '1ms',
-  rows: 10
-}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
   duration: '2ms',
   rows: 1
 }
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de preview de consecutivo {"usuarioId":24,"areaId":65,"tipoDocumentoId":2}
-Consulta ejecutada: {
-  text: '\n' +
-    '        SELECT id, clave, nombre, activa \n' +
-    '        FROM area \n' +
-    '        WHERE id = $1\n' +
-    '      ',
-  duration: '3ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT \n' +
-    '        id, nombre, clave, descripcion, plantilla,\n' +
-    '        requiere_respuesta, activo, fecha_creacion\n' +
-    '      FROM tipo_documento\n' +
-    '      WHERE id = $1\n' +
-    '    ',
-  duration: '2ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '        SELECT \n' +
-    '          a.clave AS clave_area,\n' +
-    '          a.nombre AS nombre_area,\n' +
-    '          td.clave AS clave_tipo_doc,\n' +
-    '          td.nombre AS nombre_tipo_doc\n' +
-    '        FROM area a\n' +
-    '        CROSS JOIN tipo_documento td\n' +
-    '        WHERE a.id = $1 AND td.id = $2\n' +
-    '      ',
-  duration: '1ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    '        SELECT public.fn_preview_siguiente_consecutivo($1, $2, $3) AS proximo_consecutivo\n' +
-    '      ',
-  duration: '1ms',
-  rows: 1
-}
-Consulta ejecutada: {
-  text: '\n' +
-    "        SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo\n" +
-    '      ',
-  duration: '1ms',
-  rows: 1
-}
-]: Preview de folio completo obtenido {"area_id":65,"tipo_documento_id":2,"anio":2026,"folio_completo":"EM-SMADSOT.DPG-0008/2026","consecutivo":8}
-]: Preview de consecutivo obtenido {"usuario_id":24,"area_id":65,"tipo_documento_id":2,"consecutivo":8,"folio_completo":"EM-SMADSOT.DPG-0008/2026"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
 Consulta ejecutada: {
   text: '\n' +
     '      WITH RECURSIVE ancestros AS (\n' +
@@ -733,15 +182,15 @@ Consulta ejecutada: {
     '         OR id = $1  -- Incluir el área propia\n' +
     '      ORDER BY nivel ASC\n' +
     '    ',
-  duration: '1ms',
-  rows: 3
+  duration: '4ms',
+  rows: 4
 }
 Consulta ejecutada: {
   text: 'SELECT fn_establecer_usuario_actual($1)',
   duration: '2ms',
   rows: 1
 }
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
 Consulta ejecutada: {
   text: '\n' +
     '      SELECT \n' +
@@ -764,34 +213,11 @@ Consulta ejecutada: {
 }
 Consulta ejecutada: {
   text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '2ms',
+  duration: '1ms',
   rows: 1
 }
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '3ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de preview de consecutivo {"usuarioId":24,"areaId":21,"tipoDocumentoId":2}
-Consulta ejecutada: {
-  text: '\n' +
-    '      SELECT \n' +
-    "        td.clave || '-' || a.clave || '-####/' || EXTRACT(YEAR FROM CURRENT_DATE)::TEXT AS formato_folio,\n" +
-    '        a.clave,\n' +
-    '        a.nombre,\n' +
-    '        td.nombre AS tipo_documento_nombre\n' +
-    '      FROM area a\n' +
-    '      CROSS JOIN tipo_documento td\n' +
-    '      WHERE a.id = $1 \n' +
-    '        AND a.activa = true\n' +
-    '        AND td.id = $2\n' +
-    '        AND td.activo = true\n' +
-    '    ',
-  duration: '2ms',
-  rows: 1
-}
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
+]: Solicitud de preview de consecutivo {"usuarioId":25,"areaId":65,"tipoDocumentoId":2}
 Consulta ejecutada: {
   text: '\n' +
     '        SELECT id, clave, nombre, activa \n' +
@@ -837,91 +263,49 @@ Consulta ejecutada: {
   text: '\n' +
     "        SELECT public.fn_preview_folio($1, 'EMISION', $2, $3) AS folio_completo\n" +
     '      ',
-  duration: '3ms',
+  duration: '2ms',
   rows: 1
 }
-]: Preview de folio completo obtenido {"area_id":21,"tipo_documento_id":2,"anio":2026,"folio_completo":"EM-SMADSOT-0002/2026","consecutivo":2}
-]: Preview de consecutivo obtenido {"usuario_id":24,"area_id":21,"tipo_documento_id":2,"consecutivo":2,"folio_completo":"EM-SMADSOT-0002/2026"}
+]: Preview de folio completo obtenido {"area_id":65,"tipo_documento_id":2,"anio":2026,"folio_completo":"EM-SMADSOT.DPG-0008/2026","consecutivo":8}
+]: Preview de consecutivo obtenido {"usuario_id":25,"area_id":65,"tipo_documento_id":2,"consecutivo":8,"folio_completo":"EM-SMADSOT.DPG-0008/2026"}
+Consulta ejecutada: {
+  text: 'SELECT fn_establecer_usuario_actual($1)',
+  duration: '1ms',
+  rows: 1
+}
+[RLS] Contexto establecido: usuario=25, area=68, rol=8
+]: Solicitud de emisión de documento {"usuarioId":25,"areaId":68,"contexto":"OTRO","asunto":"assssssssssssssssssssssssssssss","ip":"::1"}
 Consulta ejecutada: {
   text: 'SELECT fn_establecer_usuario_actual($1)',
   duration: '2ms',
   rows: 1
 }
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Subiendo archivos {"usuarioId":24,"cantidadArchivos":1}
-Consulta ejecutada: {
+]: Contexto RLS configurado {"usuarioId":25}
+Error en consulta SQL: {
   text: '\n' +
-    '      INSERT INTO archivo (\n' +
-    '        nombre_archivo,\n' +
-    '        ruta_archivo,\n' +
-    '        tipo_mime,\n' +
-    '        tamaño,\n' +
-    '        usuario_carga_id,\n' +
-    '        hash\n' +
-    '      ) VALUES ($1, $2, $3, $4, $5, $6)\n' +
-    '      RETURNING id, nombre_archivo, tipo_mime, tamaño\n' +
+    '      SELECT *\n' +
+    '      FROM sp_solicitar_prestamo_con_reserva(\n' +
+    '        $1::INTEGER,                    -- p_area_solicitante_id\n' +
+    '        $2::INTEGER,                    -- p_area_prestamista_id\n' +
+    '        $3::INTEGER,                    -- p_usuario_solicita_id\n' +
+    '        $4::TEXT,                       -- p_motivacion\n' +
+    '        $5::INTEGER,                    -- p_tipo_documento_id\n' +
+    '        $6::VARCHAR,                    -- p_asunto\n' +
+    '        $7::TEXT,                       -- p_contenido\n' +
+    '        $8::TIMESTAMP,                  -- p_fecha_limite\n' +
+    '        $9::prioridad_enum,             -- p_prioridad\n' +
+    '        $10::TEXT,                      -- p_instrucciones\n' +
+    '        $11::TEXT,                      -- p_observaciones\n' +
+    '        $12::contexto_documento_enum    -- p_contexto\n' +
+    '      )\n' +
     '    ',
-  duration: '8ms',
-  rows: 1
+  error: 'duplicate key value violates unique constraint "documento_folio_key"'
 }
-]: Archivo insertado en BD {"archivoId":12,"nombre":"VDIT599.pdf"}
-]: Archivo procesado exitosamente {"archivoId":12,"nombre":"VDIT599.pdf","tamaño":"823411"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de validación de turno {"areaOrigenId":65,"areaDestinoId":21,"usuarioId":24,"ip":"::1"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-]: Contexto RLS configurado {"usuarioId":24}
-Consulta ejecutada: {
-  text: '\n        SELECT fn_validar_turno($1, $2) as mensaje_error\n      ',
-  duration: '2ms',
-  rows: 1
-}
-]: Validación de turno realizada {"areaOrigenId":65,"areaDestinoId":21,"valido":false,"mensaje":"TURNO NO PERMITIDO: \"Direccion de Planeacion y Geomatica\" (DIRECCION) → \"Secretaria\" (SECRETARIA). Relación jerárquica: ASCENDENTE. No existe una regla activa que autorice esta combinación. Contacte al administrador del sistema para configurarla."}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de validación de turno {"areaOrigenId":65,"areaDestinoId":61,"usuarioId":24,"ip":"::1"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-]: Contexto RLS configurado {"usuarioId":24}
-Consulta ejecutada: {
-  text: '\n        SELECT fn_validar_turno($1, $2) as mensaje_error\n      ',
-  duration: '1ms',
-  rows: 1
-}
-]: Validación de turno realizada {"areaOrigenId":65,"areaDestinoId":61,"valido":true,"mensaje":null}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-[RLS] Contexto establecido: usuario=24, area=65, rol=4
-]: Solicitud de emisión de documento {"usuarioId":24,"areaId":65,"contexto":"OTRO","asunto":"Secretaría de Medio Ambiente, Desarrollo Sustentab","ip":"::1"}
-Consulta ejecutada: {
-  text: 'SELECT fn_establecer_usuario_actual($1)',
-  duration: '1ms',
-  rows: 1
-}
-]: Contexto RLS configurado {"usuarioId":24}
-]: Error al emitir documento {"error":"duplicate key value violates unique constraint \"documento_folio_key\"","params":{"tipo_documento_id":2,"usuario_creador_id":24,"area_origen_id":65}}
-]: Error handled duplicate key value violates unique constraint "documento_folio_key" {"url":"/api/documentos/emitir","method":"POST","userId":24,"ip":"::1"}
+]: Error handled duplicate key value violates unique constraint "documento_folio_key" {"url":"/api/documentos/emitir","method":"POST","userId":25,"ip":"::1"}
 error: duplicate key value violates unique constraint "documento_folio_key"
-    at F:\GESTOR REACT-TAURI\SIGA\backend\node_modules\pg\lib\client.js:631:17
+    at F:\GESTOR REACT-TAURI\SIGA\backend\node_modules\pg-pool\index.js:45:11
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async DocumentoRepository.emitirDocumento (F:\GESTOR REACT-TAURI\SIGA\backend\src\repositories\documento.repository.js:221:22)
-    at async DocumentoService.emitirDocumento (F:\GESTOR REACT-TAURI\SIGA\backend\src\services\documento.service.js:142:23)
+    at async Object.query (F:\GESTOR REACT-TAURI\SIGA\backend\src\config\database.js:28:17)
+    at async PrestamoRepository.solicitarConReserva (F:\GESTOR REACT-TAURI\SIGA\backend\src\repositories\prestamo.repository.js:130:20)
+    at async DocumentoService._emitirConPrestamoReserva (F:\GESTOR REACT-TAURI\SIGA\backend\src\services\documento.service.js:215:23)
     at async F:\GESTOR REACT-TAURI\SIGA\backend\src\controllers\documento.controller.js:38:21

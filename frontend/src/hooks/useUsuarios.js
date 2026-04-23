@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import usuarioService from '@services/usuario.service';
+import { getAreasActivas } from '@services/area.service';
 
 // Tiempo de caché en milisegundos (30 segundos)
 const CACHE_TIME = 30000;
@@ -123,10 +124,11 @@ export const useUsuarios = () => {
 
     try {
       const [areasRes, rolesRes] = await Promise.all([
-        usuarioService.getAllAreas(),
+        getAreasActivas(),
         usuarioService.getAllRoles(),
       ]);
       
+      // getAreasActivas devuelve { success, count, data: [...] }
       setAreas(areasRes.data || []);
       setRoles(rolesRes.data || []);
       

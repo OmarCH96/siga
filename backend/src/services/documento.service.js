@@ -115,11 +115,11 @@ class DocumentoService {
         throw new ValidationError('Los documentos de contexto OFICIO requieren un préstamo de número autorizado');
       }
 
-      // Validar que el préstamo existe y está APROBADO
-      const prestamo = await this._validarPrestamoNumero(datosDocumento.prestamo_numero_id, usuario.id);
+      // Validar que el préstamo existe, está APROBADO y pertenece al área del usuario
+      const prestamo = await this._validarPrestamoNumero(datosDocumento.prestamo_numero_id, usuario.id, usuario.area_id);
       
       if (!prestamo) {
-        throw new ValidationError('El préstamo de número especificado no existe');
+        throw new ValidationError('El préstamo de número especificado no existe o no pertenece a su área');
       }
 
       if (prestamo.estado !== 'APROBADO') {
@@ -305,7 +305,7 @@ class DocumentoService {
    * @returns {Promise<Object|null>} Préstamo encontrado o null
    * @private
    */
-  async _validarPrestamoNumero(prestamoId, usuarioId) {
+  async _validarPrestamoNumero(prestamoId, usuarioId, areaSolicitanteId) {
     try {
       await this.configurarContextoRLS(usuarioId);
 
@@ -319,9 +319,10 @@ class DocumentoService {
           area_prestamista_id
         FROM prestamo_numero_oficio
         WHERE id = $1
+          AND area_solicitante_id = $2
       `;
 
-      const result = await db.query(query, [prestamoId]);
+      const result = await db.query(query, [prestamoId, areaSolicitanteId]);
       return result.rows[0] || null;
     } catch (error) {
       log.error('Error al validar préstamo de número', {
