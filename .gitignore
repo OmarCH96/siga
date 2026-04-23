@@ -42,3 +42,4 @@ backend/temp/
 *.sql
 *.env
 !gestor_db1.sql
+!/sql/*.sql
