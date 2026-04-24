@@ -705,6 +705,43 @@ class DocumentoService {
       throw error;
     }
   }
+
+  /**
+   * Obtiene la correspondencia de la unidad del usuario autenticado
+   * Incluye lógica jerárquica: padres ven descendientes, hijos solo su área
+   * @param {Object} usuario - Usuario completo con id, areaId, permisos
+   * @param {Object} filtros - Filtros de búsqueda y paginación
+   * @returns {Promise<Object>} { documentos, total, page, limit, totalPages, areasHijas }
+   */
+  async getCorrespondenciaUnidad(usuario, filtros = {}) {
+    // Configurar contexto RLS
+    await this.configurarContextoRLS(usuario.id);
+
+    // Llamar al repository con el área del usuario y filtros
+    const resultado = await documentoRepository.getCorrespondenciaUnidad(
+      usuario.area_id,
+      usuario.id,
+      {
+        page: filtros.page || 1,
+        limit: filtros.limit || 10,
+        tipoNodo: filtros.tipoNodo || 'TODOS',
+        busqueda: filtros.busqueda || '',
+        estado: filtros.estado || '',
+        claveTipo: filtros.claveTipo || '',
+        areaEspecifica: filtros.areaEspecifica || null
+      }
+    );
+
+    log.info('Correspondencia de unidad obtenida', {
+      usuarioId: usuario.id,
+      areaId: usuario.area_id,
+      total: resultado.total,
+      areasHijas: resultado.areasHijas.length,
+      page: resultado.page
+    });
+
+    return resultado;
+  }
 }
 
 module.exports = new DocumentoService();

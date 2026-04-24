@@ -981,6 +981,251 @@ class DocumentoRepository {
       total: parseInt(countResult.rows[0].total, 10) || 0,
     };
   }
+
+  /**
+   * Obtiene correspondencia de la unidad del usuario autenticado
+   * Incluye jerarquía: Si es padre muestra descendientes, si es hijo solo su área
+   * 
+   * LÓGICA:
+   * - Unidad Padre (Dirección): CTE recursivo para obtener todas las áreas hijas
+   * - Unidad Hija (Departamento): Solo documentos de su área
+   * 
+   * @param {number} areaId - ID del área del usuario autenticado
+   * @param {number} usuarioId - ID del usuario (para RLS)
+   * @param {Object} filters - Filtros y paginación
+   * @param {number} filters.page - Página actual (1-based)
+   * @param {number} filters.limit - Registros por página
+   * @param {string} [filters.tipoNodo] - Filtro por tipo de nodo: 'EMISION'|'RECEPCION'|'TODOS'
+   * @param {string} [filters.busqueda] - Búsqueda por folio o asunto
+   * @param {string} [filters.estado] - Filtro por estado del documento
+   * @param {string} [filters.claveTipo] - Filtro por clave de tipo de documento
+   * @param {number} [filters.areaEspecifica] - ID de área específica (solo si es padre)
+   * @returns {Promise<Object>} { documentos, total, page, limit, totalPages, areasHijas }
+   */
+  async getCorrespondenciaUnidad(areaId, usuarioId, filters = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      tipoNodo = 'TODOS',
+      busqueda = '',
+      estado = '',
+      claveTipo = '',
+      areaEspecifica = null
+    } = filters;
+
+    const offset = (page - 1) * limit;
+    const client = await db.pool.connect();
+
+    try {
+      // PASO 1: Establecer usuario actual para RLS
+      await client.query('SELECT fn_establecer_usuario_actual($1)', [usuarioId]);
+
+      // PASO 2: Obtener jerarquía de áreas (CTE recursivo)
+      // Incluye el área actual + todas sus descendientes
+      const areasQuery = `
+        WITH RECURSIVE area_jerarquia AS (
+          -- Área base (del usuario)
+          SELECT 
+            id,
+            nombre,
+            clave,
+            tipo,
+            area_padre_id,
+            nivel,
+            id AS area_raiz
+          FROM area 
+          WHERE id = $1 AND activa = true
+          
+          UNION ALL
+          
+          -- Descendientes recursivos
+          SELECT 
+            a.id,
+            a.nombre,
+            a.clave,
+            a.tipo,
+            a.area_padre_id,
+            a.nivel,
+            ah.area_raiz
+          FROM area a
+          INNER JOIN area_jerarquia ah ON a.area_padre_id = ah.id
+          WHERE a.activa = true
+        )
+        SELECT * FROM area_jerarquia
+        ORDER BY nivel, nombre
+      `;
+
+      const areasResult = await client.query(areasQuery, [areaId]);
+      const areasHijas = areasResult.rows;
+
+      // Si hay área específica seleccionada y es descendiente válida, filtrar solo esa
+      let areasFiltradas = areasHijas.map(a => a.id);
+      if (areaEspecifica && areasHijas.some(a => a.id === areaEspecifica)) {
+        areasFiltradas = [areaEspecifica];
+      }
+
+      // PASO 3: Construir condiciones de filtrado dinámicas
+      const params = [areasFiltradas];
+      const conditions = ['d.documento_invalidado = false'];
+
+      // Filtrar por tipo de nodo (EMISION/RECEPCION/TODOS)
+      if (tipoNodo === 'EMISION') {
+        conditions.push("n.tipo_nodo = 'EMISION'");
+      } else if (tipoNodo === 'RECEPCION') {
+        conditions.push("n.tipo_nodo IN ('RECEPCION', 'COPIA')");
+      }
+      // Si es 'TODOS' no agregamos condición de tipo_nodo
+
+      // Búsqueda por folio o asunto
+      if (busqueda) {
+        params.push(`%${busqueda}%`);
+        conditions.push(`(d.folio ILIKE $${params.length} OR d.asunto ILIKE $${params.length})`);
+      }
+
+      // Filtro por estado
+      if (estado) {
+        params.push(estado);
+        conditions.push(`d.estado = $${params.length}`);
+      }
+
+      // Filtro por clave de tipo de documento
+      if (claveTipo) {
+        params.push(claveTipo);
+        conditions.push(`td.clave = $${params.length}`);
+      }
+
+      const whereClause = conditions.join(' AND ');
+
+      // PASO 4: Consultar documentos con paginación
+      // Usamos subconsulta para ordenar correctamente por fecha más reciente
+      const documentosQuery = `
+        WITH documentos_ranked AS (
+          SELECT 
+            d.id,
+            d.folio,
+            d.asunto,
+            d.contenido,
+            d.estado AS estado_documento,
+            d.prioridad,
+            d.fecha_creacion,
+            d.fecha_limite,
+            d.contexto,
+            d.solo_conocimiento,
+            -- Tipo de documento
+            td.id AS tipo_documento_id,
+            td.nombre AS tipo_documento_nombre,
+            td.clave AS tipo_documento_clave,
+            -- Área origen del documento
+            ao.id AS area_origen_id,
+            ao.nombre AS area_origen_nombre,
+            ao.clave AS area_origen_clave,
+            ao.tipo AS area_origen_tipo,
+            -- Usuario creador
+            uc.id AS usuario_creador_id,
+            uc.nombre AS usuario_creador_nombre,
+            uc.apellidos AS usuario_creador_apellidos,
+            -- Nodo actual relacionado con las áreas filtradas
+            n.id AS nodo_id,
+            n.tipo_nodo,
+            n.estado AS estado_nodo,
+            n.folio_propio,
+            n.folio_original,
+            n.fecha_generacion AS nodo_fecha_generacion,
+            n.fecha_recepcion,
+            n.es_nodo_activo,
+            -- Área responsable del nodo (puede ser diferente al área origen)
+            an.id AS area_responsable_id,
+            an.nombre AS area_responsable_nombre,
+            an.clave AS area_responsable_clave,
+            an.tipo AS area_responsable_tipo,
+            -- Usuario responsable del nodo
+            ur.id AS usuario_responsable_id,
+            ur.nombre AS usuario_responsable_nombre,
+            ur.apellidos AS usuario_responsable_apellidos,
+            -- Ranking para obtener el nodo más reciente por documento
+            ROW_NUMBER() OVER (PARTITION BY d.id ORDER BY n.fecha_generacion DESC) AS rn
+          FROM documento d
+          INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id
+          INNER JOIN area ao ON d.area_origen_id = ao.id
+          INNER JOIN usuario uc ON d.usuario_creador_id = uc.id
+          INNER JOIN nodo_documental n ON n.documento_id = d.id
+          INNER JOIN area an ON n.area_id = an.id
+          LEFT JOIN usuario ur ON n.usuario_responsable_id = ur.id
+          WHERE 
+            n.area_id = ANY($1::integer[])
+            AND ${whereClause}
+        )
+        SELECT 
+          id, folio, asunto, contenido, estado_documento, prioridad,
+          fecha_creacion, fecha_limite, contexto, solo_conocimiento,
+          tipo_documento_id, tipo_documento_nombre, tipo_documento_clave,
+          area_origen_id, area_origen_nombre, area_origen_clave, area_origen_tipo,
+          usuario_creador_id, usuario_creador_nombre, usuario_creador_apellidos,
+          nodo_id, tipo_nodo, estado_nodo, folio_propio, folio_original,
+          nodo_fecha_generacion, fecha_recepcion, es_nodo_activo,
+          area_responsable_id, area_responsable_nombre, area_responsable_clave, area_responsable_tipo,
+          usuario_responsable_id, usuario_responsable_nombre, usuario_responsable_apellidos
+        FROM documentos_ranked
+        WHERE rn = 1
+        ORDER BY nodo_fecha_generacion DESC, fecha_creacion DESC, id DESC
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      `;
+
+      params.push(limit, offset);
+
+      const documentosResult = await client.query(documentosQuery, params);
+
+      // PASO 5: Obtener total de registros para paginación
+      const countParams = params.slice(0, -2); // Remover limit y offset
+      const countQuery = `
+        SELECT COUNT(DISTINCT d.id) AS total
+        FROM documento d
+        INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id
+        INNER JOIN nodo_documental n ON n.documento_id = d.id
+        WHERE 
+          n.area_id = ANY($1::integer[])
+          AND ${whereClause}
+      `;
+
+      const countResult = await client.query(countQuery, countParams);
+      const total = parseInt(countResult.rows[0].total, 10) || 0;
+
+      logger.info('Correspondencia de unidad obtenida', {
+        usuario_id: usuarioId,
+        area_id: areaId,
+        total_areas: areasHijas.length,
+        total_documentos: total,
+        page,
+        limit
+      });
+
+      return {
+        documentos: documentosResult.rows,
+        total,
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        totalPages: Math.ceil(total / limit),
+        areasHijas: areasHijas.map(a => ({
+          id: a.id,
+          nombre: a.nombre,
+          clave: a.clave,
+          tipo: a.tipo,
+          nivel: a.nivel
+        }))
+      };
+
+    } catch (error) {
+      logger.error('Error al obtener correspondencia de unidad', {
+        error: error.message,
+        usuario_id: usuarioId,
+        area_id: areaId,
+        filters
+      });
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = new DocumentoRepository();

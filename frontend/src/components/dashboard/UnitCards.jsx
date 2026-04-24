@@ -13,7 +13,7 @@ const iconPalette = [
   { wrapper: 'bg-amber-50 dark:bg-amber-900/20', icon: 'text-amber-600', glyph: 'domain' },
 ];
 
-const UnitCards = ({ units, selectedUnitId, onSelectUnit }) => {
+const UnitCards = ({ units = [], selectedUnitId = null, onSelectUnit }) => {
   // Validar que units sea un array
   const safeUnits = Array.isArray(units) ? units : [];
   const navigate = useNavigate();
@@ -57,15 +57,17 @@ const UnitCards = ({ units, selectedUnitId, onSelectUnit }) => {
         const totalUsuarios = parseInt(unit.totalUsuarios) || 0;
 
         return (
-          <button
+          <div
             key={unit.id}
-            type="button"
             onClick={() => onSelectUnit(unit.id)}
-            className={`text-left group bg-white dark:bg-slate-900 rounded-xl p-5 transition-all border ${
+            className={`text-left group bg-white dark:bg-slate-900 rounded-xl p-5 transition-all border cursor-pointer ${
               selected
                 ? 'border-2 border-primary shadow-xl shadow-primary/5'
                 : 'border-slate-200 dark:border-slate-800 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/50'
             }`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectUnit(unit.id); }}
             aria-label={`Seleccionar unidad ${nombre}`}
             aria-pressed={selected}
           >
@@ -109,7 +111,7 @@ const UnitCards = ({ units, selectedUnitId, onSelectUnit }) => {
                 <span className="material-symbols-outlined text-xs">arrow_forward</span>
               </button>
             </div>
-          </button>
+          </div>
         );
       })}
       </div>
@@ -142,11 +144,6 @@ UnitCards.propTypes = {
   ),
   selectedUnitId: PropTypes.number,
   onSelectUnit: PropTypes.func.isRequired,
-};
-
-UnitCards.defaultProps = {
-  units: [],
-  selectedUnitId: null,
 };
 
 export default memo(UnitCards);

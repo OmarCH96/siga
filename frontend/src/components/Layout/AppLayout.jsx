@@ -43,7 +43,7 @@ const AppLayout = ({ children, activeRoute }) => {
 
 AppLayout.propTypes = {
     children: PropTypes.node.isRequired,
-    activeRoute: PropTypes.oneOf(['emitir', 'recepciones', 'reportes', null])
+    activeRoute: PropTypes.oneOf(['emitir', 'recepciones', 'reportes', 'correspondencia', null])
 };
 
 export default AppLayout;

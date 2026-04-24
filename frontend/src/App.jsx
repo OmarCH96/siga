@@ -17,6 +17,7 @@ import FormularioEmision from '@pages/Emision/FormularioEmision';
 import Unauthorized from '@pages/Unauthorized/Unauthorized';
 import RegistroAccesos from '@pages/Accesos/RegistroAccesos';
 import { BandejaRecepcionLayout } from './pages/BandejaRecepcion';
+import CorrespondenciaUnidad from '@pages/Correspondencia/CorrespondenciaUnidad';
 
 
 const RootRedirect = () => {
@@ -38,7 +39,12 @@ function App() {
   }, [initAuth]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <Routes>
         {/* Ruta raíz redirige según rol */}
         <Route path="/" element={<RootRedirect />} />
@@ -67,6 +73,7 @@ function App() {
         {/* Rutas protegidas para cualquier usuario autenticado */}
         <Route element={<ProtectedRoute />}>
           <Route path="/recepciones" element={<BandejaRecepcionLayout />} />
+          <Route path="/correspondencia" element={<CorrespondenciaUnidad />} />
         </Route>
 
         {/* Ruta 404 */}

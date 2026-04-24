@@ -58,6 +58,20 @@ const Sidebar = ({ user, hasPermission, logout, navigate, activeRoute }) => {
                     <span className="material-symbols-outlined">bar_chart</span>
                     <span className="text-sm font-medium">Consultas y Reportes</span>
                 </button>
+                <button
+                    type="button"
+                    onClick={() => navigate('/correspondencia')}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                        activeRoute === 'correspondencia'
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                >
+                    <span className="material-symbols-outlined">history</span>
+                    <span className={`text-sm ${activeRoute === 'correspondencia' ? 'font-semibold' : 'font-medium'}`}>
+                        Correspondencia
+                    </span>
+                </button>
             </nav>
 
             {/* Información del usuario y logout */}
@@ -93,6 +107,10 @@ Sidebar.propTypes = {
     user: PropTypes.shape({
         nombre: PropTypes.string,
         nombreUsuario: PropTypes.string,
+        areaId: PropTypes.number,
+        area: PropTypes.shape({
+            nombre: PropTypes.string
+        }),
         rol: PropTypes.shape({
             nombre: PropTypes.string
         })
@@ -100,7 +118,7 @@ Sidebar.propTypes = {
     hasPermission: PropTypes.func.isRequired,
     logout: PropTypes.func.isRequired,
     navigate: PropTypes.func.isRequired,
-    activeRoute: PropTypes.oneOf(['emitir', 'recepciones', 'reportes', null])
+    activeRoute: PropTypes.oneOf(['emitir', 'recepciones', 'reportes', 'correspondencia', null])
 };
 
 export default Sidebar;

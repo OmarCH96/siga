@@ -9,7 +9,7 @@ const statusColor = {
   Devuelto: 'bg-red-400',
 };
 
-const DashboardMetrics = ({ tabs, activeTab, onTabChange, selectedUnit, weekMetrics, distribution }) => {
+const DashboardMetrics = ({ tabs = [], activeTab = 'estadisticas', onTabChange, selectedUnit = null, weekMetrics = [], distribution = [] }) => {
   // Procesar y validar datos
   const processedWeekMetrics = processWeekMetrics(weekMetrics);
   const processedDistribution = processDistribution(distribution);
@@ -145,14 +145,6 @@ DashboardMetrics.propTypes = {
       total: PropTypes.number,
     })
   ),
-};
-
-DashboardMetrics.defaultProps = {
-  tabs: [],
-  activeTab: 'estadisticas',
-  selectedUnit: null,
-  weekMetrics: [],
-  distribution: [],
 };
 
 export default memo(DashboardMetrics);

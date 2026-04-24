@@ -488,6 +488,51 @@ const getDiagnosticoConsecutivo = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Obtener correspondencia de la unidad del usuario autenticado
+ * GET /api/documentos/correspondencia-unidad
+ * 
+ * Retorna todos los documentos donde la unidad del usuario participa,
+ * incluyendo descendientes si es unidad padre
+ * Query params: page, limit, tipoNodo, busqueda, estado, claveTipo, areaEspecifica
+ */
+const getCorrespondenciaUnidad = asyncHandler(async (req, res) => {
+  const usuario = {
+    id: req.user.id,
+    area_id: req.user.areaId,
+    rol_permisos: req.user.permisos
+  };
+
+  // Extraer filtros de query params
+  const filtros = {
+    page: req.query.page ? parseInt(req.query.page, 10) : 1,
+    limit: req.query.limit ? parseInt(req.query.limit, 10) : 10,
+    tipoNodo: req.query.tipoNodo || 'TODOS', // EMISION|RECEPCION|TODOS
+    busqueda: req.query.busqueda || '',
+    estado: req.query.estado || '',
+    claveTipo: req.query.claveTipo || '',
+    areaEspecifica: req.query.areaEspecifica ? parseInt(req.query.areaEspecifica, 10) : null
+  };
+
+  log.info('Solicitud de correspondencia de unidad', {
+    usuarioId: usuario.id,
+    areaId: usuario.area_id,
+    filtros,
+  });
+
+  const resultado = await documentoService.getCorrespondenciaUnidad(usuario, filtros);
+
+  res.status(200).json({
+    success: true,
+    data: resultado.documentos,
+    total: resultado.total,
+    page: resultado.page,
+    limit: resultado.limit,
+    totalPages: resultado.totalPages,
+    areasHijas: resultado.areasHijas,
+  });
+});
+
 module.exports = {
   emitirDocumento,
   obtenerDocumento,
@@ -500,4 +545,5 @@ module.exports = {
   recibirDocumento,
   getPreviewConsecutivo,
   getDiagnosticoConsecutivo,
+  getCorrespondenciaUnidad,
 };

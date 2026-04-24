@@ -49,7 +49,7 @@ SidebarLink.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
-const AdminSidebar = ({ user, onLogout }) => {
+const AdminSidebar = ({ user = null, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { hasPermission } = useAuth();
@@ -138,10 +138,6 @@ AdminSidebar.propTypes = {
     rol_nombre: PropTypes.string,
   }),
   onLogout: PropTypes.func.isRequired,
-};
-
-AdminSidebar.defaultProps = {
-  user: null,
 };
 
 export default memo(AdminSidebar);

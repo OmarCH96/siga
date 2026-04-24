@@ -12,7 +12,7 @@ const badgeByEstado = {
   Enviado: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
 };
 
-const RecentDocumentsTable = ({ registros }) => {
+const RecentDocumentsTable = ({ registros = [] }) => {
   // Validar que registros sea un array
   const safeRegistros = Array.isArray(registros) ? registros : [];
 
@@ -166,10 +166,6 @@ RecentDocumentsTable.propTypes = {
       fecha: PropTypes.string,
     })
   ),
-};
-
-RecentDocumentsTable.defaultProps = {
-  registros: [],
 };
 
 export default memo(RecentDocumentsTable);

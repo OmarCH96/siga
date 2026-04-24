@@ -2,7 +2,7 @@ import { memo } from 'react';
 import PropTypes from 'prop-types';
 import { getSafeValue } from '@utils/dataFormatters';
 
-const AdminTopNavbar = ({ searchTerm, onSearchChange, selectedUnitName = 'Sede Central', searchPlaceholder = 'Buscar unidades o documentos...' }) => {
+const AdminTopNavbar = ({ searchTerm = '', onSearchChange, selectedUnitName = 'Sede Central', searchPlaceholder = 'Buscar unidades o documentos...' }) => {
   const safeTerm = getSafeValue(searchTerm, '');
   const safeName = getSafeValue(selectedUnitName, 'Sede Central');
   return (
@@ -51,12 +51,6 @@ AdminTopNavbar.propTypes = {
   onSearchChange: PropTypes.func.isRequired,
   selectedUnitName: PropTypes.string,
   searchPlaceholder: PropTypes.string,
-};
-
-AdminTopNavbar.defaultProps = {
-  searchTerm: '',
-  selectedUnitName: 'Sede Central',
-  searchPlaceholder: 'Buscar unidades o documentos...',
 };
 
 export default memo(AdminTopNavbar);

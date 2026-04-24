@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Sidebar from '../../components/dashboard/AdminSidebar';
 import UnitCard from '../../components/unidades/UnitCard';
 import UnitModal from '../../components/unidades/UnitModal';
@@ -29,6 +29,10 @@ const UnidadesAdministrativas = () => {
   const [editingUnit, setEditingUnit] = useState(null);
   const [pendingToggle, setPendingToggle] = useState(null);
   const [localLoading, setLocalLoading] = useState(false);
+  
+  // Estado local para el término de búsqueda (para evitar perder foco)
+  const [searchTerm, setSearchTerm] = useState('');
+  const searchTimeoutRef = useRef(null);
 
   /**
    * Mapear áreas del backend a formato esperado por UnitCard
@@ -47,26 +51,56 @@ const UnidadesAdministrativas = () => {
     }));
   }, [areas]);
 
+  // Sincronizar searchTerm con filters.busqueda cuando viene de fuera (por ejemplo, reset)
+  useEffect(() => {
+    if (filters.busqueda !== searchTerm) {
+      setSearchTerm(filters.busqueda || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.busqueda]);
+
+  // Debounce de búsqueda - actualizar filtros después de 300ms de inactividad
+  useEffect(() => {
+    // Limpiar timeout anterior
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Crear nuevo timeout
+    searchTimeoutRef.current = setTimeout(() => {
+      if (searchTerm !== filters.busqueda) {
+        updateFilters({ busqueda: searchTerm, page: 1 });
+      }
+    }, 300);
+
+    // Cleanup
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, filters.busqueda, updateFilters]);
+
   // Handler: Abrir modal para crear nueva unidad
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     setEditingUnit(null);
     setIsModalOpen(true);
-  };
+  }, []);
 
   // Handler: Abrir modal para editar unidad
-  const handleEdit = (unit) => {
+  const handleEdit = useCallback((unit) => {
     setEditingUnit(unit);
     setIsModalOpen(true);
-  };
+  }, []);
 
   // Handler: Cerrar modal de unidad
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setEditingUnit(null);
-  };
+  }, []);
 
   // Handler: Submit del formulario (crear o editar)
-  const handleSubmit = async (formData) => {
+  const handleSubmit = useCallback(async (formData) => {
     setLocalLoading(true);
     setError(null);
 
@@ -97,19 +131,16 @@ const UnidadesAdministrativas = () => {
     } finally {
       setLocalLoading(false);
     }
-  };
+  }, [editingUnit, updateArea, createArea, setError, handleCloseModal]);
 
   // Handler: Iniciar toggle de estado (abre modal de confirmación)
-  const handleToggleStatus = (unitId, newStatus) => {
-    const unit = units.find((u) => u.id === unitId);
-    if (unit) {
-      setPendingToggle({ unitId, newStatus });
-      setIsConfirmModalOpen(true);
-    }
-  };
+  const handleToggleStatus = useCallback((unitId, newStatus) => {
+    setPendingToggle({ unitId, newStatus });
+    setIsConfirmModalOpen(true);
+  }, []);
 
   // Handler: Confirmar el cambio de estado
-  const handleConfirmToggle = async () => {
+  const handleConfirmToggle = useCallback(async () => {
     if (pendingToggle) {
       const { unitId, newStatus } = pendingToggle;
       setLocalLoading(true);
@@ -128,22 +159,21 @@ const UnidadesAdministrativas = () => {
         setLocalLoading(false);
       }
     }
-  };
+  }, [pendingToggle, toggleAreaStatus, setError]);
 
   // Handler: Cancelar el cambio de estado
-  const handleCancelToggle = () => {
+  const handleCancelToggle = useCallback(() => {
     setPendingToggle(null);
     setIsConfirmModalOpen(false);
-  };
+  }, []);
 
-  // Handler: Búsqueda - Actualizar filtros del hook
-  const handleSearch = (e) => {
-    const searchValue = e.target.value;
-    updateFilters({ busqueda: searchValue, page: 1 });
-  };
+  // Handler: Búsqueda - Actualizar estado local (el debounce se encarga de los filtros)
+  const handleSearch = useCallback((e) => {
+    setSearchTerm(e.target.value);
+  }, []);
 
   // Handler: Filtros de estado - Actualizar filtros del hook
-  const handleFilterChange = (filter) => {
+  const handleFilterChange = useCallback((filter) => {
     let activaValue = undefined;
     
     if (filter === 'active') {
@@ -153,15 +183,25 @@ const UnidadesAdministrativas = () => {
     }
     
     updateFilters({ activa: activaValue, page: 1 });
-  };
+  }, [updateFilters]);
 
   // Handler: Cambiar página
-  const handlePageChange = (newPage) => {
+  const handlePageChange = useCallback((newPage) => {
     changePage(newPage);
-  };
+  }, [changePage]);
 
   // Determinar filtro activo basado en filters.activa
   const activeFilter = filters.activa === true ? 'active' : filters.activa === false ? 'inactive' : 'all';
+
+  // Memorizar unidades disponibles para el modal (excluyendo la unidad en edición)
+  const availableUnits = useMemo(() => {
+    return units.filter((u) => u.id !== editingUnit?.id);
+  }, [units, editingUnit?.id]);
+
+  // Memorizar nombre de la unidad para el modal de confirmación
+  const pendingUnitName = useMemo(() => {
+    return units.find((u) => u.id === pendingToggle?.unitId)?.name || '';
+  }, [units, pendingToggle?.unitId]);
 
   return (
     <div className="flex min-h-screen">
@@ -195,7 +235,7 @@ const UnidadesAdministrativas = () => {
                 search
               </span>
               <input
-                value={filters.busqueda || ''}
+                value={searchTerm}
                 onChange={handleSearch}
                 disabled={loading}
                 className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary text-sm placeholder:text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -298,7 +338,7 @@ const UnidadesAdministrativas = () => {
               </div>
               <p className="text-slate-600 dark:text-slate-400 font-bold">No se encontraron unidades</p>
               <p className="text-slate-500 dark:text-slate-500 text-sm mt-1">
-                {filters.busqueda || filters.activa !== undefined
+                {searchTerm || filters.activa !== undefined
                   ? 'Intente ajustar los filtros de búsqueda'
                   : 'Comience creando una nueva unidad administrativa'}
               </p>
@@ -397,14 +437,14 @@ const UnidadesAdministrativas = () => {
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         editingUnit={editingUnit}
-        availableUnits={units.filter((u) => u.id !== editingUnit?.id)}
+        availableUnits={availableUnits}
       />
 
       <ConfirmDisableModal
         isOpen={isConfirmModalOpen}
         onClose={handleCancelToggle}
         onConfirm={handleConfirmToggle}
-        unitName={units.find((u) => u.id === pendingToggle?.unitId)?.name || ''}
+        unitName={pendingUnitName}
         isActivating={pendingToggle?.newStatus || false}
       />
     </div>

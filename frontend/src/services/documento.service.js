@@ -219,6 +219,54 @@ export const getDiagnosticoConsecutivo = async (areaId, tipoDocumentoId) => {
   return response.data;
 };
 
+/**
+ * Obtener correspondencia de la unidad del usuario autenticado
+ * Incluye jerarquía: padres ven descendientes, hijos solo su área
+ * @param {Object} filtros - Filtros de búsqueda y paginación
+ * @param {number} [filtros.page=1] - Página actual
+ * @param {number} [filtros.limit=10] - Documentos por página
+ * @param {string} [filtros.tipoNodo='TODOS'] - Tipo de nodo: 'EMISION'|'RECEPCION'|'TODOS'
+ * @param {string} [filtros.busqueda] - Búsqueda por folio o asunto
+ * @param {string} [filtros.estado] - Filtro por estado del documento
+ * @param {string} [filtros.claveTipo] - Filtro por clave de tipo de documento (EC, EO, EM, etc.)
+ * @param {number} [filtros.areaEspecifica] - ID de área específica (solo si es padre)
+ * @returns {Promise<Object>} { documentos, total, page, limit, totalPages, areasHijas }
+ */
+export const getCorrespondenciaUnidad = async (filtros = {}) => {
+  const params = new URLSearchParams();
+  
+  if (filtros.page) {
+    params.append('page', filtros.page);
+  }
+  
+  if (filtros.limit) {
+    params.append('limit', filtros.limit);
+  }
+  
+  if (filtros.tipoNodo) {
+    params.append('tipoNodo', filtros.tipoNodo);
+  }
+  
+  if (filtros.busqueda) {
+    params.append('busqueda', filtros.busqueda);
+  }
+  
+  if (filtros.estado) {
+    params.append('estado', filtros.estado);
+  }
+  
+  if (filtros.claveTipo) {
+    params.append('claveTipo', filtros.claveTipo);
+  }
+  
+  if (filtros.areaEspecifica) {
+    params.append('areaEspecifica', filtros.areaEspecifica);
+  }
+  
+  const response = await apiClient.get(`/documentos/correspondencia-unidad?${params.toString()}`);
+  return response.data;
+};
+
 // Exportación por defecto con todos los métodos
 export default {
   getBandejaRecepcion,
@@ -235,4 +283,5 @@ export default {
   recibirDocumento,
   getPreviewConsecutivo,
   getDiagnosticoConsecutivo,
+  getCorrespondenciaUnidad,
 };

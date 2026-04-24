@@ -83,6 +83,16 @@ router.get('/preview-consecutivo', documentoController.getPreviewConsecutivo);
 router.get('/diagnostico-consecutivo', documentoController.getDiagnosticoConsecutivo);
 
 /**
+ * GET /api/documentos/correspondencia-unidad
+ * Obtener correspondencia de la unidad del usuario autenticado
+ * Incluye jerarquía: padres ven descendientes, hijos solo su área
+ * Query params: page, limit, tipoNodo, busqueda, estado, claveTipo, areaEspecifica
+ * Requiere: Solo autenticación (todos los usuarios pueden ver su correspondencia)
+ * IMPORTANTE: Debe ir antes de /api/documentos/:id para evitar conflictos
+ */
+router.get('/correspondencia-unidad', documentoController.getCorrespondenciaUnidad);
+
+/**
  * GET /api/documentos/:id
  * Obtener detalle de un documento por ID con validación de permisos
  * Requiere: Autenticación (RLS valida permisos de lectura)
